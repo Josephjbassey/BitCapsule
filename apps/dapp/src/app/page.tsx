@@ -17,10 +17,45 @@ export default function Home() {
 
   const [message, setMessage] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!publicClient || !isConnected) return;
+
+    const fetchHistory = async () => {
+      try {
+        const logs = await publicClient.getLogs({
+          address: Vault.address,
+          event: {
+            type: 'event',
+            name: 'Deposit',
+            inputs: [
+              { indexed: true, name: 'user', type: 'address' },
+              { indexed: true, name: 'token', type: 'address' },
+              { indexed: false, name: 'amount', type: 'uint256' }
+            ]
+          },
+          fromBlock: BigInt(0),
+        });
+        // Sort by block number descending
+        const sortedLogs = [...logs].sort((a, b) =>
+          Number((b.blockNumber || BigInt(0)) - (a.blockNumber || BigInt(0)))
+        );
+        setHistory(sortedLogs);
+      } catch (error) {
+        console.error("Failed to fetch history", error);
+      }
+    };
+
+    fetchHistory();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchHistory, 30000);
+    return () => clearInterval(interval);
+  }, [publicClient, isConnected]);
 
   const handleMint = async () => {
     if (!message) return;
@@ -242,6 +277,62 @@ export default function Home() {
           ID: <span className="text-primary/60">XJ-9200-ALPHA</span> // Node: <span className="text-green-500/60">Verified</span>
         </div>
       </footer>
+
+      {/* Archive Section */}
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 pb-12">
+        <div className="bg-obsidian/80 border border-primary/20 rounded-xl overflow-hidden backdrop-blur-md">
+          <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex justify-between items-center">
+            <span className="text-xs font-mono text-primary uppercase tracking-widest flex items-center gap-2">
+              <span className="material-icons text-xs animate-pulse">history</span>
+              Temporal Archive Feed
+            </span>
+            <span className="text-[10px] font-mono text-primary/60 uppercase">
+              Status: Connected // {history.length} Data Blocks
+            </span>
+          </div>
+
+          <div className="h-64 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none scanline opacity-5"></div>
+            {history.length === 0 ? (
+              <div className="text-primary/40 text-center py-10 animate-pulse uppercase tracking-[0.2em]">
+                _Waiting for incoming transmissions...
+              </div>
+            ) : (
+              history.map((log, i) => (
+                <div key={log.transactionHash || i} className="border-l-2 border-primary/30 pl-4 py-2 hover:bg-primary/5 transition-colors group relative">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-primary font-bold uppercase tracking-wider">
+                      [Block {log.blockNumber?.toString()}] Vibe Sealed
+                    </span>
+                    <a
+                      href={`https://blockscout.staging.midl.xyz/tx/${log.transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary/40 hover:text-primary transition-colors text-[10px] flex items-center gap-1"
+                    >
+                      EXPLORER <span className="material-icons text-[10px]">open_in_new</span>
+                    </a>
+                  </div>
+                  <div className="text-gray-400 leading-relaxed break-all">
+                    MSG: Future self, I sealed a temporal vibe of {log.args.amount?.toString()} units. Stay wild.
+                  </div>
+                  <div className="mt-1 text-[10px] text-primary/60 flex justify-between">
+                    <span>SENDER: {log.args.user?.slice(0, 6)}...{log.args.user?.slice(-4)}</span>
+                    <span>TX: {log.transactionHash?.slice(0, 10)}...</span>
+                  </div>
+                  <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent"></div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Decorative Terminal Footer */}
+          <div className="bg-black/40 px-4 py-1 text-[8px] font-mono text-primary/30 uppercase flex justify-between">
+            <span>Buffer: 100% // Stream: Encrypted</span>
+            <span>Ref_ID: XJ-ARCHIVE-LINK</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
