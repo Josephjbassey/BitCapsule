@@ -1,5 +1,7 @@
 "use client";
 
+import { EXPLORER_BASE_URL } from "@/app/config";
+
 interface SuccessOverlayProps {
   txHash: string;
   onClose: () => void;
@@ -57,7 +59,7 @@ export default function SuccessOverlay({ txHash, onClose, onRefresh }: SuccessOv
 
         <div className="flex flex-col gap-4 pt-4">
           <a
-            href={`https://blockscout.staging.midl.xyz/tx/${txHash}`}
+            href={`${EXPLORER_BASE_URL}/tx/${txHash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-5 bg-primary/10 hover:bg-primary/20 border border-primary/40 text-white font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-3 rounded-xl group/btn hover:shadow-neon"
@@ -67,6 +69,7 @@ export default function SuccessOverlay({ txHash, onClose, onRefresh }: SuccessOv
           </a>
 
           <button
+            type="button"
             onClick={handleReturn}
             className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-3 rounded-xl hover:bg-white/10"
           >

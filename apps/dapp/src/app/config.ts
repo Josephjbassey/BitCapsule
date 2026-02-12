@@ -15,3 +15,5 @@ export const queryClient = new QueryClient({
 		},
 	},
 });
+
+export const EXPLORER_BASE_URL = "https://blockscout.staging.midl.xyz";

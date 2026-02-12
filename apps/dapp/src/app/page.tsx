@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as Vault from "@/shared/contracts/Vault";
 import { encodeFunctionData } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
+import { EXPLORER_BASE_URL } from "./config";
+import { toast } from "sonner";
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -18,11 +20,12 @@ export default function Home() {
   const publicClient = usePublicClient();
 
   const [message, setMessage] = useState("");
+  const [isMinting, setIsMinting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
     try {
       const logs = await publicClient.getLogs({
@@ -45,7 +48,7 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to fetch history", error);
     }
-  };
+  }, [publicClient, isConnected]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -56,10 +59,11 @@ export default function Home() {
     fetchHistory();
     const interval = setInterval(fetchHistory, 30000);
     return () => clearInterval(interval);
-  }, [publicClient, isConnected]);
+  }, [publicClient, isConnected, fetchHistory]);
 
   const handleMint = async () => {
     if (!message) return;
+    setIsMinting(true);
     try {
       // Utilizing the message to derive a dummy amount for the demo
       const amount = BigInt(message.length);
@@ -94,8 +98,12 @@ export default function Home() {
         setSuccessTxHash(txHashes[0]);
         setMessage("");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Action failed", error);
+      toast.error(error.message || "Transaction failed");
+      setSuccessTxHash(null);
+    } finally {
+      setIsMinting(false);
     }
   };
 
@@ -280,7 +288,7 @@ export default function Home() {
           <span className="hover:text-primary cursor-pointer transition-colors uppercase">Terms of Engagement</span>
         </div>
         <div className="mt-2 md:mt-0 font-mono uppercase">
-          ID: <span className="text-primary/60">XJ-9200-ALPHA</span> // Node: <span className="text-green-500/60">Verified</span>
+          ID: <span className="text-primary/60">XJ-9200-ALPHA</span> {'//'} Node: <span className="text-green-500/60">Verified</span>
         </div>
       </footer>
 
@@ -293,11 +301,11 @@ export default function Home() {
               Temporal Archive Feed
             </span>
             <span className="text-[10px] font-mono text-primary/60 uppercase">
-              Status: Connected // {history.length} Data Blocks
+              Status: Connected {'//'} {history.length} Data Blocks
             </span>
           </div>
 
-          <div className="h-64 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative overflow-hidden">
+          <div className="h-64 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative">
             <div className="absolute inset-0 pointer-events-none scanline opacity-5"></div>
             {history.length === 0 ? (
               <div className="text-primary/40 text-center py-10 animate-pulse uppercase tracking-[0.2em]">
@@ -305,13 +313,13 @@ export default function Home() {
               </div>
             ) : (
               history.map((log, i) => (
-                <div key={log.transactionHash || i} className="border-l-2 border-primary/30 pl-4 py-2 hover:bg-primary/5 transition-colors group relative">
+                <div key={`${log.transactionHash}-${log.logIndex}-${i}`} className="border-l-2 border-primary/30 pl-4 py-2 hover:bg-primary/5 transition-colors group relative">
                   <div className="flex justify-between items-start mb-1">
                     <span className="text-primary font-bold uppercase tracking-wider">
                       [Block {log.blockNumber?.toString()}] Vibe Sealed
                     </span>
                     <a
-                      href={`https://blockscout.staging.midl.xyz/tx/${log.transactionHash}`}
+                      href={`${EXPLORER_BASE_URL}/tx/${log.transactionHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary/40 hover:text-primary transition-colors text-[10px] flex items-center gap-1"
@@ -320,7 +328,7 @@ export default function Home() {
                     </a>
                   </div>
                   <div className="text-gray-400 leading-relaxed break-all">
-                    MSG: Future self, I sealed a temporal vibe of {log.args.amount?.toString()} units. Stay wild.
+                    System note: deposit of {log.args.amount?.toString()} units
                   </div>
                   <div className="mt-1 text-[10px] text-primary/60 flex justify-between">
                     <span>SENDER: {log.args.user?.slice(0, 6)}...{log.args.user?.slice(-4)}</span>
@@ -334,7 +342,7 @@ export default function Home() {
 
           {/* Decorative Terminal Footer */}
           <div className="bg-black/40 px-4 py-1 text-[8px] font-mono text-primary/30 uppercase flex justify-between">
-            <span>Buffer: 100% // Stream: Encrypted</span>
+            <span>Buffer: 100% · Stream: Encrypted</span>
             <span>Ref_ID: XJ-ARCHIVE-LINK</span>
           </div>
         </div>
