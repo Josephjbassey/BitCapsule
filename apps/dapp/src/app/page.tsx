@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
-import * as Vault from "@/shared/contracts/Vault";
-import { encodeFunctionData } from "viem";
+import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
+import { encodeFunctionData, zeroAddress } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
+import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { EXPLORER_BASE_URL } from "./config";
 import { toast } from "sonner";
+
+enum VaultType {
+  TEMPORAL = 0,
+  LEGACY = 1,
+  HODL = 2,
+  SOCIAL = 3
+}
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -16,7 +24,7 @@ export default function Home() {
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
-  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
+  const { sendBTCTransactionsAsync, isPending: isBroadcasting } = useSendBTCTransactions();
   const publicClient = usePublicClient();
 
   const [message, setMessage] = useState("");
@@ -25,17 +33,28 @@ export default function Home() {
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
 
+  // New platform states
+  const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
+  const [beneficiary, setBeneficiary] = useState("");
+  const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
+  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
+
+  const isSigningOrPending = isMinting || isBroadcasting;
+
   const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
     try {
       const logs = await publicClient.getLogs({
-        address: Vault.address,
+        address: TimeCapsule.address as `0x${string}`,
         event: {
           type: 'event',
-          name: 'Deposit',
+          name: 'CapsuleCreated',
           inputs: [
-            { indexed: true, name: 'user', type: 'address' },
-            { indexed: true, name: 'token', type: 'address' },
+            { indexed: true, name: 'id', type: 'uint256' },
+            { indexed: true, name: 'owner', type: 'address' },
+            { indexed: true, name: 'beneficiary', type: 'address' },
+            { indexed: false, name: 'unlockTime', type: 'uint256' },
+            { indexed: false, name: 'vaultType', type: 'uint8' },
             { indexed: false, name: 'amount', type: 'uint256' }
           ]
         },
@@ -52,6 +71,8 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -62,20 +83,27 @@ export default function Home() {
   }, [publicClient, isConnected, fetchHistory]);
 
   const handleMint = async () => {
-    if (!message) return;
+    if (!message || !isConnected) return;
     setIsMinting(true);
     try {
-      // Utilizing the message to derive a dummy amount for the demo
-      const amount = BigInt(message.length);
+      const amount = BigInt(message.length * 100000); // Dummy amount based on message length
+      const targetBeneficiary = vaultType === VaultType.SOCIAL ? beneficiary : (address || zeroAddress);
+      const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
-            to: Vault.address,
+            to: TimeCapsule.address as `0x${string}`,
             data: encodeFunctionData({
-              abi: Vault.abi,
-              functionName: "deposit",
-              args: [Vault.address, amount],
+              abi: TimeCapsule.abi,
+              functionName: "createCapsule",
+              args: [
+                targetBeneficiary as `0x${string}`,
+                unlockTimestamp,
+                vaultType,
+                "0x0000000000000000000000000000000000000000", // Using native/dummy token for demo
+                amount
+              ],
             }),
           },
         },
@@ -107,6 +135,35 @@ export default function Home() {
     }
   };
 
+  const handleWithdrawEarly = async (id: bigint) => {
+    try {
+        const intention = await addTxIntentionAsync({
+            intention: {
+              evmTransaction: {
+                to: TimeCapsule.address as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: TimeCapsule.abi,
+                  functionName: "withdrawEarly",
+                  args: [id],
+                }),
+              },
+            },
+            reset: true,
+          });
+
+          const { tx } = await finalizeBTCTransactionAsync();
+          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          await sendBTCTransactionsAsync({
+            serializedTransactions: [signedTransaction],
+            btcTransaction: tx.hex,
+          });
+          toast.success("Early withdrawal initiated!");
+          fetchHistory();
+    } catch (e: any) {
+        toast.error(e.message || "Withdrawal failed");
+    }
+  }
+
   const xverseConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
 
   if (!isMounted) return null;
@@ -126,7 +183,7 @@ export default function Home() {
           <header className="flex justify-between items-center">
             <div className="flex items-center gap-4 text-bitcoin-orange/80">
               <span className="material-icons text-sm animate-pulse">wifi_tethering</span>
-              <span className="text-xs tracking-[0.2em] font-bold uppercase">TimeVibe // Secure Link v.3.1.0</span>
+              <span className="text-xs tracking-[0.2em] font-bold uppercase">TimeVibe // Secure Link v.4.0.0</span>
             </div>
             <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 font-mono">
               <span>ENCRYPTION: AES-256</span>
@@ -197,7 +254,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">TimeVibe</h1>
-            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.2.0</span>
+            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.4.0</span>
           </div>
         </div>
         <div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">
@@ -212,7 +269,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 flex-grow flex flex-col md:flex-row items-center justify-center gap-12 px-6 py-8 w-full max-w-7xl mx-auto h-full">
+      <main className="relative z-10 flex-grow flex flex-col md:flex-row items-center justify-center gap-12 px-6 py-8 w-full max-w-7xl mx-auto h-full overflow-y-auto">
         <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative group perspective-1000">
           <div className="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full border border-primary/20 border-dashed animate-[spin_60s_linear_infinite]"></div>
@@ -230,8 +287,8 @@ export default function Home() {
             <div className="absolute bottom-10 right-0 w-1.5 h-1.5 bg-bitcoin-gold rounded-full blur-[1px] animate-pulse"></div>
           </div>
           <div className="mt-8 text-center space-y-2">
-            <p className="text-primary/60 text-xs tracking-[0.3em] uppercase">System Armed</p>
-            <h2 className="text-2xl font-bold text-white tracking-wide uppercase">Temporal Vault</h2>
+            <p className="text-primary/60 text-xs tracking-[0.3em] uppercase">Temporal Utility Platform</p>
+            <h2 className="text-2xl font-bold text-white tracking-wide uppercase">Multi-Tier Vault</h2>
           </div>
         </div>
 
@@ -242,7 +299,35 @@ export default function Home() {
             <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-lg"></div>
             <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary rounded-br-lg"></div>
 
-            <div className="p-6 md:p-8 space-y-8 bg-cyber-grid bg-[length:10px_10px]">
+            <div className="p-6 md:p-8 space-y-6 bg-cyber-grid bg-[length:10px_10px]">
+              {/* Vault Type Selector */}
+              <div className="space-y-2">
+                <label className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Utility Protocol</label>
+                <select
+                    value={vaultType}
+                    onChange={(e) => setVaultType(Number(e.target.value))}
+                    className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary transition-all"
+                >
+                    <option value={VaultType.TEMPORAL}>TEMPORAL VAULT (Personal)</option>
+                    <option value={VaultType.LEGACY}>LEGACY SWITCH (Inheritance)</option>
+                    <option value={VaultType.HODL}>HODL LOCKER (Forced Savings)</option>
+                    <option value={VaultType.SOCIAL}>SOCIAL GIFT (P2P Transfer)</option>
+                </select>
+              </div>
+
+              {vaultType === VaultType.SOCIAL && (
+                <div className="space-y-2 animate-in slide-in-from-top duration-300">
+                    <label className="text-xs tracking-wider text-bitcoin-gold uppercase font-semibold block">Friend's Bitcoin Address</label>
+                    <input
+                        type="text"
+                        value={beneficiary}
+                        onChange={(e) => setBeneficiary(e.target.value)}
+                        placeholder="bc1q..."
+                        className="w-full bg-obsidian border border-bitcoin-gold/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-bitcoin-gold transition-all"
+                    />
+                </div>
+              )}
+
               <div className="space-y-3">
                 <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                   <span>Input Stream</span>
@@ -252,23 +337,38 @@ export default function Home() {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full h-40 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
-                    placeholder="Initializing encryption... Write to your future self..."
+                    className="w-full h-32 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
+                    placeholder="Initialize encryption sequence..."
                   />
                   <div className="absolute bottom-0 left-2 right-2 h-[1px] bg-primary shadow-[0_0_10px_rgba(52,132,244,1)] opacity-50 group-hover:opacity-100 transition-opacity"></div>
                 </div>
               </div>
 
-              <div className="pt-4">
+              <div className="space-y-2">
+                <label className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Unlock Horizon ({unlockTimeDays} Days)</label>
+                <input
+                    type="range"
+                    min="1"
+                    max="3650"
+                    value={unlockTimeDays}
+                    onChange={(e) => setUnlockTimeDays(Number(e.target.value))}
+                    className="w-full accent-primary"
+                />
+              </div>
+
+              <div className="pt-2">
                 <button
                   onClick={handleMint}
-                  className="relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300"
+                  disabled={isSigningOrPending}
+                  className="relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300 disabled:opacity-50"
                 >
                   <div className="absolute inset-0 circuit-pattern opacity-10 group-hover:opacity-20 transition-opacity"></div>
                   <div className="relative flex items-center justify-between px-6 py-5">
                     <div className="flex flex-col items-start">
                       <span className="text-xs text-bitcoin-gold/80 uppercase tracking-widest mb-1 group-hover:text-bitcoin-gold transition-colors">Confirm Protocol</span>
-                      <span className="text-xl font-bold text-white tracking-wide group-hover:drop-shadow-[0_0_8px_rgba(247,147,26,0.6)] transition-all uppercase">Seal Vibe</span>
+                      <span className="text-xl font-bold text-white tracking-wide group-hover:drop-shadow-[0_0_8px_rgba(247,147,26,0.6)] transition-all uppercase">
+                        {isSigningOrPending ? "Syncing..." : "Seal Utility"}
+                      </span>
                     </div>
                     <div className="w-12 h-12 rounded-lg border border-bitcoin-gold/50 bg-bitcoin-gold/10 flex items-center justify-center shadow-gold-glow group-hover:bg-bitcoin-gold group-hover:text-black transition-all duration-300">
                       <span className="material-icons text-2xl transform -rotate-45 group-hover:rotate-0 transition-transform">send</span>
@@ -284,8 +384,8 @@ export default function Home() {
 
       <footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-obsidian/80 backdrop-blur-md">
         <div className="flex gap-4">
-          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Privacy Protocol V2</span>
-          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Terms of Engagement</span>
+          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Legacy Protocol v1.2</span>
+          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Dead Man's Switch Active</span>
         </div>
         <div className="mt-2 md:mt-0 font-mono uppercase">
           ID: <span className="text-primary/60">XJ-9200-ALPHA</span> {'//'} Node: <span className="text-green-500/60">Verified</span>
@@ -293,57 +393,88 @@ export default function Home() {
       </footer>
 
       {/* Archive Section */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 pb-12">
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-6 pb-12 overflow-y-auto">
         <div className="bg-obsidian/80 border border-primary/20 rounded-xl overflow-hidden backdrop-blur-md">
           <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex justify-between items-center">
             <span className="text-xs font-mono text-primary uppercase tracking-widest flex items-center gap-2">
               <span className="material-icons text-xs animate-pulse">history</span>
-              Temporal Archive Feed
+              Active Temporal Vaults
             </span>
             <span className="text-[10px] font-mono text-primary/60 uppercase">
-              Status: Connected {'//'} {history.length} Data Blocks
+              {history.length} Registered Anchors
             </span>
           </div>
 
-          <div className="h-64 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative">
+          <div className="max-h-80 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative">
             <div className="absolute inset-0 pointer-events-none scanline opacity-5"></div>
             {history.length === 0 ? (
               <div className="text-primary/40 text-center py-10 animate-pulse uppercase tracking-[0.2em]">
-                _Waiting for incoming transmissions...
+                _No active vaults detected in local radius...
               </div>
             ) : (
-              history.map((log, i) => (
-                <div key={`${log.transactionHash}-${log.logIndex}-${i}`} className="border-l-2 border-primary/30 pl-4 py-2 hover:bg-primary/5 transition-colors group relative">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-primary font-bold uppercase tracking-wider">
-                      [Block {log.blockNumber?.toString()}] Vibe Sealed
-                    </span>
-                    <a
-                      href={`${EXPLORER_BASE_URL}/tx/${log.transactionHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary/40 hover:text-primary transition-colors text-[10px] flex items-center gap-1"
-                    >
-                      EXPLORER <span className="material-icons text-[10px]">open_in_new</span>
-                    </a>
-                  </div>
-                  <div className="text-gray-400 leading-relaxed break-all">
-                    System note: deposit of {log.args.amount?.toString()} units
-                  </div>
-                  <div className="mt-1 text-[10px] text-primary/60 flex justify-between">
-                    <span>SENDER: {log.args.user?.slice(0, 6)}...{log.args.user?.slice(-4)}</span>
-                    <span>TX: {log.transactionHash?.slice(0, 10)}...</span>
-                  </div>
-                  <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent"></div>
-                </div>
-              ))
-            )}
-          </div>
+              history.map((log, i) => {
+                const id = log.args.id;
+                const unlockTime = Number(log.args.unlockTime);
+                const isLocked = currentTime < unlockTime;
+                const timeLeft = unlockTime - currentTime;
 
-          {/* Decorative Terminal Footer */}
-          <div className="bg-black/40 px-4 py-1 text-[8px] font-mono text-primary/30 uppercase flex justify-between">
-            <span>Buffer: 100% · Stream: Encrypted</span>
-            <span>Ref_ID: XJ-ARCHIVE-LINK</span>
+                const days = Math.floor(timeLeft / (24 * 60 * 60));
+                const hrs = Math.floor((timeLeft % (24 * 60 * 60)) / (60 * 60));
+                const mins = Math.floor((timeLeft % (60 * 60)) / 60);
+
+                return (
+                  <div key={`${log.transactionHash}-${log.logIndex}-${i}`} className="border-l-2 border-primary/30 pl-4 py-3 hover:bg-primary/5 transition-colors group relative bg-black/20 rounded-r-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="space-y-1">
+                        <span className="text-primary font-bold uppercase tracking-wider block">
+                          [Vault #{id?.toString()}] Type: {VaultType[log.args.vaultType]}
+                        </span>
+                        <span className="text-[10px] text-gray-500 block">
+                            Beneficiary: {log.args.beneficiary?.slice(0, 10)}...
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        {isLocked ? (
+                            <div className="text-bitcoin-gold font-bold">
+                                T-MINUS: {days}d {hrs}h {mins}m
+                            </div>
+                        ) : (
+                            <div className="text-green-500 font-bold animate-pulse">VAULT OPEN</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 items-center mt-3">
+                        <a
+                            href={`${EXPLORER_BASE_URL}/tx/${log.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary/40 hover:text-primary transition-colors text-[10px] flex items-center gap-1"
+                        >
+                            EXPLORER <span className="material-icons text-[10px]">open_in_new</span>
+                        </a>
+
+                        {isLocked && log.args.owner === address && (
+                            <button
+                                onClick={() => handleWithdrawEarly(id)}
+                                className="bg-red-500/10 border border-red-500/40 text-red-500 text-[9px] px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase font-bold"
+                            >
+                                Panic Button (80/20 Split)
+                            </button>
+                        )}
+
+                        {!isLocked && (
+                            <button
+                                className="bg-green-500/10 border border-green-500/40 text-green-500 text-[9px] px-3 py-1 rounded hover:bg-green-500 hover:text-white transition-all uppercase font-bold"
+                            >
+                                Claim Payload
+                            </button>
+                        )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
@@ -355,6 +486,8 @@ export default function Home() {
           onRefresh={fetchHistory}
         />
       )}
+
+      {isSigningOrPending && <TemporalSyncOverlay />}
     </div>
   );
 }
