@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction } from "@midl/executor-react";
+import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as Vault from "@/shared/contracts/Vault";
 import { encodeFunctionData } from "viem";
+import SuccessOverlay from "@/components/SuccessOverlay";
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -13,11 +14,38 @@ export default function Home() {
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
+  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
   const publicClient = usePublicClient();
 
   const [message, setMessage] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+
+  const fetchHistory = async () => {
+    if (!publicClient || !isConnected) return;
+    try {
+      const logs = await publicClient.getLogs({
+        address: Vault.address,
+        event: {
+          type: 'event',
+          name: 'Deposit',
+          inputs: [
+            { indexed: true, name: 'user', type: 'address' },
+            { indexed: true, name: 'token', type: 'address' },
+            { indexed: false, name: 'amount', type: 'uint256' }
+          ]
+        },
+        fromBlock: BigInt(0),
+      });
+      const sortedLogs = [...logs].sort((a, b) =>
+        Number((b.blockNumber || BigInt(0)) - (a.blockNumber || BigInt(0)))
+      );
+      setHistory(sortedLogs);
+    } catch (error) {
+      console.error("Failed to fetch history", error);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -25,34 +53,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!publicClient || !isConnected) return;
-
-    const fetchHistory = async () => {
-      try {
-        const logs = await publicClient.getLogs({
-          address: Vault.address,
-          event: {
-            type: 'event',
-            name: 'Deposit',
-            inputs: [
-              { indexed: true, name: 'user', type: 'address' },
-              { indexed: true, name: 'token', type: 'address' },
-              { indexed: false, name: 'amount', type: 'uint256' }
-            ]
-          },
-          fromBlock: BigInt(0),
-        });
-        // Sort by block number descending
-        const sortedLogs = [...logs].sort((a, b) =>
-          Number((b.blockNumber || BigInt(0)) - (a.blockNumber || BigInt(0)))
-        );
-        setHistory(sortedLogs);
-      } catch (error) {
-        console.error("Failed to fetch history", error);
-      }
-    };
-
     fetchHistory();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchHistory, 30000);
     return () => clearInterval(interval);
   }, [publicClient, isConnected]);
@@ -84,10 +85,15 @@ export default function Home() {
         txId: tx.id,
       });
 
-      await publicClient?.sendBTCTransactions({
+      const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
+
+      if (txHashes && txHashes.length > 0) {
+        setSuccessTxHash(txHashes[0]);
+        setMessage("");
+      }
     } catch (error) {
       console.error("Action failed", error);
     }
@@ -333,6 +339,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {successTxHash && (
+        <SuccessOverlay
+          txHash={successTxHash}
+          onClose={() => setSuccessTxHash(null)}
+          onRefresh={fetchHistory}
+        />
+      )}
     </div>
   );
 }
