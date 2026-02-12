@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, zeroAddress } from "viem";
+import { encodeFunctionData, zeroAddress, isAddress, isAddressEqual } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { EXPLORER_BASE_URL } from "./config";
@@ -29,6 +29,7 @@ export default function Home() {
 
   const [message, setMessage] = useState("");
   const [isMinting, setIsMinting] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
   const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
 
-  const isSigningOrPending = isMinting || isBroadcasting;
+  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing;
 
   const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
@@ -55,7 +56,8 @@ export default function Home() {
             { indexed: true, name: 'beneficiary', type: 'address' },
             { indexed: false, name: 'unlockTime', type: 'uint256' },
             { indexed: false, name: 'vaultType', type: 'uint8' },
-            { indexed: false, name: 'amount', type: 'uint256' }
+            { indexed: false, name: 'amount', type: 'uint256' },
+            { indexed: false, name: 'token', type: 'address' }
           ]
         },
         fromBlock: BigInt(0),
@@ -83,7 +85,13 @@ export default function Home() {
   }, [publicClient, isConnected, fetchHistory]);
 
   const handleMint = async () => {
-    if (!message || !isConnected) return;
+    if (!message || !isConnected || isMinting) return;
+
+    if (vaultType === VaultType.SOCIAL && !isAddress(beneficiary)) {
+        toast.error("Please enter a valid EVM beneficiary address");
+        return;
+    }
+
     setIsMinting(true);
     try {
       const amount = BigInt(message.length * 100000); // Dummy amount based on message length
@@ -94,6 +102,7 @@ export default function Home() {
         intention: {
           evmTransaction: {
             to: TimeCapsule.address as `0x${string}`,
+            value: amount, // Pass native value
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
               functionName: "createCapsule",
@@ -101,7 +110,7 @@ export default function Home() {
                 targetBeneficiary as `0x${string}`,
                 unlockTimestamp,
                 vaultType,
-                "0x0000000000000000000000000000000000000000", // Using native/dummy token for demo
+                zeroAddress, // Sentinel for native BTC/ETH
                 amount
               ],
             }),
@@ -136,6 +145,8 @@ export default function Home() {
   };
 
   const handleWithdrawEarly = async (id: bigint) => {
+    if (isWithdrawing) return;
+    setIsWithdrawing(true);
     try {
         const intention = await addTxIntentionAsync({
             intention: {
@@ -160,7 +171,10 @@ export default function Home() {
           toast.success("Early withdrawal initiated!");
           fetchHistory();
     } catch (e: any) {
+        console.error("Withdrawal failed", e);
         toast.error(e.message || "Withdrawal failed");
+    } finally {
+        setIsWithdrawing(false);
     }
   }
 
@@ -211,6 +225,7 @@ export default function Home() {
               </div>
 
               <button
+                type="button"
                 onClick={() => xverseConnector && connect({ connector: xverseConnector })}
                 className="xverse-card w-full md:w-80 p-1 rounded-2xl group relative overflow-hidden bg-black border border-white/5 hover:border-bitcoin-orange/30 transition-all duration-500"
               >
@@ -302,8 +317,9 @@ export default function Home() {
             <div className="p-6 md:p-8 space-y-6 bg-cyber-grid bg-[length:10px_10px]">
               {/* Vault Type Selector */}
               <div className="space-y-2">
-                <label className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Utility Protocol</label>
+                <label htmlFor="protocol-selector" className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Utility Protocol</label>
                 <select
+                    id="protocol-selector"
                     value={vaultType}
                     onChange={(e) => setVaultType(Number(e.target.value))}
                     className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary transition-all"
@@ -317,24 +333,26 @@ export default function Home() {
 
               {vaultType === VaultType.SOCIAL && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                    <label className="text-xs tracking-wider text-bitcoin-gold uppercase font-semibold block">Friend's Bitcoin Address</label>
+                    <label htmlFor="beneficiary-address" className="text-xs tracking-wider text-bitcoin-gold uppercase font-semibold block">Friend's EVM Address</label>
                     <input
+                        id="beneficiary-address"
                         type="text"
                         value={beneficiary}
                         onChange={(e) => setBeneficiary(e.target.value)}
-                        placeholder="bc1q..."
+                        placeholder="0x..."
                         className="w-full bg-obsidian border border-bitcoin-gold/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-bitcoin-gold transition-all"
                     />
                 </div>
               )}
 
               <div className="space-y-3">
-                <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                <label htmlFor="input-stream" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                   <span>Input Stream</span>
                   <span className="animate-pulse">_Ready</span>
                 </label>
                 <div className="relative group">
                   <textarea
+                    id="input-stream"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="w-full h-32 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
@@ -345,8 +363,9 @@ export default function Home() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Unlock Horizon ({unlockTimeDays} Days)</label>
+                <label htmlFor="unlock-horizon" className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Unlock Horizon ({unlockTimeDays} Days)</label>
                 <input
+                    id="unlock-horizon"
                     type="range"
                     min="1"
                     max="3650"
@@ -358,6 +377,7 @@ export default function Home() {
 
               <div className="pt-2">
                 <button
+                  type="button"
                   onClick={handleMint}
                   disabled={isSigningOrPending}
                   className="relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300 disabled:opacity-50"
@@ -422,6 +442,8 @@ export default function Home() {
                 const hrs = Math.floor((timeLeft % (24 * 60 * 60)) / (60 * 60));
                 const mins = Math.floor((timeLeft % (60 * 60)) / 60);
 
+                const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
+
                 return (
                   <div key={`${log.transactionHash}-${log.logIndex}-${i}`} className="border-l-2 border-primary/30 pl-4 py-3 hover:bg-primary/5 transition-colors group relative bg-black/20 rounded-r-lg">
                     <div className="flex justify-between items-start mb-2">
@@ -454,10 +476,12 @@ export default function Home() {
                             EXPLORER <span className="material-icons text-[10px]">open_in_new</span>
                         </a>
 
-                        {isLocked && log.args.owner === address && (
+                        {isLocked && isOwner && (
                             <button
+                                type="button"
                                 onClick={() => handleWithdrawEarly(id)}
-                                className="bg-red-500/10 border border-red-500/40 text-red-500 text-[9px] px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase font-bold"
+                                disabled={isWithdrawing}
+                                className="bg-red-500/10 border border-red-500/40 text-red-500 text-[9px] px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase font-bold disabled:opacity-50"
                             >
                                 Panic Button (80/20 Split)
                             </button>
@@ -465,6 +489,7 @@ export default function Home() {
 
                         {!isLocked && (
                             <button
+                                type="button"
                                 className="bg-green-500/10 border border-green-500/40 text-green-500 text-[9px] px-3 py-1 rounded hover:bg-green-500 hover:text-white transition-all uppercase font-bold"
                             >
                                 Claim Payload
