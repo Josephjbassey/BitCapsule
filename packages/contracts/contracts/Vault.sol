@@ -12,11 +12,16 @@ contract Vault  {
     error InvalidAmount();
     error InsufficientBalance();
     
+    // Custom errors
+    error VaultLocked();
+
     // Mapping from token address to user address to balance
     mapping(address => mapping(address => uint256)) public balances;
+    // Mapping from token address to user address to unlock timestamp
+    mapping(address => mapping(address => uint256)) public unlockTimestamps;
     
     // Events
-    event Deposit(address indexed user, address indexed token, uint256 amount);
+    event Deposit(address indexed user, address indexed token, uint256 amount, uint256 unlockTimestamp);
     event Withdraw(address indexed user, address indexed token, uint256 amount);
     
     /**
@@ -25,13 +30,30 @@ contract Vault  {
      * @param amount The amount of tokens to deposit
      */
     function deposit(address token, uint256 amount) external {
+        depositWithLock(token, amount, 0);
+    }
+
+    /**
+     * @dev Deposit ERC20 tokens into the vault with a time lock
+     * @param token The address of the ERC20 token
+     * @param amount The amount of tokens to deposit
+     * @param lockDuration The duration in seconds to lock the funds
+     */
+    function depositWithLock(address token, uint256 amount, uint256 lockDuration) public {
         if (token == address(0)) revert InvalidTokenAddress();
         if (amount == 0) revert InvalidAmount();
         
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         balances[token][msg.sender] += amount;
         
-        emit Deposit(msg.sender, token, amount);
+        if (lockDuration > 0) {
+            uint256 newUnlockTime = block.timestamp + lockDuration;
+            if (newUnlockTime > unlockTimestamps[token][msg.sender]) {
+                unlockTimestamps[token][msg.sender] = newUnlockTime;
+            }
+        }
+
+        emit Deposit(msg.sender, token, amount, unlockTimestamps[token][msg.sender]);
     }
     
     /**
@@ -43,6 +65,7 @@ contract Vault  {
         if (token == address(0)) revert InvalidTokenAddress();
         if (amount == 0) revert InvalidAmount();
         if (balances[token][msg.sender] < amount) revert InsufficientBalance();
+        if (block.timestamp < unlockTimestamps[token][msg.sender]) revert VaultLocked();
         
         balances[token][msg.sender] -= amount;
         IERC20(token).safeTransfer(msg.sender, amount);
