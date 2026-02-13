@@ -5,7 +5,7 @@ import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTrans
 import { useWaitForTransaction } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, zeroAddress, isAddress } from "viem";
+import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
@@ -135,8 +135,13 @@ export default function Home() {
         return;
     }
 
+    if (!address) {
+        toast.error("Wallet address not found. Please reconnect.");
+        return;
+    }
+
     // Validation logic for beneficiary
-    let targetBeneficiary: `0x${string}` = (address || zeroAddress) as `0x${string}`;
+    let targetBeneficiary: `0x${string}` = address as `0x${string}`;
 
     if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
         if (!beneficiary || beneficiary === zeroAddress) {
@@ -152,7 +157,7 @@ export default function Home() {
 
     setIsMinting(true);
     try {
-      const amountInWei = BigInt(Math.floor(Number(amount) * 1e18)); // Parse amount in Wei
+      const amountInWei = parseEther(amount); // Parse amount in Wei using viem for precision
       // targetBeneficiary is correctly set above based on vaultType
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
