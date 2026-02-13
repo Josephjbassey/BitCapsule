@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 import { encodeFunctionData, zeroAddress, parseUnits } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
+import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { EXPLORER_BASE_URL } from "./config";
 import { toast } from "sonner";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
@@ -20,6 +21,13 @@ enum VaultType {
   LEGACY = 2,
 }
 
+enum VaultType {
+  TEMPORAL = 0,
+  LEGACY = 1,
+  HODL = 2,
+  SOCIAL = 3
+}
+
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
@@ -27,7 +35,7 @@ export default function Home() {
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
-  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
+  const { sendBTCTransactionsAsync, isPending: isBroadcasting } = useSendBTCTransactions();
   const publicClient = usePublicClient();
 
   // Form State
@@ -39,9 +47,19 @@ export default function Home() {
   const [beneficiary, setBeneficiary] = useState("");
 
   const [isMinting, setIsMinting] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+
+  // New platform states
+  const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
+  const [beneficiary, setBeneficiary] = useState("");
+  const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
+  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
+
+  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
@@ -70,6 +88,8 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -148,6 +168,74 @@ export default function Home() {
     }
   };
 
+  const handleWithdrawEarly = async (id: bigint) => {
+    if (isWithdrawing) return;
+    setIsWithdrawing(true);
+    try {
+        const intention = await addTxIntentionAsync({
+            intention: {
+              evmTransaction: {
+                to: TimeCapsule.address as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: TimeCapsule.abi,
+                  functionName: "withdrawEarly",
+                  args: [id],
+                }),
+              },
+            },
+            reset: true,
+          });
+
+          const { tx } = await finalizeBTCTransactionAsync();
+          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          await sendBTCTransactionsAsync({
+            serializedTransactions: [signedTransaction],
+            btcTransaction: tx.hex,
+          });
+          toast.success("Early withdrawal initiated!");
+          fetchHistory();
+    } catch (e: any) {
+        console.error("Withdrawal failed", e);
+        toast.error(e.message || "Withdrawal failed");
+    } finally {
+        setIsWithdrawing(false);
+    }
+  };
+
+  const handleClaim = async (id: bigint, useLegacy: boolean) => {
+    if (isClaiming) return;
+    setIsClaiming(true);
+    try {
+        const intention = await addTxIntentionAsync({
+            intention: {
+              evmTransaction: {
+                to: TimeCapsule.address as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: TimeCapsule.abi,
+                  functionName: useLegacy ? "claimLegacy" : "claim",
+                  args: [id],
+                }),
+              },
+            },
+            reset: true,
+          });
+
+          const { tx } = await finalizeBTCTransactionAsync();
+          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          await sendBTCTransactionsAsync({
+            serializedTransactions: [signedTransaction],
+            btcTransaction: tx.hex,
+          });
+          toast.success("Payload claimed successfully!");
+          fetchHistory();
+    } catch (e: any) {
+        console.error("Claim failed", e);
+        toast.error(e.message || "Claim failed");
+    } finally {
+        setIsClaiming(false);
+    }
+  };
+
   const xverseConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
 
   if (!isMounted) return null;
@@ -166,6 +254,7 @@ export default function Home() {
             </header>
             <main className="flex-grow flex flex-col items-center justify-center relative">
               <button
+                type="button"
                 onClick={() => xverseConnector && connect({ connector: xverseConnector })}
                 className="xverse-card p-8 rounded-2xl bg-black border border-white/20 hover:border-bitcoin-orange transition-all"
               >
@@ -188,7 +277,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">TimeVibe</h1>
-            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.2.0</span>
+            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.4.0</span>
           </div>
         </div>
         <div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">
@@ -320,17 +409,17 @@ export default function Home() {
           <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex justify-between items-center">
             <span className="text-xs font-mono text-primary uppercase tracking-widest flex items-center gap-2">
               <span className="material-icons text-xs animate-pulse">history</span>
-              Temporal Archive Feed
+              Active Temporal Vaults
             </span>
             <span className="text-[10px] font-mono text-primary/60 uppercase">
-              Status: Connected {'//'} {history.length} Data Blocks
+              {history.length} Registered Anchors
             </span>
           </div>
 
           <div className="h-48 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative">
             {history.length === 0 ? (
               <div className="text-primary/40 text-center py-10 animate-pulse uppercase tracking-[0.2em]">
-                _Waiting for incoming transmissions...
+                _No active vaults detected in local radius...
               </div>
             ) : (
               history.map((log, i) => (
@@ -369,6 +458,8 @@ export default function Home() {
           onRefresh={fetchHistory}
         />
       )}
+
+      {isSigningOrPending && <TemporalSyncOverlay />}
     </div>
   );
 }
