@@ -3,11 +3,11 @@
 import { TemporalSlider } from "@/components/ui/vault/TemporalSlider";
 import { useState } from "react";
 import { VaultCard, VaultButton } from "@/components/ui/vault";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
 import { vaultAbi } from "@/lib/abi";
 import { addresses } from "@/lib/constants";
 import { toast } from "sonner";
-import { parseUnits } from "viem";
+import { parseUnits, isAddress, erc20Abi } from "viem";
 
 export const DepositForm = () => {
     const [duration, setDuration] = useState(31536000); // 1 year in seconds
@@ -16,6 +16,7 @@ export const DepositForm = () => {
     const [message, setMessage] = useState("");
 
     const { writeContractAsync, isPending } = useWriteContract();
+    const publicClient = usePublicClient();
     const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
 
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -32,16 +33,36 @@ export const DepositForm = () => {
             return;
         }
 
+        if (!isAddress(tokenAddress)) {
+            toast.error("Invalid token address");
+            return;
+        }
+
         try {
+            // Fetch decimals dynamically
+            let decimals = 18;
+            try {
+                if (publicClient) {
+                    decimals = await publicClient.readContract({
+                        address: tokenAddress as `0x${string}`,
+                        abi: erc20Abi,
+                        functionName: "decimals",
+                    });
+                }
+            } catch (err) {
+                console.warn("Failed to fetch decimals, defaulting to 18", err);
+                toast.warning("Could not fetch token decimals, defaulting to 18");
+            }
+
             const txHash = await writeContractAsync({
                 address: addresses.vault as `0x${string}`,
                 abi: vaultAbi,
                 functionName: "depositWithLock",
                 args: [
                     tokenAddress as `0x${string}`,
-                    parseUnits(amount, 18),
+                    parseUnits(amount, decimals),
                     BigInt(duration),
-                    msg // Now included as per request, updating contract to match
+                    msg
                 ],
             });
             setHash(txHash);

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
 
 interface TemporalSliderProps {
     value: number; // Value in seconds (duration)
@@ -20,6 +20,27 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
     // Calculate current target date based on duration
     const targetDate = new Date(Date.now() + value * 1000);
     const targetYear = targetDate.getFullYear();
+
+    const formatDuration = (seconds: number) => {
+        if (seconds < 60) return `${seconds}s`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+        if (seconds < 31536000) return `${Math.floor(seconds / 86400)}d`;
+        return `${Math.floor(seconds / 31536000)}y`;
+    };
+
+    const labels = useMemo(() => {
+        const steps = 5;
+        const result = [];
+        for (let i = 0; i < steps; i++) {
+            const val = min + ((max - min) * i) / (steps - 1);
+            result.push({
+                val,
+                label: formatDuration(Math.round(val))
+            });
+        }
+        return result;
+    }, [min, max]);
 
     const handleInteract = useCallback((clientX: number) => {
         if (!trackRef.current) return;
@@ -135,11 +156,16 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
                 </div>
             </div>
             <div className="flex justify-between text-[10px] text-gray-500 uppercase tracking-widest font-semibold">
-                <span>1 YR</span>
-                <span>5 YRS</span>
-                <span>10 YRS</span>
-                <span className="text-primary/70">50 YRS</span>
-                <span>2100</span>
+                {labels.map((item, i) => (
+                    <span
+                        key={i}
+                        className={cn(
+                            Math.abs(item.val - value) < (max - min) / 10 ? "text-primary/70" : ""
+                        )}
+                    >
+                        {item.label}
+                    </span>
+                ))}
             </div>
         </div>
     );
