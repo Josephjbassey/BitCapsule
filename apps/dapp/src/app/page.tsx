@@ -22,7 +22,7 @@ import UnlockProcess from "@/components/screens/UnlockProcess";
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
-  const { connectors, connect } = useConnect();
+  const { connectors, connectAsync } = useConnect();
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
@@ -91,12 +91,34 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [publicClient, isConnected, fetchHistory]);
 
-  const handleConnect = () => {
-    const xverseConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
+  const handleConnect = async () => {
+    // Find Xverse connector by name or ID
+    const xverseConnector = connectors.find(
+      (c) =>
+        c.name.toLowerCase().includes("xverse") ||
+        c.id.toLowerCase().includes("xverse")
+    );
+
     if (xverseConnector) {
-        connect({ connector: xverseConnector });
+      try {
+        await connectAsync({ connector: xverseConnector });
+      } catch (error: any) {
+        console.error("Connection failed", error);
+        toast.error(error.message || "Failed to connect to Xverse");
+      }
     } else {
-        toast.error("Xverse wallet not found");
+      console.warn("Available connectors:", connectors.map(c => `${c.name} (${c.id})`));
+
+      // Fallback: If no Xverse specifically, but there are connectors, try the first one
+      if (connectors.length > 0) {
+        try {
+          await connectAsync({ connector: connectors[0] });
+        } catch (error: any) {
+          toast.error("Xverse not found and fallback connection failed");
+        }
+      } else {
+        toast.error("Xverse wallet not found. Please ensure the extension is installed and enabled.");
+      }
     }
   };
 
