@@ -87,6 +87,12 @@ export const abi = [
                 "internalType": "address",
                 "name": "token",
                 "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "message",
+                "type": "string"
             }
         ],
         "name": "CapsuleCreated",
@@ -200,6 +206,11 @@ export const abi = [
                 "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "message",
+                "type": "string"
             }
         ],
         "name": "createCapsule",
@@ -243,22 +254,28 @@ export const abi = [
             { "internalType": "uint256", "name": "amount", "type": "uint256" },
             { "internalType": "address", "name": "token", "type": "address" },
             { "internalType": "uint8", "name": "vaultType", "type": "uint8" },
-            { "internalType": "bool", "name": "claimed", "type": "bool" }
+            { "internalType": "bool", "name": "claimed", "type": "bool" },
+            { "internalType": "string", "name": "message", "type": "string" }
         ],
         "stateMutability": "view",
         "type": "function"
     }
 ] as const;
 
-const contractAddress = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
-
-if (contractAddress && !isAddress(contractAddress)) {
-    throw new Error(`Invalid TimeCapsule address: ${contractAddress}`);
+export const getAddress = () => {
+    const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
+    // Validate that it starts with 0x and is a string
+    if (!address || !address.startsWith("0x") || address === "0x0000000000000000000000000000000000000000") {
+        return "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8" as `0x${string}`; // Fallback for demo
+    }
+    return address as `0x${string}`;
 }
 
-// Default to Vault address for demo if env is missing, but warn
-if (!contractAddress) {
-    console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS is not set, falling back to Vault address for demo.");
-}
-
-export const address = (contractAddress || "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8") as `0x${string}`;
+export const address = (() => {
+    try {
+        return getAddress();
+    } catch (e) {
+        console.warn(e);
+        return "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8" as `0x${string}`;
+    }
+})();

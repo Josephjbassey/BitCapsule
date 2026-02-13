@@ -18,6 +18,7 @@ contract TimeCapsule is ReentrancyGuard {
         address token;
         VaultType vaultType;
         bool claimed;
+        string message;
     }
 
     mapping(uint256 => Capsule) public capsules;
@@ -26,7 +27,7 @@ contract TimeCapsule is ReentrancyGuard {
 
     address public treasury;
 
-    event CapsuleCreated(uint256 indexed id, address indexed owner, address indexed beneficiary, uint256 unlockTime, VaultType vaultType, uint256 amount, address token);
+    event CapsuleCreated(uint256 indexed id, address indexed owner, address indexed beneficiary, uint256 unlockTime, VaultType vaultType, uint256 amount, address token, string message);
     event CapsuleClaimed(uint256 indexed id, address indexed beneficiary, uint256 amount, address token);
     event EarlyWithdrawal(uint256 indexed id, address indexed owner, uint256 userAmount, uint256 treasuryAmount, address token);
     event Pinged(address indexed user, uint256 timestamp);
@@ -40,7 +41,8 @@ contract TimeCapsule is ReentrancyGuard {
         uint256 unlockTime,
         VaultType vaultType,
         address token,
-        uint256 amount
+        uint256 amount,
+        string memory message
     ) external payable nonReentrant {
         require(amount > 0, "Amount must be greater than 0");
         require(unlockTime > block.timestamp, "Unlock time must be in the future");
@@ -51,6 +53,10 @@ contract TimeCapsule is ReentrancyGuard {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
+        if (vaultType == VaultType.LEGACY || vaultType == VaultType.SOCIAL) {
+            require(beneficiary != address(0), "Beneficiary required for LEGACY/SOCIAL vaults");
+        }
+
         capsules[capsuleCount] = Capsule({
             owner: msg.sender,
             beneficiary: beneficiary,
@@ -58,12 +64,13 @@ contract TimeCapsule is ReentrancyGuard {
             amount: amount,
             token: token,
             vaultType: vaultType,
-            claimed: false
+            claimed: false,
+            message: message
         });
 
         lastPing[msg.sender] = block.timestamp;
 
-        emit CapsuleCreated(capsuleCount, msg.sender, beneficiary, unlockTime, vaultType, amount, token);
+        emit CapsuleCreated(capsuleCount, msg.sender, beneficiary, unlockTime, vaultType, amount, token, message);
         capsuleCount++;
     }
 
@@ -74,9 +81,11 @@ contract TimeCapsule is ReentrancyGuard {
 
     function withdrawEarly(uint256 id) external nonReentrant {
         Capsule storage capsule = capsules[id];
+        require(capsule.owner != address(0), "Capsule does not exist");
         require(msg.sender == capsule.owner, "Only owner can withdraw early");
         require(!capsule.claimed, "Already claimed");
         require(block.timestamp < capsule.unlockTime, "Unlock time already reached");
+        require(capsule.vaultType == VaultType.TEMPORAL || capsule.vaultType == VaultType.HODL, "Early withdrawal only for TEMPORAL/HODL");
 
         capsule.claimed = true;
         uint256 treasuryAmount = (capsule.amount * 20) / 100;
