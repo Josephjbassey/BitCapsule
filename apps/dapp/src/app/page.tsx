@@ -30,6 +30,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [isMinting, setIsMinting] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
   const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
 
-  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing;
+  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
@@ -176,7 +177,41 @@ export default function Home() {
     } finally {
         setIsWithdrawing(false);
     }
-  }
+  };
+
+  const handleClaim = async (id: bigint, useLegacy: boolean) => {
+    if (isClaiming) return;
+    setIsClaiming(true);
+    try {
+        const intention = await addTxIntentionAsync({
+            intention: {
+              evmTransaction: {
+                to: TimeCapsule.address as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: TimeCapsule.abi,
+                  functionName: useLegacy ? "claimLegacy" : "claim",
+                  args: [id],
+                }),
+              },
+            },
+            reset: true,
+          });
+
+          const { tx } = await finalizeBTCTransactionAsync();
+          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          await sendBTCTransactionsAsync({
+            serializedTransactions: [signedTransaction],
+            btcTransaction: tx.hex,
+          });
+          toast.success("Payload claimed successfully!");
+          fetchHistory();
+    } catch (e: any) {
+        console.error("Claim failed", e);
+        toast.error(e.message || "Claim failed");
+    } finally {
+        setIsClaiming(false);
+    }
+  };
 
   const xverseConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
 
@@ -443,6 +478,8 @@ export default function Home() {
                 const mins = Math.floor((timeLeft % (60 * 60)) / 60);
 
                 const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
+                const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
+                const isLegacy = log.args.vaultType === VaultType.LEGACY;
 
                 return (
                   <div key={`${log.transactionHash}-${log.logIndex}-${i}`} className="border-l-2 border-primary/30 pl-4 py-3 hover:bg-primary/5 transition-colors group relative bg-black/20 rounded-r-lg">
@@ -480,19 +517,32 @@ export default function Home() {
                             <button
                                 type="button"
                                 onClick={() => handleWithdrawEarly(id)}
-                                disabled={isWithdrawing}
+                                disabled={isSigningOrPending}
                                 className="bg-red-500/10 border border-red-500/40 text-red-500 text-[9px] px-3 py-1 rounded hover:bg-red-500 hover:text-white transition-all uppercase font-bold disabled:opacity-50"
                             >
-                                Panic Button (80/20 Split)
+                                {isWithdrawing ? "Processing..." : "Panic Button (80/20 Split)"}
                             </button>
                         )}
 
-                        {!isLocked && (
+                        {isLocked && isLegacy && isBeneficiary && (
+                             <button
+                                type="button"
+                                onClick={() => handleClaim(id, true)}
+                                disabled={isSigningOrPending}
+                                className="bg-orange-500/10 border border-orange-500/40 text-orange-500 text-[9px] px-3 py-1 rounded hover:bg-orange-500 hover:text-white transition-all uppercase font-bold disabled:opacity-50"
+                            >
+                                {isClaiming ? "Syncing..." : "Claim Legacy"}
+                            </button>
+                        )}
+
+                        {!isLocked && (isOwner || isBeneficiary) && (
                             <button
                                 type="button"
-                                className="bg-green-500/10 border border-green-500/40 text-green-500 text-[9px] px-3 py-1 rounded hover:bg-green-500 hover:text-white transition-all uppercase font-bold"
+                                onClick={() => handleClaim(id, false)}
+                                disabled={isSigningOrPending}
+                                className="bg-green-500/10 border border-green-500/40 text-green-500 text-[9px] px-3 py-1 rounded hover:bg-green-500 hover:text-white transition-all uppercase font-bold disabled:opacity-50"
                             >
-                                Claim Payload
+                                {isClaiming ? "Claiming..." : "Claim Payload"}
                             </button>
                         )}
                     </div>
