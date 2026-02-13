@@ -161,6 +161,7 @@ export default function Home() {
         txId: tx.id,
       });
 
+      setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
@@ -177,6 +178,7 @@ export default function Home() {
       setSuccessTxHash(null);
     } finally {
       setIsMinting(false);
+      setIsBroadcasting(false);
     }
   };
 
@@ -201,6 +203,7 @@ export default function Home() {
 
           const { tx } = await finalizeBTCTransactionAsync();
           const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          setIsBroadcasting(true);
           await sendBTCTransactionsAsync({
             serializedTransactions: [signedTransaction],
             btcTransaction: tx.hex,
@@ -215,6 +218,7 @@ export default function Home() {
         setUnlockStatus('none');
     } finally {
         setIsWithdrawing(false);
+        setIsBroadcasting(false);
     }
   };
 
@@ -238,6 +242,7 @@ export default function Home() {
 
           const { tx } = await finalizeBTCTransactionAsync();
           const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          setIsBroadcasting(true);
           await sendBTCTransactionsAsync({
             serializedTransactions: [signedTransaction],
             btcTransaction: tx.hex,
@@ -250,6 +255,7 @@ export default function Home() {
         toast.error(e.message || "Claim failed");
     } finally {
         setIsClaiming(false);
+        setIsBroadcasting(false);
     }
   };
 
