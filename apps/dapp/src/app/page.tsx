@@ -8,10 +8,6 @@ import { encodeFunctionData, zeroAddress, isAddress } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
-import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
-import { LockMechanism } from "@/components/ui/vault/LockMechanism";
-import { TemporalSlider } from "@/components/ui/vault/TemporalSlider";
-import { VaultButton, VaultCard } from "@/components/ui/vault";
 
 // Import Screens
 import WalletConnect from "@/components/screens/WalletConnect";
@@ -26,7 +22,7 @@ export default function Home() {
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
-  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
+  const { sendBTCTransactionsAsync, isPending: isBroadcasting } = useSendBTCTransactions();
   const publicClient = usePublicClient();
 
   // State
@@ -34,30 +30,37 @@ export default function Home() {
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
 
   const [message, setMessage] = useState("");
-  const [amount, setAmount] = useState("");
-  const [tokenAddress, setTokenAddress] = useState(zeroAddress); // Default to ETH/Zero Address
-  const [duration, setDuration] = useState(31536000); // 1 year default
-  const [vaultType, setVaultType] = useState<VaultType>(VaultType.TIME_LOCK);
-  const [beneficiary, setBeneficiary] = useState("");
-
   const [isMinting, setIsMinting] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+
+  // New platform states
+  const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
+  const [beneficiary, setBeneficiary] = useState("");
+  const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
+  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
+
+  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
     try {
       const logs = await publicClient.getLogs({
-        address: TimeCapsule.address,
+        address: TimeCapsule.address as `0x${string}`,
         event: {
           type: 'event',
           name: 'CapsuleCreated',
           inputs: [
             { indexed: true, name: 'id', type: 'uint256' },
             { indexed: true, name: 'owner', type: 'address' },
-            { indexed: false, name: 'unlockTimestamp', type: 'uint256' },
-            { indexed: false, name: 'message', type: 'string' }
+            { indexed: true, name: 'beneficiary', type: 'address' },
+            { indexed: false, name: 'unlockTime', type: 'uint256' },
+            { indexed: false, name: 'vaultType', type: 'uint8' },
+            { indexed: false, name: 'amount', type: 'uint256' },
+            { indexed: false, name: 'token', type: 'address' }
           ]
         },
         fromBlock: BigInt(0),
@@ -73,6 +76,8 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -99,41 +104,26 @@ export default function Home() {
         return;
     }
 
-    // Validation logic for beneficiary
-    let targetBeneficiary: `0x${string}` = zeroAddress;
-
-    if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
-        if (!beneficiary || beneficiary === zeroAddress) {
-            toast.error("Beneficiary is required for Social and Legacy vaults.");
-            return;
-        }
-        if (!isAddress(beneficiary)) {
-            toast.error("Invalid beneficiary address format.");
-            return;
-        }
-        targetBeneficiary = beneficiary as `0x${string}`;
-    }
-
     setIsMinting(true);
     try {
-      const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + duration);
-      const weiAmount = parseUnits(amount, 18); // Assuming 18 decimals
+      const amount = BigInt(message.length * 100000); // Dummy amount based on message length
+      const targetBeneficiary = vaultType === VaultType.SOCIAL ? beneficiary : (address || zeroAddress);
+      const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
-            to: TimeCapsule.address,
-            value: tokenAddress === zeroAddress ? weiAmount : BigInt(0),
+            to: TimeCapsule.address as `0x${string}`,
+            value: amount, // Pass native value
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
               functionName: "createCapsule",
               args: [
-                  tokenAddress as `0x${string}`,
-                  weiAmount,
-                  unlockTimestamp,
-                  targetBeneficiary,
-                  vaultType,
-                  message // Include message
+                targetBeneficiary as `0x${string}`,
+                unlockTimestamp,
+                vaultType,
+                zeroAddress, // Sentinel for native BTC/ETH
+                amount
               ],
             }),
           },
