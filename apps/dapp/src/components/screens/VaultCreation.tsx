@@ -18,6 +18,8 @@ interface VaultCreationProps {
   setUnlockTimeDays: (days: number) => void;
   message: string;
   setMessage: (msg: string) => void;
+  amount: string;
+  setAmount: (amt: string) => void;
   handleMint: () => void;
   isSigningOrPending: boolean;
 }
@@ -31,6 +33,8 @@ export default function VaultCreation({
   setUnlockTimeDays,
   message,
   setMessage,
+  amount,
+  setAmount,
   handleMint,
   isSigningOrPending,
 }: VaultCreationProps) {
@@ -89,11 +93,12 @@ export default function VaultCreation({
 
             {/* Vault Type Selector (Added from functionality requirement) */}
             <div className="space-y-2">
-              <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+              <label htmlFor="vault-type-selector" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                 <span>Utility Protocol</span>
                 <span className="material-icons text-xs animate-pulse">settings</span>
               </label>
               <select
+                  id="vault-type-selector"
                   value={vaultType}
                   onChange={(e) => setVaultType(Number(e.target.value))}
                   className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary transition-all"
@@ -107,8 +112,9 @@ export default function VaultCreation({
 
             {vaultType === VaultType.SOCIAL && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                    <label className="text-xs tracking-wider text-bitcoin-gold uppercase font-semibold block">Friend's EVM Address</label>
+                    <label htmlFor="beneficiary-input" className="text-xs tracking-wider text-bitcoin-gold uppercase font-semibold block">Friend's EVM Address</label>
                     <input
+                        id="beneficiary-input"
                         type="text"
                         value={beneficiary}
                         onChange={(e) => setBeneficiary(e.target.value)}
@@ -118,17 +124,31 @@ export default function VaultCreation({
                 </div>
             )}
 
+            {/* Amount Field */}
+            <div className="space-y-2">
+                <label htmlFor="amount-input" className="text-xs tracking-wider text-primary/80 uppercase font-semibold block">Deposit Amount (ETH/BTC)</label>
+                <input
+                    id="amount-input"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.01"
+                    className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary transition-all"
+                />
+            </div>
+
             {/* Text Input Area */}
             <div className="space-y-3">
-              <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+              <label htmlFor="message-input" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                 <span>Input Stream</span>
                 <span className="animate-pulse">_Ready</span>
               </label>
               <div className="relative group">
                 <textarea
+                  id="message-input"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full h-40 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
+                  className="w-full h-32 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
                   placeholder="Initializing encryption... Write to your future self..."
                 ></textarea>
                 {/* Glowing line at bottom of active input */}
@@ -139,13 +159,14 @@ export default function VaultCreation({
             {/* Temporal Slider */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <label className="text-xs tracking-wider text-primary/80 uppercase font-semibold">Temporal Coordinates</label>
+                <label htmlFor="unlock-horizon" className="text-xs tracking-wider text-primary/80 uppercase font-semibold">Temporal Coordinates</label>
                 <span className="text-xl font-bold text-white tabular-nums drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
                     {unlockTimeDays} <span className="text-xs text-gray-400 font-normal">DAYS</span>
                 </span>
               </div>
               <div className="relative h-12 flex items-center select-none">
                 <input
+                    id="unlock-horizon"
                     type="range"
                     min="1"
                     max="3650"
@@ -187,6 +208,7 @@ export default function VaultCreation({
             {/* Seal Button */}
             <div className="pt-4">
               <button
+                type="button"
                 onClick={handleMint}
                 disabled={isSigningOrPending}
                 className="relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300 disabled:opacity-50"

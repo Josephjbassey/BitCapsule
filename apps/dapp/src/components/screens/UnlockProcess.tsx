@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { EXPLORER_BASE_URL } from "@/app/config";
 
 interface UnlockProcessProps {
   status: 'penalty' | 'success';
@@ -123,7 +124,7 @@ export default function UnlockProcess({ status, onClose, txHash }: UnlockProcess
                 </h1>
                 <p className="mt-4 text-primary font-mono text-sm tracking-[0.5em] uppercase">Capsule Unlocked successfully</p>
                 {txHash && (
-                    <a href={`https://mempool.space/tx/${txHash}`} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[10px] font-mono text-gray-500 hover:text-white underline decoration-dashed">
+                    <a href={`${EXPLORER_BASE_URL}/tx/${txHash}`} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[10px] font-mono text-gray-500 hover:text-white underline decoration-dashed">
                         TX: {txHash.slice(0, 10)}...
                     </a>
                 )}

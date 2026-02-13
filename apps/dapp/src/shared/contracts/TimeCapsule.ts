@@ -264,18 +264,24 @@ export const abi = [
 
 export const getAddress = () => {
     const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
-    // Validate that it starts with 0x and is a string
-    if (!address || !address.startsWith("0x") || address === "0x0000000000000000000000000000000000000000") {
-        return "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8" as `0x${string}`; // Fallback for demo
+    if (!address || !isAddress(address)) {
+        throw new Error(
+            `TimeCapsule address is missing or invalid: ${address}. ` +
+            "Ensure NEXT_PUBLIC_TIME_CAPSULE_ADDRESS is set in your environment."
+        );
     }
     return address as `0x${string}`;
 }
 
 export const address = (() => {
-    try {
-        return getAddress();
-    } catch (e) {
-        console.warn(e);
-        return "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8" as `0x${string}`;
+    if (typeof window !== "undefined") {
+        try {
+            return getAddress();
+        } catch (e) {
+            console.error("Critical error sourcing TimeCapsule address:", e);
+            // In browser, we might want to return a placeholder but the requirement said fail-fast
+            return "0x0000000000000000000000000000000000000000" as `0x${string}`;
+        }
     }
+    return "0x0000000000000000000000000000000000000000" as `0x${string}`;
 })();

@@ -3,7 +3,7 @@
 import { TemporalSlider } from "@/components/ui/vault/TemporalSlider";
 import { useState } from "react";
 import { VaultCard, VaultButton } from "@/components/ui/vault";
-import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount } from "wagmi";
 import { vaultAbi } from "@/lib/abi";
 import { addresses } from "@/lib/constants";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export const DepositForm = () => {
     const [message, setMessage] = useState("");
 
     const { writeContractAsync, isPending } = useWriteContract();
+    const { address } = useAccount();
     const publicClient = usePublicClient();
     const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
 
@@ -54,13 +55,37 @@ export const DepositForm = () => {
                 toast.warning("Could not fetch token decimals, defaulting to 18");
             }
 
+            const amountInWei = parseUnits(amount, decimals);
+
+            // Check allowance
+            if (publicClient && address) {
+                const allowance = await publicClient.readContract({
+                    address: tokenAddress as `0x${string}`,
+                    abi: erc20Abi,
+                    functionName: "allowance",
+                    args: [address, addresses.vault as `0x${string}`],
+                });
+
+                if (allowance < amountInWei) {
+                    toast.info("Approving token allowance...");
+                    const approveHash = await writeContractAsync({
+                        address: tokenAddress as `0x${string}`,
+                        abi: erc20Abi,
+                        functionName: "approve",
+                        args: [addresses.vault as `0x${string}`, amountInWei],
+                    });
+                    await publicClient.waitForTransactionReceipt({ hash: approveHash });
+                    toast.success("Allowance approved!");
+                }
+            }
+
             const txHash = await writeContractAsync({
                 address: addresses.vault as `0x${string}`,
                 abi: vaultAbi,
                 functionName: "depositWithLock",
                 args: [
                     tokenAddress as `0x${string}`,
-                    parseUnits(amount, decimals),
+                    amountInWei,
                     BigInt(duration),
                     msg
                 ],

@@ -27,6 +27,7 @@ export default function Home() {
   // State
   const [view, setView] = useState<'creation' | 'archive'>('creation');
   const [message, setMessage] = useState("");
+  const [amount, setAmount] = useState("");
   const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
   const [beneficiary, setBeneficiary] = useState("");
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
@@ -94,7 +95,10 @@ export default function Home() {
   };
 
   const handleMint = async () => {
-    if (!message || !isConnected || isMinting) return;
+    if (!message || !amount || !isConnected || isMinting) {
+        if (!amount && isConnected) toast.error("Please enter an amount");
+        return;
+    }
 
     if (vaultType === VaultType.SOCIAL && !isAddress(beneficiary)) {
         toast.error("Please enter a valid EVM beneficiary address");
@@ -103,7 +107,7 @@ export default function Home() {
 
     setIsMinting(true);
     try {
-      const amount = BigInt(message.length * 100000); // Dummy amount
+      const amountInWei = BigInt(Math.floor(Number(amount) * 1e18)); // Simple conversion for demo
       const targetBeneficiary = vaultType === VaultType.SOCIAL ? beneficiary : (address || zeroAddress);
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
@@ -111,7 +115,7 @@ export default function Home() {
         intention: {
           evmTransaction: {
             to: TimeCapsule.address as `0x${string}`,
-            value: amount,
+            value: amountInWei,
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
               functionName: "createCapsule",
@@ -120,7 +124,7 @@ export default function Home() {
                 unlockTimestamp,
                 vaultType,
                 zeroAddress,
-                amount,
+                amountInWei,
                 message
               ],
             }),
@@ -144,6 +148,7 @@ export default function Home() {
       if (txHashes && txHashes.length > 0) {
         setSuccessTxHash(txHashes[0]);
         setMessage("");
+        setAmount("");
       }
     } catch (error: any) {
       console.error("Action failed", error);
@@ -225,7 +230,7 @@ export default function Home() {
   if (!isMounted) return null;
 
   if (!isConnected) {
-    return <WalletConnect onConnect={handleConnect} />;
+    return <WalletConnect onConnect={handleConnect} onAbort={() => setView('creation')} />;
   }
 
   return (
@@ -274,6 +279,8 @@ export default function Home() {
             setUnlockTimeDays={setUnlockTimeDays}
             message={message}
             setMessage={setMessage}
+            amount={amount}
+            setAmount={setAmount}
             handleMint={handleMint}
             isSigningOrPending={isSigningOrPending}
           />

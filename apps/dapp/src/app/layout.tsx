@@ -43,7 +43,7 @@ export default function RootLayout({
 				<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 			</head>
 			<Web3Provider>
-				<body className={`${inter.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} bg-background-dark font-sans overflow-hidden h-screen w-screen`}>
+				<body className={`${inter.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} bg-background-dark font-sans min-h-screen`}>
 					{children}
 					<Toaster />
 				</body>

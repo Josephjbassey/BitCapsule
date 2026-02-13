@@ -4,9 +4,10 @@ import React from "react";
 
 interface WalletConnectProps {
   onConnect: () => void;
+  onAbort?: () => void;
 }
 
-export default function WalletConnect({ onConnect }: WalletConnectProps) {
+export default function WalletConnect({ onConnect, onAbort }: WalletConnectProps) {
   return (
     <div className="fixed inset-0 z-[100] bg-background-dark text-gray-100 min-h-screen w-full flex flex-col relative font-display overflow-hidden">
       {/* Background Environment */}
@@ -95,7 +96,11 @@ export default function WalletConnect({ onConnect }: WalletConnectProps) {
         </main>
 
         <footer className="relative z-20 flex justify-between items-end mt-8">
-          <button className="group flex items-center gap-3 px-6 py-3 border border-white/20 rounded hover:bg-white/5 hover:border-primary/50 transition-all duration-300 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={onAbort}
+            className="group flex items-center gap-3 px-6 py-3 border border-white/20 rounded hover:bg-white/5 hover:border-primary/50 transition-all duration-300 backdrop-blur-sm"
+          >
             <span className="material-icons text-gray-400 text-lg group-hover:text-primary group-hover:-translate-x-1 transition-all">arrow_back_ios_new</span>
             <div className="flex flex-col items-start">
               <span className="text-[10px] text-gray-500 font-mono uppercase tracking-wider group-hover:text-primary/70">System</span>
