@@ -136,7 +136,7 @@ export default function Home() {
     }
 
     // Validation logic for beneficiary
-    let targetBeneficiary: `0x${string}` = zeroAddress;
+    let targetBeneficiary: `0x${string}` = (address || zeroAddress) as `0x${string}`;
 
     if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
         if (!beneficiary || beneficiary === zeroAddress) {
@@ -153,7 +153,7 @@ export default function Home() {
     setIsMinting(true);
     try {
       const amountInWei = BigInt(Math.floor(Number(amount) * 1e18)); // Parse amount in Wei
-      const targetBeneficiary = vaultType === VaultType.SOCIAL ? beneficiary : (address || zeroAddress);
+      // targetBeneficiary is correctly set above based on vaultType
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       const intention = await addTxIntentionAsync({
