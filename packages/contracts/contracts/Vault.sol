@@ -55,12 +55,12 @@ contract Vault  {
             if (newUnlockTime > unlockTimestamps[token][msg.sender]) {
                 unlockTimestamps[token][msg.sender] = newUnlockTime;
             }
+            emit Deposit(msg.sender, token, amount, unlockTimestamps[token][msg.sender], message);
         } else {
             // No duration provided implies immediate access, treat as unlocked
             unlockedBalances[token][msg.sender] += amount;
+            emit Deposit(msg.sender, token, amount, 0, message);
         }
-
-        emit Deposit(msg.sender, token, amount, unlockTimestamps[token][msg.sender], message);
     }
     
     /**

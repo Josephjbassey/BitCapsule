@@ -71,6 +71,7 @@ contract TimeCapsule {
         require(capsule.owner != address(0), "Capsule does not exist");
         require(msg.sender == capsule.owner, "Not owner");
         require(!capsule.claimed, "Already claimed");
+        require(capsule.vaultType == VaultType.TIME_LOCK, "Early withdrawal only for TIME_LOCK");
 
         capsule.claimed = true;
 
