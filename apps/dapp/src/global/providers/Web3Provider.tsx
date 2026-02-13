@@ -17,9 +17,9 @@ export default function Web3Provider({
 	return (
 		<QueryClientProvider client={client}>
 			<MidlProvider config={midlConfig}>
-				<SatoshiKitProvider>
-					<WagmiMidlProvider>{children}</WagmiMidlProvider>
-				</SatoshiKitProvider>
+				<WagmiMidlProvider>
+					<SatoshiKitProvider>{children}</SatoshiKitProvider>
+				</WagmiMidlProvider>
 			</MidlProvider>
 		</QueryClientProvider>
 	);
