@@ -17,6 +17,7 @@ import { VaultButton, VaultCard } from "@/components/ui/vault";
 import WalletConnect from "@/components/screens/WalletConnect";
 import VaultCreation, { VaultType } from "@/components/screens/VaultCreation";
 import VaultArchive from "@/components/screens/VaultArchive";
+import UnlockProcess from "@/components/screens/UnlockProcess";
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -37,6 +38,11 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
 
   const [isMinting, setIsMinting] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
+
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
@@ -122,7 +128,7 @@ export default function Home() {
 
     setIsMinting(true);
     try {
-      const amountInWei = BigInt(Math.floor(Number(amount) * 1e18)); // Simple conversion for demo
+      const amountInWei = BigInt(Math.floor(Number(amount) * 1e18)); // Parse amount in Wei
       const targetBeneficiary = vaultType === VaultType.SOCIAL ? beneficiary : (address || zeroAddress);
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
@@ -135,11 +141,11 @@ export default function Home() {
               abi: TimeCapsule.abi,
               functionName: "createCapsule",
               args: [
-                targetBeneficiary as `0x${string}`,
-                unlockTimestamp,
-                vaultType,
                 zeroAddress,
                 amountInWei,
+                unlockTimestamp,
+                targetBeneficiary as `0x${string}`,
+                vaultType,
                 message
               ],
             }),
@@ -255,9 +261,7 @@ export default function Home() {
 
   return (
     <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
-      <div className="absolute inset-0 z-0 bg-cyber-grid bg-[length:20px_20px] opacity-20 pointer-events-none"></div>
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-background-dark/90 via-transparent to-background-dark/90 pointer-events-none z-0"></div>
-      <div className="scanline"></div>
+      <BackgroundEffects />
 
       <header className="relative z-20 w-full px-6 py-4 flex justify-between items-center border-b border-primary/20 backdrop-blur-sm bg-obsidian/50">
         <div className="flex items-center gap-3">
@@ -335,8 +339,17 @@ export default function Home() {
         />
       )}
 
+      {/* Unlock Process Overlay */}
+      {unlockStatus !== 'none' && (
+        <UnlockProcess
+          status={unlockStatus}
+          onClose={() => setUnlockStatus('none')}
+          txHash={successTxHash || undefined}
+        />
+      )}
+
       {/* Generic Loading Overlay for other ops */}
       {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay />}
-    </>
+    </div>
   );
 }
