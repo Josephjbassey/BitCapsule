@@ -44,6 +44,7 @@ export default function VaultArchive({
           </div>
           <nav className="flex flex-col mt-8 gap-2">
             <button
+                type="button"
                 onClick={() => setFilter('ALL')}
                 className={`sidebar-item group flex items-center w-full px-4 md:px-6 py-4 text-left transition-colors ${filter === 'ALL' ? 'active text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
             >
@@ -53,6 +54,7 @@ export default function VaultArchive({
             </button>
             <div className="h-px bg-white/5 mx-4 my-2"></div>
             <button
+                type="button"
                 onClick={() => setFilter('LOCKED')}
                 className={`sidebar-item group flex items-center w-full px-4 md:px-6 py-4 text-left transition-colors ${filter === 'LOCKED' ? 'active text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
             >
@@ -60,6 +62,7 @@ export default function VaultArchive({
               <span className="hidden md:block ml-4 text-sm font-mono tracking-wide">LOCKED</span>
             </button>
             <button
+                type="button"
                 onClick={() => setFilter('UNLOCKED')}
                 className={`sidebar-item group flex items-center w-full px-4 md:px-6 py-4 text-left transition-colors ${filter === 'UNLOCKED' ? 'active text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
             >
@@ -133,18 +136,22 @@ export default function VaultArchive({
                     <div className="flex justify-between items-start z-10">
                       <div className="flex flex-col">
                         <span className={`text-4xl font-bold ${textColor} font-mono tracking-tight drop-shadow-lg`}>{unlockYear}</span>
-                        <span className={`text-[10px] font-mono ${textColor}/80 tracking-widest mt-1`}>
+                        <span className={`text-[10px] font-mono tracking-widest mt-1 ${
+                            isGold ? "text-bitcoin-gold/80" : (isLocked ? "text-primary/80" : "text-green-400/80")
+                        }`}>
                             {isLocked ? "LOCKED" : "UNLOCKED"}
                         </span>
                       </div>
-                      <span className={`material-symbols-outlined ${textColor}/60`}>
+                      <span className={`material-symbols-outlined ${
+                          isGold ? "text-bitcoin-gold/60" : (isLocked ? "text-primary/60" : "text-green-400/60")
+                      }`}>
                         {isLocked ? "lock" : "lock_open"}
                       </span>
                     </div>
 
                     <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative border-y border-white/5 bg-black/20 rounded">
                       <p className={`text-xs text-white/50 font-mono leading-relaxed select-none p-4 ${isLocked ? "message-blur" : ""}`}>
-                        {isLocked ? "Encrypted Content. Time-lock active." : "Content Decrypted. Ready for access."}
+                        {isLocked ? "Encrypted Content. Time-lock active." : (log.args.message || "Content Decrypted. Ready for access.")}
                       </p>
                     </div>
 
@@ -184,6 +191,7 @@ export default function VaultArchive({
                       <div className="space-y-2">
                         {isLocked && isOwner && (
                             <button
+                                type="button"
                                 onClick={(e) => { e.stopPropagation(); handleWithdrawEarly(id); }}
                                 disabled={isSigningOrPending}
                                 className="w-full py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-500 text-xs font-bold tracking-widest uppercase transition-colors"
@@ -194,6 +202,7 @@ export default function VaultArchive({
 
                         {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
                             <button
+                                type="button"
                                 onClick={(e) => { e.stopPropagation(); handleClaim(id, isLegacy); }}
                                 disabled={isSigningOrPending}
                                 className="w-full py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-500 text-xs font-bold tracking-widest uppercase transition-colors"
@@ -213,6 +222,7 @@ export default function VaultArchive({
         <div className="fixed bottom-8 right-8 z-40 group">
             <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></div>
             <button
+                type="button"
                 onClick={onNavigateBack}
                 className="relative w-14 h-14 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon hover:scale-110 transition-transform duration-300"
             >

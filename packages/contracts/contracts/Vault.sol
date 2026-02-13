@@ -3,8 +3,9 @@ pragma solidity ^0.8.27;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract Vault  {
+contract Vault is ReentrancyGuard {
     using SafeERC20 for IERC20;
     
     // Custom errors
@@ -13,14 +14,16 @@ contract Vault  {
     error InsufficientBalance();
     error VaultLocked();
 
+    struct Lock {
+        uint256 amount;
+        uint256 unlockTime;
+    }
+
     // Mapping from token address to user address to UNLOCKED balance
     mapping(address => mapping(address => uint256)) public unlockedBalances;
 
-    // Mapping from token address to user address to LOCKED balance
-    mapping(address => mapping(address => uint256)) public lockedBalances;
-
-    // Mapping from token address to user address to unlock timestamp for the LOCKED balance
-    mapping(address => mapping(address => uint256)) public unlockTimestamps;
+    // Mapping from token address to user address to an array of LOCKS
+    mapping(address => mapping(address => Lock[])) public userLocks;
     
     // Events
     event Deposit(address indexed user, address indexed token, uint256 amount, uint256 unlockTimestamp, string message);
@@ -31,9 +34,15 @@ contract Vault  {
      * @param token The address of the ERC20 token
      * @param amount The amount of tokens to deposit
      */
-    function deposit(address token, uint256 amount) external {
+    function deposit(address token, uint256 amount) external nonReentrant {
         // Deposit without lock adds to unlockedBalances
-        depositWithLock(token, amount, 0, "");
+        if (token == address(0)) revert InvalidTokenAddress();
+        if (amount == 0) revert InvalidAmount();
+
+        unlockedBalances[token][msg.sender] += amount;
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+
+        emit Deposit(msg.sender, token, amount, 0, "");
     }
 
     /**
@@ -43,22 +52,22 @@ contract Vault  {
      * @param lockDuration The duration in seconds to lock the funds
      * @param message A message attached to the deposit
      */
-    function depositWithLock(address token, uint256 amount, uint256 lockDuration, string memory message) public {
+    function depositWithLock(address token, uint256 amount, uint256 lockDuration, string memory message) public nonReentrant {
         if (token == address(0)) revert InvalidTokenAddress();
         if (amount == 0) revert InvalidAmount();
 
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-
         if (lockDuration > 0) {
-            lockedBalances[token][msg.sender] += amount;
-            uint256 newUnlockTime = block.timestamp + lockDuration;
-            if (newUnlockTime > unlockTimestamps[token][msg.sender]) {
-                unlockTimestamps[token][msg.sender] = newUnlockTime;
-            }
-            emit Deposit(msg.sender, token, amount, unlockTimestamps[token][msg.sender], message);
+            uint256 unlockTime = block.timestamp + lockDuration;
+            userLocks[token][msg.sender].push(Lock({
+                amount: amount,
+                unlockTime: unlockTime
+            }));
+
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            emit Deposit(msg.sender, token, amount, unlockTime, message);
         } else {
-            // No duration provided implies immediate access, treat as unlocked
             unlockedBalances[token][msg.sender] += amount;
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             emit Deposit(msg.sender, token, amount, 0, message);
         }
     }
@@ -68,37 +77,39 @@ contract Vault  {
      * @param token The address of the ERC20 token
      * @param amount The amount of tokens to withdraw
      */
-    function withdraw(address token, uint256 amount) external {
+    function withdraw(address token, uint256 amount) external nonReentrant {
         if (token == address(0)) revert InvalidTokenAddress();
         if (amount == 0) revert InvalidAmount();
         
-        uint256 unlocked = unlockedBalances[token][msg.sender];
-        uint256 locked = lockedBalances[token][msg.sender];
+        // Clean up matured locks and add to unlocked balance
+        _syncMaturedLocks(token, msg.sender);
 
-        if (unlocked + locked < amount) revert InsufficientBalance();
+        if (unlockedBalances[token][msg.sender] < amount) revert InsufficientBalance();
 
-        uint256 remainingToWithdraw = amount;
-
-        // First consume unlocked balances
-        if (unlocked >= remainingToWithdraw) {
-            unlockedBalances[token][msg.sender] -= remainingToWithdraw;
-            remainingToWithdraw = 0;
-        } else {
-            unlockedBalances[token][msg.sender] = 0;
-            remainingToWithdraw -= unlocked;
-        }
-
-        // If still need to withdraw, check if locked funds are unlocked
-        if (remainingToWithdraw > 0) {
-            if (block.timestamp < unlockTimestamps[token][msg.sender]) revert VaultLocked();
-            lockedBalances[token][msg.sender] -= remainingToWithdraw;
-        }
-
+        unlockedBalances[token][msg.sender] -= amount;
         IERC20(token).safeTransfer(msg.sender, amount);
         
         emit Withdraw(msg.sender, token, amount);
     }
     
+    /**
+     * @dev Synchronizes matured locks into the unlocked balance
+     */
+    function _syncMaturedLocks(address token, address user) internal {
+        Lock[] storage locks = userLocks[token][user];
+        uint256 i = 0;
+        while (i < locks.length) {
+            if (block.timestamp >= locks[i].unlockTime) {
+                unlockedBalances[token][user] += locks[i].amount;
+                // Move the last element to the current position and pop
+                locks[i] = locks[locks.length - 1];
+                locks.pop();
+            } else {
+                i++;
+            }
+        }
+    }
+
     /**
      * @dev Get the TOTAL balance of a user for a specific token (locked + unlocked)
      * @param token The address of the ERC20 token
@@ -106,6 +117,18 @@ contract Vault  {
      * @return The balance of the user for the specified token
      */
     function getBalance(address token, address user) external view returns (uint256) {
-        return unlockedBalances[token][user] + lockedBalances[token][user];
+        uint256 totalLocked = 0;
+        Lock[] memory locks = userLocks[token][user];
+        for (uint256 i = 0; i < locks.length; i++) {
+            totalLocked += locks[i].amount;
+        }
+        return unlockedBalances[token][user] + totalLocked;
+    }
+
+    /**
+     * @dev Returns all locks for a specific user and token
+     */
+    function getUserLocks(address token, address user) external view returns (Lock[] memory) {
+        return userLocks[token][user];
     }
 }

@@ -1,6 +1,6 @@
 # dApp Demo
 
-This repository contains a simple dApp demo that showcases the use of a vault contract for depositing and withdrawing Runes (ERC20 tokens), as well as implementing various use cases like the "Temporal Archive" and "Legacy Protocol".
+This repository contains a simple dApp demo that showcases the use of a vault contract for depositing and withdrawing Bitcoin Runes, as well as implementing various use cases like the "Temporal Archive" and "Legacy Protocol".
 
 ## Use Cases
 
@@ -51,7 +51,7 @@ pnpm dev
 
 ### Interacting with the dApp
 
-Once the dApp is running, you can interact with it through your web browser. The dApp allows you to deposit and withdraw Runes (ERC20 tokens) from the vault contract.
+Once the dApp is running, you can interact with it through your web browser. The dApp allows you to deposit and withdraw Bitcoin Runes from the vault contract.
 
 #### Pre-requisites
 
@@ -65,5 +65,5 @@ Ensure you have Runes in your wallet and they have been added to the MIDL ecosys
 
 1. Open your browser and navigate to `http://localhost:3000`.
 2. Connect your wallet (e.g., XVerse).
-3. Use the dApp to deposit and withdraw Runes (ERC20 tokens) from the vault.
-4. You can view the transaction history on (Mempool)(http://mempool.staging.midl.xyz) and on the [MIDL Explorer](https://blockscout.staging.midl.xyz/).
+3. Use the dApp to deposit and withdraw Bitcoin Runes from the vault.
+4. You can view the transaction history on [Mempool](http://mempool.staging.midl.xyz) and on the [MIDL Explorer](https://blockscout.staging.midl.xyz/).
