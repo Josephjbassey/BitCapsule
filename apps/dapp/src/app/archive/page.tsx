@@ -51,15 +51,16 @@ export default function TemporalArchivePage() {
 			{/* Footer HUD */}
 			<footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-obsidian/80 backdrop-blur-md">
 				<div className="flex gap-4">
-					<span className="hover:text-primary cursor-pointer transition-colors">
+					{/* Placeholder links - replaced interactive spans with non-interactive div or links if routes existed */}
+					<span className="opacity-50">
 						PRIVACY_PROTOCOL_V2
 					</span>
-					<span className="hover:text-primary cursor-pointer transition-colors">
+					<span className="opacity-50">
 						TERMS_OF_ENGAGEMENT
 					</span>
 				</div>
 				<div className="mt-2 md:mt-0 font-mono">
-					ID: <span className="text-primary/60">XJ-9200-ALPHA</span> // NODE:{" "}
+					ID: <span className="text-primary/60">XJ-9200-ALPHA</span>{" // NODE: "}
 					<span className="text-green-500/60">VERIFIED</span>
 				</div>
 			</footer>

@@ -40,11 +40,31 @@ export const abi = [
 		stateMutability: "nonpayable",
 		type: "function",
 	},
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "owner", type: "address" },
+            { indexed: false, internalType: "uint256", name: "unlockTimestamp", type: "uint256" }
+        ],
+        name: "CapsuleCreated",
+        type: "event"
+    },
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "claimant", type: "address" }
+        ],
+        name: "CapsuleClaimed",
+        type: "event"
+    }
 ] as const;
 
 export const getAddress = () => {
     const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
-    if (!address || address === "0x0000000000000000000000000000000000000000") {
+    // Validate that it starts with 0x and is a string
+    if (!address || !address.startsWith("0x") || address === "0x0000000000000000000000000000000000000000") {
         throw new Error("TimeCapsule address is missing or invalid. Check environment configuration.");
     }
     return address as `0x${string}`;
@@ -55,6 +75,6 @@ export const address = (() => {
         return getAddress();
     } catch (e) {
         console.warn(e);
-        return "0x0000000000000000000000000000000000000000" as `0x${string}`; // Fallback to avoid crash during static analysis/build, but calls will fail
+        return "0x0000000000000000000000000000000000000000" as `0x${string}`;
     }
 })();

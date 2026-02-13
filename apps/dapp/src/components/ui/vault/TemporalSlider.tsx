@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 
 interface TemporalSliderProps {
     value: number; // Value in seconds (duration)
@@ -14,21 +14,21 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
     const trackRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    // Calculate position percentage based on value
-    const percentage = ((value - min) / (max - min)) * 100;
+    // Calculate position percentage based on value with guard for zero division
+    const percentage = max === min ? 0 : Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 
     // Calculate current target date based on duration
     const targetDate = new Date(Date.now() + value * 1000);
     const targetYear = targetDate.getFullYear();
 
-    const handleInteract = (clientX: number) => {
+    const handleInteract = useCallback((clientX: number) => {
         if (!trackRef.current) return;
         const rect = trackRef.current.getBoundingClientRect();
         const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
         const newPercentage = x / rect.width;
         const newValue = Math.round(min + newPercentage * (max - min));
         onChange(newValue);
-    };
+    }, [min, max, onChange]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
@@ -38,6 +38,23 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
     const handleTouchStart = (e: React.TouchEvent) => {
         setIsDragging(true);
         handleInteract(e.touches[0].clientX);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        const step = (max - min) / 100; // 1% step
+        if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            onChange(Math.min(max, value + step));
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+            onChange(Math.max(min, value - step));
+        } else if (e.key === "Home") {
+            onChange(min);
+        } else if (e.key === "End") {
+            onChange(max);
+        } else if (e.key === "PageUp") {
+            onChange(Math.min(max, value + step * 10));
+        } else if (e.key === "PageDown") {
+            onChange(Math.max(min, value - step * 10));
+        }
     };
 
     useEffect(() => {
@@ -68,12 +85,12 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
             window.removeEventListener("mouseup", handleMouseUp);
             window.removeEventListener("touchend", handleMouseUp);
         };
-    }, [isDragging]);
+    }, [isDragging, handleInteract]);
 
     return (
         <div className="space-y-4 pt-4 pb-2">
             <div className="flex justify-between items-end">
-                <label className="text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                <label id="temporal-slider-label" className="text-xs tracking-wider text-primary/80 uppercase font-semibold">
                     Temporal Coordinates
                 </label>
                 <span className="text-xl font-bold text-white tabular-nums drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
@@ -81,10 +98,18 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
                 </span>
             </div>
             <div
-                className="relative h-12 flex items-center select-none cursor-pointer group"
+                className="relative h-12 flex items-center select-none cursor-pointer group outline-none"
                 ref={trackRef}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
+                onKeyDown={handleKeyDown}
+                role="slider"
+                tabIndex={0}
+                aria-valuemin={min}
+                aria-valuemax={max}
+                aria-valuenow={value}
+                aria-labelledby="temporal-slider-label"
+                aria-label="Select lock duration"
             >
                 {/* Track Background */}
                 <div className="absolute w-full h-1 bg-gray-800 rounded-full overflow-hidden">

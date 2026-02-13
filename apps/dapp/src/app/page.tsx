@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 import { encodeFunctionData, zeroAddress, parseUnits } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
-import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { EXPLORER_BASE_URL } from "./config";
 import { toast } from "sonner";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
@@ -21,13 +20,6 @@ enum VaultType {
   LEGACY = 2,
 }
 
-enum VaultType {
-  TEMPORAL = 0,
-  LEGACY = 1,
-  HODL = 2,
-  SOCIAL = 3
-}
-
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
@@ -35,7 +27,7 @@ export default function Home() {
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
-  const { sendBTCTransactionsAsync, isPending: isBroadcasting } = useSendBTCTransactions();
+  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
   const publicClient = usePublicClient();
 
   // Form State
@@ -47,19 +39,9 @@ export default function Home() {
   const [beneficiary, setBeneficiary] = useState("");
 
   const [isMinting, setIsMinting] = useState(false);
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
-
-  // New platform states
-  const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
-  const [beneficiary, setBeneficiary] = useState("");
-  const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
-  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
-
-  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   const fetchHistory = useCallback(async () => {
     if (!publicClient || !isConnected) return;
@@ -88,8 +70,6 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
-    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -100,8 +80,10 @@ export default function Home() {
   }, [publicClient, isConnected, fetchHistory]);
 
   const handleSealVibe = async () => {
-    if (!amount) {
-        toast.error("Please enter an amount");
+    // Validate amount
+    const amountVal = Number(amount);
+    if (!amount || isNaN(amountVal) || amountVal <= 0) {
+        toast.error("Please enter a positive amount");
         return;
     }
 
@@ -168,74 +150,6 @@ export default function Home() {
     }
   };
 
-  const handleWithdrawEarly = async (id: bigint) => {
-    if (isWithdrawing) return;
-    setIsWithdrawing(true);
-    try {
-        const intention = await addTxIntentionAsync({
-            intention: {
-              evmTransaction: {
-                to: TimeCapsule.address as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: TimeCapsule.abi,
-                  functionName: "withdrawEarly",
-                  args: [id],
-                }),
-              },
-            },
-            reset: true,
-          });
-
-          const { tx } = await finalizeBTCTransactionAsync();
-          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-          await sendBTCTransactionsAsync({
-            serializedTransactions: [signedTransaction],
-            btcTransaction: tx.hex,
-          });
-          toast.success("Early withdrawal initiated!");
-          fetchHistory();
-    } catch (e: any) {
-        console.error("Withdrawal failed", e);
-        toast.error(e.message || "Withdrawal failed");
-    } finally {
-        setIsWithdrawing(false);
-    }
-  };
-
-  const handleClaim = async (id: bigint, useLegacy: boolean) => {
-    if (isClaiming) return;
-    setIsClaiming(true);
-    try {
-        const intention = await addTxIntentionAsync({
-            intention: {
-              evmTransaction: {
-                to: TimeCapsule.address as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: TimeCapsule.abi,
-                  functionName: useLegacy ? "claimLegacy" : "claim",
-                  args: [id],
-                }),
-              },
-            },
-            reset: true,
-          });
-
-          const { tx } = await finalizeBTCTransactionAsync();
-          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-          await sendBTCTransactionsAsync({
-            serializedTransactions: [signedTransaction],
-            btcTransaction: tx.hex,
-          });
-          toast.success("Payload claimed successfully!");
-          fetchHistory();
-    } catch (e: any) {
-        console.error("Claim failed", e);
-        toast.error(e.message || "Claim failed");
-    } finally {
-        setIsClaiming(false);
-    }
-  };
-
   const xverseConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
 
   if (!isMounted) return null;
@@ -277,7 +191,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">TimeVibe</h1>
-            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.4.0</span>
+            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.2.0</span>
           </div>
         </div>
         <div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">
@@ -305,18 +219,21 @@ export default function Home() {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                         <button
+                            type="button"
                             onClick={() => setVaultType(VaultType.TIME_LOCK)}
                             className={`p-2 text-[10px] uppercase font-mono border rounded transition-all ${vaultType === VaultType.TIME_LOCK ? "bg-primary/20 border-primary text-primary" : "bg-black/20 border-white/10 text-gray-400"}`}
                         >
                             Time Lock
                         </button>
                         <button
+                            type="button"
                             onClick={() => setVaultType(VaultType.SOCIAL)}
                             className={`p-2 text-[10px] uppercase font-mono border rounded transition-all ${vaultType === VaultType.SOCIAL ? "bg-primary/20 border-primary text-primary" : "bg-black/20 border-white/10 text-gray-400"}`}
                         >
                             Social
                         </button>
                         <button
+                            type="button"
                             onClick={() => setVaultType(VaultType.LEGACY)}
                             className={`p-2 text-[10px] uppercase font-mono border rounded transition-all ${vaultType === VaultType.LEGACY ? "bg-primary/20 border-primary text-primary" : "bg-black/20 border-white/10 text-gray-400"}`}
                         >
@@ -409,17 +326,17 @@ export default function Home() {
           <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex justify-between items-center">
             <span className="text-xs font-mono text-primary uppercase tracking-widest flex items-center gap-2">
               <span className="material-icons text-xs animate-pulse">history</span>
-              Active Temporal Vaults
+              Temporal Archive Feed
             </span>
             <span className="text-[10px] font-mono text-primary/60 uppercase">
-              {history.length} Registered Anchors
+              Status: Connected {'//'} {history.length} Data Blocks
             </span>
           </div>
 
           <div className="h-48 overflow-y-auto custom-scrollbar p-4 space-y-4 font-mono text-xs relative">
             {history.length === 0 ? (
               <div className="text-primary/40 text-center py-10 animate-pulse uppercase tracking-[0.2em]">
-                _No active vaults detected in local radius...
+                _Waiting for incoming transmissions...
               </div>
             ) : (
               history.map((log, i) => (
@@ -458,8 +375,6 @@ export default function Home() {
           onRefresh={fetchHistory}
         />
       )}
-
-      {isSigningOrPending && <TemporalSyncOverlay />}
     </div>
   );
 }

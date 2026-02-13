@@ -12,10 +12,11 @@ import { parseUnits } from "viem";
 export const DepositForm = () => {
     const [duration, setDuration] = useState(31536000); // 1 year in seconds
     const [amount, setAmount] = useState("");
-    const [tokenAddress, setTokenAddress] = useState(""); // User should ideally select this
+    const [tokenAddress, setTokenAddress] = useState("");
     const [message, setMessage] = useState("");
 
-    const { data: hash, writeContract, isPending } = useWriteContract();
+    const { writeContractAsync, isPending } = useWriteContract();
+    const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
 
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash,
@@ -25,84 +26,91 @@ export const DepositForm = () => {
         setDuration(newDuration);
     };
 
-    const handleDeposit = async () => {
+    const handleDeposit = async (msg: string) => {
         if (!amount || !tokenAddress) {
             toast.error("Please enter amount and token address");
             return;
         }
 
         try {
-            writeContract({
+            const txHash = await writeContractAsync({
                 address: addresses.vault as `0x${string}`,
                 abi: vaultAbi,
                 functionName: "depositWithLock",
                 args: [
                     tokenAddress as `0x${string}`,
-                    parseUnits(amount, 18), // Assuming 18 decimals, should be dynamic
+                    parseUnits(amount, 18),
                     BigInt(duration),
                 ],
             });
-        } catch (error) {
+            setHash(txHash);
+            // Log message for now, as requested, since contract doesn't store it yet
+            console.log("Sealing message with vault:", msg);
+        } catch (error: any) {
             console.error(error);
-            toast.error("Failed to initiate deposit");
+            toast.error(error.message || "Failed to initiate deposit");
         }
     };
 
     return (
         <VaultCard>
-            {/* Token & Amount Input (Placeholder for now) */}
              <div className="space-y-3 mb-4">
                 <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                     <span>Asset Details</span>
                 </label>
                 <div className="grid grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Token Address (0x...)"
-                        className="bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
-                        value={tokenAddress}
-                        onChange={(e) => setTokenAddress(e.target.value)}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Amount"
-                        className="bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                    />
+                    <div className="flex flex-col">
+                        <label htmlFor="token-address" className="sr-only">Token Address</label>
+                        <input
+                            id="token-address"
+                            type="text"
+                            placeholder="Token Address (0x...)"
+                            className="bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
+                            value={tokenAddress}
+                            onChange={(e) => setTokenAddress(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex flex-col">
+                        <label htmlFor="amount" className="sr-only">Amount</label>
+                        <input
+                            id="amount"
+                            type="number"
+                            placeholder="Amount"
+                            className="bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Text Input Area */}
             <div className="space-y-3">
-                <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                <label htmlFor="input-stream" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                     <span>Input Stream</span>
                     <span className="animate-pulse">_Ready</span>
                 </label>
                 <div className="relative group">
                     <textarea
+                        id="input-stream"
                         className="w-full h-32 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
                         placeholder="Initializing encryption... Write to your future self..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                     />
-                    {/* Glowing line at bottom of active input */}
                     <div className="absolute bottom-0 left-2 right-2 h-[1px] bg-primary shadow-[0_0_10px_rgba(52,132,244,1)] opacity-50 group-hover:opacity-100 transition-opacity" />
                 </div>
             </div>
 
-            {/* Temporal Slider */}
             <TemporalSlider
                 value={duration}
                 onChange={handleDurationChange}
-                min={60} // 1 minute for testing
-                max={3153600000} // 100 years
+                min={60}
+                max={3153600000}
             />
 
-            {/* Seal Button */}
             <div className="pt-4">
                 <VaultButton
-                    onClick={handleDeposit}
+                    onClick={() => handleDeposit(message)}
                     disabled={isPending || isConfirming}
                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                 >

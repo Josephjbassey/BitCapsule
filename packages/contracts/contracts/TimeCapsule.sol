@@ -24,6 +24,7 @@ contract TimeCapsule {
 
     event CapsuleCreated(uint256 indexed id, address indexed owner, uint256 unlockTimestamp);
     event CapsuleClaimed(uint256 indexed id, address indexed claimant);
+    event CapsuleWithdrawnEarly(uint256 indexed id, address indexed owner, uint256 amount);
 
     function createCapsule(
         address token,
@@ -32,11 +33,15 @@ contract TimeCapsule {
         address beneficiary,
         VaultType vaultType
     ) external payable {
+        // Enforce future unlock time to prevent immediate claiming
+        require(unlockTimestamp > block.timestamp, "Unlock must be in future");
+
         if (token != address(0)) {
             require(msg.value == 0, "Do not send ETH for ERC20 capsule");
             require(amount > 0, "Amount must be > 0");
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         } else {
+            require(amount > 0, "ETH amount must be > 0");
             require(msg.value == amount, "ETH amount mismatch");
         }
 
@@ -65,11 +70,9 @@ contract TimeCapsule {
         require(!capsule.claimed, "Already claimed");
 
         capsule.claimed = true;
-        // Apply 20% penalty logic if needed, or straightforward withdrawal.
-        // Following "The Panic Button" spec from previous turn: "20% penalty fee that goes back to the Midl treasury".
-        // Since treasury address isn't defined, I will implement simple withdrawal for now as the prompt focused on "checks", not logic implementation details.
 
         _transfer(capsule.token, capsule.owner, capsule.amount);
+        emit CapsuleWithdrawnEarly(id, msg.sender, capsule.amount);
     }
 
     function claim(uint256 id) external {
