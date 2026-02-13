@@ -8,6 +8,10 @@ import { encodeFunctionData, zeroAddress, isAddress } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
+import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
+import { LockMechanism } from "@/components/ui/vault/LockMechanism";
+import { TemporalSlider } from "@/components/ui/vault/TemporalSlider";
+import { VaultButton, VaultCard } from "@/components/ui/vault";
 
 // Import Screens
 import WalletConnect from "@/components/screens/WalletConnect";
@@ -21,7 +25,7 @@ export default function Home() {
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
-  const { sendBTCTransactionsAsync, isPending: isBroadcasting } = useSendBTCTransactions();
+  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
   const publicClient = usePublicClient();
 
   // State
@@ -33,8 +37,6 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
 
   const [isMinting, setIsMinting] = useState(false);
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export default function Home() {
     if (!publicClient || !isConnected) return;
     try {
       const logs = await publicClient.getLogs({
-        address: TimeCapsule.address as `0x${string}`,
+        address: TimeCapsule.address,
         event: {
           type: 'event',
           name: 'CapsuleCreated',
@@ -74,8 +76,6 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
-    const timer = setInterval(() => setCurrentTime(Math.floor(Date.now() / 1000)), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -103,6 +103,21 @@ export default function Home() {
     if (vaultType === VaultType.SOCIAL && !isAddress(beneficiary)) {
         toast.error("Please enter a valid EVM beneficiary address");
         return;
+    }
+
+    // Validation logic for beneficiary
+    let targetBeneficiary: `0x${string}` = zeroAddress;
+
+    if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
+        if (!beneficiary || beneficiary === zeroAddress) {
+            toast.error("Beneficiary is required for Social and Legacy vaults.");
+            return;
+        }
+        if (!isAddress(beneficiary)) {
+            toast.error("Invalid beneficiary address format.");
+            return;
+        }
+        targetBeneficiary = beneficiary as `0x${string}`;
     }
 
     setIsMinting(true);
@@ -162,6 +177,7 @@ export default function Home() {
   const handleWithdrawEarly = async (id: bigint) => {
     if (isWithdrawing) return;
     setIsWithdrawing(true);
+    setUnlockStatus('penalty'); // Show penalty screen
     try {
         const intention = await addTxIntentionAsync({
             intention: {
@@ -185,9 +201,12 @@ export default function Home() {
           });
           toast.success("Early withdrawal initiated!");
           fetchHistory();
+          setUnlockStatus('none'); // Hide penalty screen on completion? Or show success?
+          // Maybe show success screen?
     } catch (e: any) {
         console.error("Withdrawal failed", e);
         toast.error(e.message || "Withdrawal failed");
+        setUnlockStatus('none');
     } finally {
         setIsWithdrawing(false);
     }
@@ -219,6 +238,7 @@ export default function Home() {
           });
           toast.success("Payload claimed successfully!");
           fetchHistory();
+          setUnlockStatus('success');
     } catch (e: any) {
         console.error("Claim failed", e);
         toast.error(e.message || "Claim failed");
@@ -315,7 +335,8 @@ export default function Home() {
         />
       )}
 
-      {isSigningOrPending && <TemporalSyncOverlay />}
-    </div>
+      {/* Generic Loading Overlay for other ops */}
+      {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay />}
+    </>
   );
 }

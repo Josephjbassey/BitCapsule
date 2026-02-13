@@ -1,6 +1,32 @@
-import { isAddress } from "viem";
-
 export const abi = [
+	{
+		inputs: [],
+		name: "capsuleCount",
+		outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [
+			{ internalType: "address", name: "token", type: "address" },
+			{ internalType: "uint256", name: "amount", type: "uint256" },
+			{ internalType: "uint256", name: "unlockTimestamp", type: "uint256" },
+			{ internalType: "address", name: "beneficiary", type: "address" },
+			{ internalType: "uint8", name: "vaultType", type: "uint8" },
+            { internalType: "string", name: "message", type: "string" },
+		],
+		name: "createCapsule",
+		outputs: [],
+		stateMutability: "payable",
+		type: "function",
+	},
+	{
+		inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+		name: "withdrawEarly",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
     {
         "inputs": [
             {
@@ -168,18 +194,12 @@ export const abi = [
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "claimLegacy",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
+		inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+		name: "claimLegacy",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
     {
         "inputs": [
             {
@@ -213,30 +233,17 @@ export const abi = [
                 "type": "string"
             }
         ],
-        "name": "createCapsule",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
+        name: "CapsuleCreated",
+        type: "event"
     },
     {
-        "inputs": [],
-        "name": "ping",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "claimant", type: "address" }
         ],
-        "name": "withdrawEarly",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+        name: "CapsuleClaimed",
+        type: "event"
     },
     {
         "inputs": [
@@ -257,8 +264,8 @@ export const abi = [
             { "internalType": "bool", "name": "claimed", "type": "bool" },
             { "internalType": "string", "name": "message", "type": "string" }
         ],
-        "stateMutability": "view",
-        "type": "function"
+        name: "CapsuleWithdrawnEarly",
+        type: "event"
     }
 ] as const;
 
