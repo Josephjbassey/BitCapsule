@@ -1,15 +1,14 @@
-import time
 from playwright.sync_api import sync_playwright
 
 def run():
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page()
         try:
+            page = browser.new_page()
             print("Navigating to http://localhost:3000")
             page.goto("http://localhost:3000")
             # Wait for hydration
-            page.wait_for_timeout(5000)
+            page.wait_for_load_state("networkidle")
 
             print("Taking screenshot")
             page.screenshot(path="verification_screenshot.png")

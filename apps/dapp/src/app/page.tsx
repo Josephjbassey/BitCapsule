@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
+import { useWaitForTransaction } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, zeroAddress, isAddress } from "viem";
+import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
@@ -22,11 +23,12 @@ import UnlockProcess from "@/components/screens/UnlockProcess";
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
-  const { connectors, connect } = useConnect();
+  const { connectors, connectAsync } = useConnect();
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
   const { sendBTCTransactionsAsync } = useSendBTCTransactions();
+  const { waitForTransactionAsync } = useWaitForTransaction();
   const publicClient = usePublicClient();
 
   // State
@@ -91,12 +93,34 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [publicClient, isConnected, fetchHistory]);
 
-  const handleConnect = () => {
-    const xverseConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
+  const handleConnect = async () => {
+    // Find Xverse connector by name or ID
+    const xverseConnector = connectors.find(
+      (c) =>
+        c.name.toLowerCase().includes("xverse") ||
+        c.id.toLowerCase().includes("xverse")
+    );
+
     if (xverseConnector) {
-        connect({ connector: xverseConnector });
+      try {
+        await connectAsync({ connector: xverseConnector });
+      } catch (error: any) {
+        console.error("Connection failed", error);
+        toast.error(error.message || "Failed to connect to Xverse");
+      }
     } else {
-        toast.error("Xverse wallet not found");
+      console.warn("Available connectors:", connectors.map(c => `${c.name} (${c.id})`));
+
+      // Fallback: If no Xverse specifically, but there are connectors, try the first one
+      if (connectors.length > 0) {
+        try {
+          await connectAsync({ connector: connectors[0] });
+        } catch (error: any) {
+          toast.error("Xverse not found and fallback connection failed");
+        }
+      } else {
+        toast.error("Xverse wallet not found. Please ensure the extension is installed and enabled.");
+      }
     }
   };
 
@@ -111,8 +135,13 @@ export default function Home() {
         return;
     }
 
+    if (!address) {
+        toast.error("Wallet address not found. Please reconnect.");
+        return;
+    }
+
     // Validation logic for beneficiary
-    let targetBeneficiary: `0x${string}` = zeroAddress;
+    let targetBeneficiary: `0x${string}` = address as `0x${string}`;
 
     if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
         if (!beneficiary || beneficiary === zeroAddress) {
@@ -128,8 +157,8 @@ export default function Home() {
 
     setIsMinting(true);
     try {
-      const amountInWei = BigInt(Math.floor(Number(amount) * 1e18)); // Parse amount in Wei
-      const targetBeneficiary = vaultType === VaultType.SOCIAL ? beneficiary : (address || zeroAddress);
+      const amountInWei = parseEther(amount); // Parse amount in Wei using viem for precision
+      // targetBeneficiary is correctly set above based on vaultType
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       const intention = await addTxIntentionAsync({
@@ -161,12 +190,14 @@ export default function Home() {
         txId: tx.id,
       });
 
+      setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
 
       if (txHashes && txHashes.length > 0) {
+        await waitForTransactionAsync({ txId: tx.id });
         setSuccessTxHash(txHashes[0]);
         setMessage("");
         setAmount("");
@@ -177,6 +208,7 @@ export default function Home() {
       setSuccessTxHash(null);
     } finally {
       setIsMinting(false);
+      setIsBroadcasting(false);
     }
   };
 
@@ -201,11 +233,13 @@ export default function Home() {
 
           const { tx } = await finalizeBTCTransactionAsync();
           const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          setIsBroadcasting(true);
           await sendBTCTransactionsAsync({
             serializedTransactions: [signedTransaction],
             btcTransaction: tx.hex,
           });
-          toast.success("Early withdrawal initiated!");
+          await waitForTransactionAsync({ txId: tx.id });
+          toast.success("Early withdrawal successful!");
           fetchHistory();
           setUnlockStatus('none'); // Hide penalty screen on completion? Or show success?
           // Maybe show success screen?
@@ -215,6 +249,7 @@ export default function Home() {
         setUnlockStatus('none');
     } finally {
         setIsWithdrawing(false);
+        setIsBroadcasting(false);
     }
   };
 
@@ -238,10 +273,12 @@ export default function Home() {
 
           const { tx } = await finalizeBTCTransactionAsync();
           const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+          setIsBroadcasting(true);
           await sendBTCTransactionsAsync({
             serializedTransactions: [signedTransaction],
             btcTransaction: tx.hex,
           });
+          await waitForTransactionAsync({ txId: tx.id });
           toast.success("Payload claimed successfully!");
           fetchHistory();
           setUnlockStatus('success');
@@ -250,6 +287,7 @@ export default function Home() {
         toast.error(e.message || "Claim failed");
     } finally {
         setIsClaiming(false);
+        setIsBroadcasting(false);
     }
   };
 
