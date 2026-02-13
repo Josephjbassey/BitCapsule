@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
+import { useWaitForTransaction } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 import { encodeFunctionData, zeroAddress, isAddress } from "viem";
@@ -27,6 +28,7 @@ export default function Home() {
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
   const { sendBTCTransactionsAsync } = useSendBTCTransactions();
+  const { waitForTransactionAsync } = useWaitForTransaction();
   const publicClient = usePublicClient();
 
   // State
@@ -190,6 +192,7 @@ export default function Home() {
       });
 
       if (txHashes && txHashes.length > 0) {
+        await waitForTransactionAsync({ txId: tx.id });
         setSuccessTxHash(txHashes[0]);
         setMessage("");
         setAmount("");
@@ -230,7 +233,8 @@ export default function Home() {
             serializedTransactions: [signedTransaction],
             btcTransaction: tx.hex,
           });
-          toast.success("Early withdrawal initiated!");
+          await waitForTransactionAsync({ txId: tx.id });
+          toast.success("Early withdrawal successful!");
           fetchHistory();
           setUnlockStatus('none'); // Hide penalty screen on completion? Or show success?
           // Maybe show success screen?
@@ -269,6 +273,7 @@ export default function Home() {
             serializedTransactions: [signedTransaction],
             btcTransaction: tx.hex,
           });
+          await waitForTransactionAsync({ txId: tx.id });
           toast.success("Payload claimed successfully!");
           fetchHistory();
           setUnlockStatus('success');
