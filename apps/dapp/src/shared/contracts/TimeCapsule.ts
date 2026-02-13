@@ -13,6 +13,7 @@ export const abi = [
 			{ internalType: "uint256", name: "unlockTimestamp", type: "uint256" },
 			{ internalType: "address", name: "beneficiary", type: "address" },
 			{ internalType: "uint8", name: "vaultType", type: "uint8" },
+            { internalType: "string", name: "message", type: "string" },
 		],
 		name: "createCapsule",
 		outputs: [],
@@ -45,7 +46,8 @@ export const abi = [
         inputs: [
             { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
             { indexed: true, internalType: "address", name: "owner", type: "address" },
-            { indexed: false, internalType: "uint256", name: "unlockTimestamp", type: "uint256" }
+            { indexed: false, internalType: "uint256", name: "unlockTimestamp", type: "uint256" },
+            { indexed: false, internalType: "string", name: "message", type: "string" }
         ],
         name: "CapsuleCreated",
         type: "event"
@@ -57,6 +59,16 @@ export const abi = [
             { indexed: true, internalType: "address", name: "claimant", type: "address" }
         ],
         name: "CapsuleClaimed",
+        type: "event"
+    },
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "owner", type: "address" },
+            { indexed: false, internalType: "uint256", name: "amount", type: "uint256" }
+        ],
+        name: "CapsuleWithdrawnEarly",
         type: "event"
     }
 ] as const;

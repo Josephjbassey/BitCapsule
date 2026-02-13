@@ -36,7 +36,7 @@ VaultCard.displayName = "VaultCard";
 export const VaultButton = React.forwardRef<
 	HTMLButtonElement,
 	React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, children, ...props }, ref) => {
+>(({ className, children, type = "button", ...props }, ref) => {
 	return (
 		<button
 			ref={ref}
@@ -44,6 +44,7 @@ export const VaultButton = React.forwardRef<
 				"relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300",
 				className
 			)}
+			type={type}
 			{...props}
 		>
 			{/* Gold Circuitry Pattern Background */}

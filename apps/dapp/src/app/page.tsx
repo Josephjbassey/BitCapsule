@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, zeroAddress, parseUnits } from "viem";
+import { encodeFunctionData, zeroAddress, parseUnits, isAddress } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import { EXPLORER_BASE_URL } from "./config";
 import { toast } from "sonner";
@@ -54,7 +54,8 @@ export default function Home() {
           inputs: [
             { indexed: true, name: 'id', type: 'uint256' },
             { indexed: true, name: 'owner', type: 'address' },
-            { indexed: false, name: 'unlockTimestamp', type: 'uint256' }
+            { indexed: false, name: 'unlockTimestamp', type: 'uint256' },
+            { indexed: false, name: 'message', type: 'string' }
           ]
         },
         fromBlock: BigInt(0),
@@ -95,6 +96,10 @@ export default function Home() {
             toast.error("Beneficiary is required for Social and Legacy vaults.");
             return;
         }
+        if (!isAddress(beneficiary)) {
+            toast.error("Invalid beneficiary address format.");
+            return;
+        }
         targetBeneficiary = beneficiary as `0x${string}`;
     }
 
@@ -115,8 +120,9 @@ export default function Home() {
                   tokenAddress as `0x${string}`,
                   weiAmount,
                   unlockTimestamp,
-                  targetBeneficiary as `0x${string}`,
-                  vaultType
+                  targetBeneficiary,
+                  vaultType,
+                  message // Include message
               ],
             }),
           },
@@ -214,10 +220,10 @@ export default function Home() {
             <div className="space-y-4">
                 {/* Vault Type Selection */}
                 <div className="space-y-2">
-                    <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                    <label id="vault-protocol-label" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                         <span>Vault Protocol</span>
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="vault-protocol-label">
                         <button
                             type="button"
                             onClick={() => setVaultType(VaultType.TIME_LOCK)}
@@ -244,10 +250,11 @@ export default function Home() {
 
                 {/* Amount Input */}
                 <div className="space-y-2">
-                    <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                    <label htmlFor="assets-amount" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                         <span>Assets to Seal</span>
                     </label>
                     <input
+                        id="assets-amount"
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
@@ -259,11 +266,12 @@ export default function Home() {
                 {/* Beneficiary Input (Conditional) */}
                 {(vaultType === VaultType.LEGACY || vaultType === VaultType.SOCIAL) && (
                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                        <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                        <label htmlFor="beneficiary-address" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                             <span>Beneficiary Address</span>
                             <span className="text-red-400 text-[10px]">REQUIRED</span>
                         </label>
                         <input
+                            id="beneficiary-address"
                             type="text"
                             value={beneficiary}
                             onChange={(e) => setBeneficiary(e.target.value)}
@@ -275,12 +283,13 @@ export default function Home() {
 
                 {/* Message Input */}
                 <div className="space-y-2">
-                    <label className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
+                    <label htmlFor="message-stream" className="flex justify-between text-xs tracking-wider text-primary/80 uppercase font-semibold">
                         <span>Input Stream</span>
                         <span className="animate-pulse">_Ready</span>
                     </label>
                     <div className="relative group">
                     <textarea
+                        id="message-stream"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="w-full h-24 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
@@ -355,7 +364,8 @@ export default function Home() {
                     </a>
                   </div>
                   <div className="text-gray-400 leading-relaxed break-all">
-                    New Time Capsule Created. Unlock time: {new Date(Number(log.args.unlockTimestamp) * 1000).toLocaleDateString()}
+                    {/* Display message if available in log */}
+                    {log.args.message ? `Message: ${log.args.message}` : `New Time Capsule Created. Unlock time: ${new Date(Number(log.args.unlockTimestamp) * 1000).toLocaleDateString()}`}
                   </div>
                   <div className="mt-1 text-[10px] text-primary/60 flex justify-between">
                     <span>OWNER: {log.args.owner?.slice(0, 6)}...{log.args.owner?.slice(-4)}</span>

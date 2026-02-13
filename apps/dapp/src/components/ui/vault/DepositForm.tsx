@@ -41,11 +41,10 @@ export const DepositForm = () => {
                     tokenAddress as `0x${string}`,
                     parseUnits(amount, 18),
                     BigInt(duration),
+                    msg // Now included as per request, updating contract to match
                 ],
             });
             setHash(txHash);
-            // Log message for now, as requested, since contract doesn't store it yet
-            console.log("Sealing message with vault:", msg);
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || "Failed to initiate deposit");

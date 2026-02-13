@@ -17,12 +17,13 @@ contract TimeCapsule {
         address beneficiary;
         VaultType vaultType;
         bool claimed;
+        string message;
     }
 
     mapping(uint256 => Capsule) public capsules;
     uint256 public capsuleCount;
 
-    event CapsuleCreated(uint256 indexed id, address indexed owner, uint256 unlockTimestamp);
+    event CapsuleCreated(uint256 indexed id, address indexed owner, uint256 unlockTimestamp, string message);
     event CapsuleClaimed(uint256 indexed id, address indexed claimant);
     event CapsuleWithdrawnEarly(uint256 indexed id, address indexed owner, uint256 amount);
 
@@ -31,7 +32,8 @@ contract TimeCapsule {
         uint256 amount,
         uint256 unlockTimestamp,
         address beneficiary,
-        VaultType vaultType
+        VaultType vaultType,
+        string memory message
     ) external payable {
         // Enforce future unlock time to prevent immediate claiming
         require(unlockTimestamp > block.timestamp, "Unlock must be in future");
@@ -57,10 +59,11 @@ contract TimeCapsule {
             unlockTimestamp: unlockTimestamp,
             beneficiary: beneficiary,
             vaultType: vaultType,
-            claimed: false
+            claimed: false,
+            message: message
         });
 
-        emit CapsuleCreated(capsuleCount, msg.sender, unlockTimestamp);
+        emit CapsuleCreated(capsuleCount, msg.sender, unlockTimestamp, message);
     }
 
     function withdrawEarly(uint256 id) external {

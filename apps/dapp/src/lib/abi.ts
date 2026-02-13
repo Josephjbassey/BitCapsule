@@ -46,6 +46,12 @@ export const vaultAbi = [
 				name: "unlockTimestamp",
 				type: "uint256",
 			},
+            {
+                indexed: false,
+                internalType: "string",
+                name: "message",
+                type: "string",
+            },
 		],
 		name: "Deposit",
 		type: "event",
@@ -88,7 +94,31 @@ export const vaultAbi = [
 				type: "address",
 			},
 		],
-		name: "balances",
+		name: "unlockedBalances",
+		outputs: [
+			{
+				internalType: "uint256",
+				name: "",
+				type: "uint256",
+			},
+		],
+		stateMutability: "view",
+		type: "function",
+	},
+    {
+		inputs: [
+			{
+				internalType: "address",
+				name: "",
+				type: "address",
+			},
+			{
+				internalType: "address",
+				name: "",
+				type: "address",
+			},
+		],
+		name: "lockedBalances",
 		outputs: [
 			{
 				internalType: "uint256",
@@ -134,6 +164,11 @@ export const vaultAbi = [
 				name: "lockDuration",
 				type: "uint256",
 			},
+            {
+                internalType: "string",
+                name: "message",
+                type: "string",
+            },
 		],
 		name: "depositWithLock",
 		outputs: [],
