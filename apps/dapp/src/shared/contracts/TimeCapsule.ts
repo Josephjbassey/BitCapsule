@@ -1,3 +1,5 @@
+import { isAddress } from "viem";
+
 export const abi = [
 	{
 		inputs: [],
@@ -264,8 +266,8 @@ export const abi = [
             { "internalType": "bool", "name": "claimed", "type": "bool" },
             { "internalType": "string", "name": "message", "type": "string" }
         ],
-        name: "CapsuleWithdrawnEarly",
-        type: "event"
+        stateMutability: "view",
+        type: "function"
     }
 ] as const;
 

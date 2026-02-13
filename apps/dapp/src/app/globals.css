@@ -30,19 +30,6 @@
   --animate-float: float 6s ease-in-out infinite;
   --animate-scanline: scanline 10s linear infinite;
 
-  @keyframes spin-reverse {
-    from { transform: rotate(360deg); }
-    to { transform: rotate(0deg); }
-  }
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-  }
-  @keyframes scanline {
-    0% { bottom: 100%; }
-    100% { bottom: -100px; }
-  }
-
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
