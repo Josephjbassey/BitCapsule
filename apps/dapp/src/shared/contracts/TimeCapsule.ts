@@ -1,264 +1,92 @@
-import { isAddress } from "viem";
-
 export const abi = [
+	{
+		inputs: [],
+		name: "capsuleCount",
+		outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [
+			{ internalType: "address", name: "token", type: "address" },
+			{ internalType: "uint256", name: "amount", type: "uint256" },
+			{ internalType: "uint256", name: "unlockTimestamp", type: "uint256" },
+			{ internalType: "address", name: "beneficiary", type: "address" },
+			{ internalType: "uint8", name: "vaultType", type: "uint8" },
+            { internalType: "string", name: "message", type: "string" },
+		],
+		name: "createCapsule",
+		outputs: [],
+		stateMutability: "payable",
+		type: "function",
+	},
+	{
+		inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+		name: "withdrawEarly",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_treasury",
-                "type": "address"
-            }
+		inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+		name: "claim",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+    {
+		inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+		name: "claimLegacy",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "owner", type: "address" },
+            { indexed: false, internalType: "uint256", name: "unlockTimestamp", type: "uint256" },
+            { indexed: false, internalType: "string", name: "message", type: "string" }
         ],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
+        name: "CapsuleCreated",
+        type: "event"
     },
     {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "beneficiary",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            }
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "claimant", type: "address" }
         ],
-        "name": "CapsuleClaimed",
-        "type": "event"
+        name: "CapsuleClaimed",
+        type: "event"
     },
     {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "beneficiary",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "unlockTime",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "vaultType",
-                "type": "uint8"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            }
+        anonymous: false,
+        inputs: [
+            { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+            { indexed: true, internalType: "address", name: "owner", type: "address" },
+            { indexed: false, internalType: "uint256", name: "amount", type: "uint256" }
         ],
-        "name": "CapsuleCreated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "userAmount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "treasuryAmount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            }
-        ],
-        "name": "EarlyWithdrawal",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "user",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "Pinged",
-        "type": "event"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "claim",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "claimLegacy",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "beneficiary",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "unlockTime",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint8",
-                "name": "vaultType",
-                "type": "uint8"
-            },
-            {
-                "internalType": "address",
-                "name": "token",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "createCapsule",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "ping",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "id",
-                "type": "uint256"
-            }
-        ],
-        "name": "withdrawEarly",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "capsules",
-        "outputs": [
-            { "internalType": "address", "name": "owner", "type": "address" },
-            { "internalType": "address", "name": "beneficiary", "type": "address" },
-            { "internalType": "uint256", "name": "unlockTime", "type": "uint256" },
-            { "internalType": "uint256", "name": "amount", "type": "uint256" },
-            { "internalType": "address", "name": "token", "type": "address" },
-            { "internalType": "uint8", "name": "vaultType", "type": "uint8" },
-            { "internalType": "bool", "name": "claimed", "type": "bool" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+        name: "CapsuleWithdrawnEarly",
+        type: "event"
     }
 ] as const;
 
-const contractAddress = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
-
-if (contractAddress && !isAddress(contractAddress)) {
-    throw new Error(`Invalid TimeCapsule address: ${contractAddress}`);
+export const getAddress = () => {
+    const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
+    // Validate that it starts with 0x and is a string
+    if (!address || !address.startsWith("0x") || address === "0x0000000000000000000000000000000000000000") {
+        throw new Error("TimeCapsule address is missing or invalid. Check environment configuration.");
+    }
+    return address as `0x${string}`;
 }
 
-// Default to Vault address for demo if env is missing, but warn
-if (!contractAddress) {
-    console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS is not set, falling back to Vault address for demo.");
-}
-
-export const address = (contractAddress || "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8") as `0x${string}`;
+export const address = (() => {
+    try {
+        return getAddress();
+    } catch (e) {
+        console.warn(e);
+        return "0x0000000000000000000000000000000000000000" as `0x${string}`;
+    }
+})();
