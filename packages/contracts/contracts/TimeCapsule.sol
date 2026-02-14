@@ -44,6 +44,10 @@ contract TimeCapsule is ReentrancyGuard {
         treasury = _treasury;
     }
 
+    /**
+     * @dev Create a new time-locked capsule.
+     * signature: (address token, uint256 amount, uint256 unlockTimestamp, address beneficiary, VaultType vaultType, string memory message)
+     */
     function createCapsule(
         address token,
         uint256 amount,
