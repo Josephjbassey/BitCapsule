@@ -348,8 +348,12 @@ export const abi = [
 ] as const;
 
 export const getAddress = () => {
-    const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS || "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E";
-    if (!address || !isAddress(address)) {
+    const FALLBACK_ADDRESS = "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E";
+    const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS || FALLBACK_ADDRESS;
+    if (address === FALLBACK_ADDRESS && !process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS) {
+        console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set — using fallback address. Do NOT use in production.");
+    }
+    if (!isAddress(address)) {
         throw new Error(
             `TimeCapsule address is missing or invalid: ${address}. ` +
             "Ensure NEXT_PUBLIC_TIME_CAPSULE_ADDRESS is set in your environment."
