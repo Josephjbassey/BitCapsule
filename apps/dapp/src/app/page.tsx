@@ -83,10 +83,12 @@ export default function Home() {
   }, [publicClient, isConnected]);
 
   useEffect(() => {
-    if (connectors.length > 0) {
-      console.log("Connectors found:", connectors.map(c => `${c.name} (${c.id})`));
-    } else {
-      console.warn("No connectors found. Check if SatoshiKitProvider is correctly wrapping the app.");
+    if (process.env.NODE_ENV === "development") {
+      if (connectors.length > 0) {
+        console.log("Connectors found:", connectors.map(c => `${c.name} (${c.id})`));
+      } else {
+        console.warn("No connectors found. Check if SatoshiKitProvider is correctly wrapping the app.");
+      }
     }
   }, [connectors]);
 
@@ -102,18 +104,21 @@ export default function Home() {
   }, [publicClient, isConnected, fetchHistory]);
 
   const handleConnect = async () => {
-    console.log("Attempting to connect...");
+    if (process.env.NODE_ENV === "development") {
+      console.log("Attempting to connect...");
+    }
 
     // Find Xverse connector by name or ID
     const xverseConnector = connectors.find(
       (c) =>
         c.name.toLowerCase().includes("xverse") ||
-        c.id.toLowerCase().includes("xverse") ||
-        c.id === "xverse"
+        c.id.toLowerCase().includes("xverse")
     );
 
     if (xverseConnector) {
-      console.log("Xverse connector found, connecting...");
+      if (process.env.NODE_ENV === "development") {
+        console.log("Xverse connector found, connecting...");
+      }
       try {
         await connectAsync({ connector: xverseConnector });
       } catch (error: any) {
@@ -121,24 +126,27 @@ export default function Home() {
         toast.error(error.message || "Failed to connect to Xverse");
       }
     } else {
-      console.warn("Xverse specifically not found. Available connectors:", connectors.map(c => `${c.name} (${c.id})`));
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Xverse specifically not found. Available connectors:", connectors.map(c => `${c.name} (${c.id})`));
+      }
 
-      // Fallback: Try any connector that looks like a Bitcoin/Xverse connector or just the first one
+      // Fallback: Try any connector that looks like a Bitcoin/Xverse connector
       const fallbackConnector = connectors.find(c =>
         c.name.toLowerCase().includes("bitcoin") ||
         c.id.toLowerCase().includes("satoshi")
-      ) || connectors[0];
+      );
 
       if (fallbackConnector) {
-        console.log(`Trying fallback connector: ${fallbackConnector.name} (${fallbackConnector.id})`);
+        toast.warning(`Xverse not found. Attempting connection with ${fallbackConnector.name}...`);
+        console.warn(`Trying fallback connector: ${fallbackConnector.name} (${fallbackConnector.id})`);
         try {
           await connectAsync({ connector: fallbackConnector });
         } catch (error: any) {
           console.error("Fallback connection failed", error);
-          toast.error("Xverse not found and fallback connection failed");
+          toast.error("Bitcoin wallet connection failed. Please ensure your wallet is unlocked.");
         }
       } else {
-        toast.error("No wallet connectors found. Please ensure the Xverse extension is installed and enabled.");
+        toast.error("No Bitcoin-compatible wallet found. Please ensure the Xverse extension is installed and enabled.");
       }
     }
   };
