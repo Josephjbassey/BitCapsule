@@ -1,23 +1,31 @@
-from playwright.sync_api import sync_playwright
+import asyncio
+from playwright.async_api import async_playwright
 
-def run():
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
+async def verify_render():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
         try:
-            page = browser.new_page()
-            print("Navigating to http://localhost:3000")
-            page.goto("http://localhost:3000")
-            # Wait for hydration
-            page.wait_for_load_state("networkidle")
+            page = await browser.new_page()
+            await page.goto("http://localhost:3000")
+            # Wait for content to load deterministically
+            await page.wait_for_load_state("networkidle")
 
-            print("Taking screenshot")
-            page.screenshot(path="verification_screenshot.png")
-            print("Screenshot saved to verification_screenshot.png")
+            # Take screenshot
+            await page.screenshot(path="screenshot.png", full_page=True)
 
+            # Check for branding
+            content = await page.content()
+            if "TimeVibe" in content:
+                print("Verification successful: TimeVibe branding found.")
+                return True
+            else:
+                print("Verification failed: TimeVibe branding not found.")
+                return False
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Verification error: {e}")
+            return False
         finally:
-            browser.close()
+            await browser.close()
 
 if __name__ == "__main__":
-    run()
+    asyncio.run(verify_render())
