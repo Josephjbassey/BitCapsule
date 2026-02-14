@@ -50,6 +50,7 @@ export default function Home() {
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
 
+  // Derived state: tracks any active transaction process including the new isBroadcasting state
   const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   const fetchHistory = useCallback(async () => {
