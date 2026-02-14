@@ -15,12 +15,12 @@ export default function Web3Provider({
 	const client = useMemo(() => queryClient, []);
 
 	return (
-		<QueryClientProvider client={client}>
-			<MidlProvider config={midlConfig}>
+		<MidlProvider config={midlConfig}>
+			<QueryClientProvider client={client}>
 				<WagmiMidlProvider>
 					<SatoshiKitProvider>{children}</SatoshiKitProvider>
 				</WagmiMidlProvider>
-			</MidlProvider>
-		</QueryClientProvider>
+			</QueryClientProvider>
+		</MidlProvider>
 	);
 }
