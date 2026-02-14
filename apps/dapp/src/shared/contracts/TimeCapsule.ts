@@ -348,7 +348,7 @@ export const abi = [
 ] as const;
 
 export const getAddress = () => {
-    const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
+    const address = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS || "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E";
     if (!address || !isAddress(address)) {
         throw new Error(
             `TimeCapsule address is missing or invalid: ${address}. ` +
