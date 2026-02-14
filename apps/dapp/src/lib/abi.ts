@@ -1,244 +1,282 @@
 export const vaultAbi = [
-	{
-		inputs: [],
-		name: "InsufficientBalance",
-		type: "error",
-	},
-	{
-		inputs: [],
-		name: "InvalidAmount",
-		type: "error",
-	},
-	{
-		inputs: [],
-		name: "InvalidTokenAddress",
-		type: "error",
-	},
-	{
-		inputs: [],
-		name: "VaultLocked",
-		type: "error",
-	},
-	{
-		anonymous: false,
-		inputs: [
-			{
-				indexed: true,
-				internalType: "address",
-				name: "user",
-				type: "address",
-			},
-			{
-				indexed: true,
-				internalType: "address",
-				name: "token",
-				type: "address",
-			},
-			{
-				indexed: false,
-				internalType: "uint256",
-				name: "amount",
-				type: "uint256",
-			},
-			{
-				indexed: false,
-				internalType: "uint256",
-				name: "unlockTimestamp",
-				type: "uint256",
-			},
-            {
-                indexed: false,
-                internalType: "string",
-                name: "message",
-                type: "string",
-            },
-		],
-		name: "Deposit",
-		type: "event",
-	},
-	{
-		anonymous: false,
-		inputs: [
-			{
-				indexed: true,
-				internalType: "address",
-				name: "user",
-				type: "address",
-			},
-			{
-				indexed: true,
-				internalType: "address",
-				name: "token",
-				type: "address",
-			},
-			{
-				indexed: false,
-				internalType: "uint256",
-				name: "amount",
-				type: "uint256",
-			},
-		],
-		name: "Withdraw",
-		type: "event",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "",
-				type: "address",
-			},
-			{
-				internalType: "address",
-				name: "",
-				type: "address",
-			},
-		],
-		name: "unlockedBalances",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "",
-				type: "uint256",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-    {
-		inputs: [
-			{
-				internalType: "address",
-				name: "",
-				type: "address",
-			},
-			{
-				internalType: "address",
-				name: "",
-				type: "address",
-			},
-		],
-		name: "lockedBalances",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "",
-				type: "uint256",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address",
-			},
-			{
-				internalType: "uint256",
-				name: "amount",
-				type: "uint256",
-			},
-		],
-		name: "deposit",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address",
-			},
-			{
-				internalType: "uint256",
-				name: "amount",
-				type: "uint256",
-			},
-			{
-				internalType: "uint256",
-				name: "lockDuration",
-				type: "uint256",
-			},
-            {
-                internalType: "string",
-                name: "message",
-                type: "string",
-            },
-		],
-		name: "depositWithLock",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address",
-			},
-			{
-				internalType: "address",
-				name: "user",
-				type: "address",
-			},
-		],
-		name: "getBalance",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "",
-				type: "uint256",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "",
-				type: "address",
-			},
-			{
-				internalType: "address",
-				name: "",
-				type: "address",
-			},
-		],
-		name: "unlockTimestamps",
-		outputs: [
-			{
-				internalType: "uint256",
-				name: "",
-				type: "uint256",
-			},
-		],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [
-			{
-				internalType: "address",
-				name: "token",
-				type: "address",
-			},
-			{
-				internalType: "uint256",
-				name: "amount",
-				type: "uint256",
-			},
-		],
-		name: "withdraw",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
+  {
+    "inputs": [],
+    "name": "InsufficientBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTokenAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VaultLocked",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "unlockTimestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "Deposit",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdraw",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lockDuration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "depositWithLock",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getUserLocks",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unlockTime",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Vault.Lock[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "unlockedBalances",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "userLocks",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unlockTime",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
 ] as const;
