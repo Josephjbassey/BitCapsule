@@ -13,7 +13,7 @@ export const VaultCard = React.forwardRef<HTMLDivElement, VaultCardProps>(
 			<div
 				ref={ref}
 				className={cn(
-					"bg-obsidian-light/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group",
+					"bg-background-dark-light/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group",
 					className
 				)}
 				{...props}
@@ -41,7 +41,7 @@ export const VaultButton = React.forwardRef<
 		<button
 			ref={ref}
 			className={cn(
-				"relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300",
+				"relative w-full group overflow-hidden rounded-lg bg-background-dark-light border border-primary/30 hover:border-primary/80 transition-all duration-300",
 				className
 			)}
 			type={type}
@@ -55,7 +55,7 @@ export const VaultButton = React.forwardRef<
 				{children}
 			</div>
 			{/* Bottom warning strip */}
-			<div className="absolute bottom-0 left-0 w-full h-0.5 bg-bitcoin-gold/50" />
+			<div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary/50" />
 		</button>
 	);
 });

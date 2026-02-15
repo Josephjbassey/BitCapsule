@@ -123,9 +123,9 @@ export default function VaultArchive({
 
               // Card Styles
               const isGold = isLegacy;
-              const borderColor = isGold ? "border-bitcoin-gold/30" : (isLocked ? "border-primary/30" : "border-green-500/30");
+              const borderColor = isGold ? "border-primary/30" : (isLocked ? "border-primary/30" : "border-green-500/30");
               const glowShadow = isGold ? "shadow-gold-glow" : (isLocked ? "shadow-neon" : "shadow-neon-sm");
-              const textColor = isGold ? "text-bitcoin-gold" : (isLocked ? "text-primary" : "text-green-400");
+              const textColor = isGold ? "text-primary" : (isLocked ? "text-primary" : "text-green-400");
               const bgClass = isGold ? "bg-black/40" : "bg-shard-gradient";
 
               return (
@@ -137,13 +137,13 @@ export default function VaultArchive({
                       <div className="flex flex-col">
                         <span className={`text-4xl font-bold ${textColor} font-mono tracking-tight drop-shadow-lg`}>{unlockYear}</span>
                         <span className={`text-[10px] font-mono tracking-widest mt-1 ${
-                            isGold ? "text-bitcoin-gold/80" : (isLocked ? "text-primary/80" : "text-green-400/80")
+                            isGold ? "text-primary/80" : (isLocked ? "text-primary/80" : "text-green-400/80")
                         }`}>
                             {isLocked ? "LOCKED" : "UNLOCKED"}
                         </span>
                       </div>
                       <span className={`material-symbols-outlined ${
-                          isGold ? "text-bitcoin-gold/60" : (isLocked ? "text-primary/60" : "text-green-400/60")
+                          isGold ? "text-primary/60" : (isLocked ? "text-primary/60" : "text-green-400/60")
                       }`}>
                         {isLocked ? "lock" : "lock_open"}
                       </span>

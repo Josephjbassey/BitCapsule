@@ -28,6 +28,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 🌐 Hosting on Vercel
+Check [VERCEL.md](./VERCEL.md) for step-by-step instructions on how to host BitCapsule on Vercel.
+
 ## 🔐 Wallet Setup (Regtest)
 To use BitCapsule in the staging/regtest environment:
 1. Open your **Xverse Wallet**.
