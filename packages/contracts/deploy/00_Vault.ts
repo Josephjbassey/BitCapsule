@@ -2,6 +2,11 @@ import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export default async function deploy(hre: HardhatRuntimeEnvironment) {
 	const { deployer } = await hre.getNamedAccounts();
+
+	if (!deployer) {
+		throw new Error("\n[ERROR] 'deployer' account is undefined. Please ensure 'namedAccounts' is correctly configured in hardhat.config.ts.");
+	}
+
 	console.log(`\nStarting Vault deployment sequence...`);
 	console.log(`Deployer account: ${deployer}`);
 

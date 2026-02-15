@@ -2,6 +2,11 @@ import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export default async function deploy(hre: HardhatRuntimeEnvironment) {
 	const { deployer, treasury } = await hre.getNamedAccounts();
+
+	if (!treasury) {
+		throw new Error("\n[ERROR] 'treasury' account is undefined. Please ensure 'namedAccounts' is correctly configured in hardhat.config.ts.");
+	}
+
 	console.log(`\nStarting TimeCapsule deployment sequence...`);
 	console.log(`Deployer: ${deployer}`);
 	console.log(`Treasury: ${treasury}`);

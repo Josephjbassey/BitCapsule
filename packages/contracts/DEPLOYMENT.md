@@ -29,27 +29,36 @@ pnpm exec hardhat vars set MNEMONIC
 ```
 *When prompted, paste your 12 or 24-word seed phrase.*
 
+### Step C: Verify Your Addresses
+To see the addresses for your `deployer` and `treasury` wallets (derived from your mnemonic):
+
+```bash
+pnpm exec hardhat list-accounts
+```
+- **deployer**: Used to pay for deployment gas.
+- **treasury**: Receives protocol fees (20% panic withdrawal fee).
+
 ---
 
 ## 3. Deployment
 
-### Step C: Clean Previous Deployments (Optional)
+### Step D: Clean Previous Deployments (Optional)
 If you've deployed before and want a fresh start, or if you want to see the deployment logs again:
 ```bash
 rm -rf ./deployments
 ```
 
-### Step D: Deploy to Regtest
+### Step E: Deploy to Regtest
 ```bash
 pnpm exec hardhat deploy --network regtest
 ```
 
-**Note on Output**: If you see "compiled successfully" but no deployment logs, it means Hardhat thinks the contracts are already deployed. Use `rm -rf ./deployments` or the `--reset` flag to force a redeployment and see the logs:
+**Note on Output**: Hardhat-deploy is idempotent. If the bytecode hasn't changed, it won't redeploy. Use the `--reset` flag to force a redeployment:
 ```bash
 pnpm exec hardhat deploy --network regtest --reset
 ```
 
-### Step E: Verify (Optional)
+### Step F: Verify (Optional)
 To verify your contract source code on the block explorer:
 ```bash
 pnpm exec hardhat verify --network regtest <CONTRACT_ADDRESS>
@@ -72,4 +81,4 @@ Once your contracts are deployed, you must update the dApp to point to your new 
 ---
 **Troubleshooting**:
 - **"No Hardhat config file found"**: Ensure you are running the command from inside the `packages/contracts` folder.
-- **Silent Deployment**: Hardhat-deploy is idempotent. If bytecode hasn't changed, it won't redeploy. Use `--reset` to force it.
+- **Address "undefined" is invalid**: This usually means `namedAccounts` in `hardhat.config.ts` is misconfigured. Ensure you are using the latest version of the config.
