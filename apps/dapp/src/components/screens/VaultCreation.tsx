@@ -89,7 +89,7 @@ export default function VaultCreation({
           <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-lg"></div>
           <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary rounded-br-lg"></div>
 
-          <div className="p-6 md:p-8 space-y-8 bg-cyber-grid bg-[length:10px_10px]">
+          <div className="p-6 md:p-8 space-y-8 bg-cyber-grid bg-[length:10px_10px] animate-in fade-in zoom-in duration-700">
 
             {/* Vault Type Selector (Added from functionality requirement) */}
             <div className="space-y-2">
@@ -101,7 +101,7 @@ export default function VaultCreation({
                   id="vault-type-selector"
                   value={vaultType}
                   onChange={(e) => setVaultType(Number(e.target.value))}
-                  className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary transition-all"
+                  className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
               >
                   <option value={VaultType.TEMPORAL}>TEMPORAL VAULT (Personal)</option>
                   <option value={VaultType.LEGACY}>LEGACY SWITCH (Inheritance)</option>
@@ -119,7 +119,7 @@ export default function VaultCreation({
                         value={beneficiary}
                         onChange={(e) => setBeneficiary(e.target.value)}
                         placeholder="0x..."
-                        className="w-full bg-obsidian border border-bitcoin-gold/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-bitcoin-gold transition-all"
+                        className="w-full bg-obsidian border border-bitcoin-gold/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-bitcoin-gold focus:ring-1 focus:ring-bitcoin-gold/30 transition-all hover:border-bitcoin-gold/60"
                     />
                 </div>
             )}
@@ -133,7 +133,7 @@ export default function VaultCreation({
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.01"
-                    className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary transition-all"
+                    className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
                 />
             </div>
 
@@ -232,6 +232,18 @@ export default function VaultCreation({
                 {/* Bottom warning strip */}
                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-bitcoin-gold/50"></div>
               </button>
+              <div className="text-center mt-6 pt-4 border-t border-primary/10">
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Running low on Regtest BTC?</p>
+                <a
+                  href="https://faucet.staging.midl.xyz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 border border-primary/20 rounded text-primary/60 hover:text-primary hover:border-primary transition-all text-[9px] font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/10"
+                >
+                  <span className="material-icons text-[12px]">local_gas_station</span>
+                  Refuel at Faucet
+                </a>
+              </div>
               <div className="text-center mt-3">
                 <span className="text-[10px] text-red-400/70 tracking-widest uppercase flex items-center justify-center gap-1">
                   <span className="material-icons text-[10px]">warning</span>

@@ -6,8 +6,8 @@ import "./globals.css";
 import "@/styles/cinematic.css";
 
 export const metadata: Metadata = {
-	title: "TimeVibe Cinematic Vault",
-	description: "Secure Channel V.2.0 - Temporal Vault System",
+	title: "BitCapsule Cinematic Vault",
+	description: "BITCAPSULE // SECURE CHANNEL V.4.1.0 - Temporal Vault System",
 };
 
 export default function RootLayout({
