@@ -18,6 +18,13 @@ import VaultCreation, { VaultType } from "@/components/screens/VaultCreation";
 import VaultArchive from "@/components/screens/VaultArchive";
 import UnlockProcess from "@/components/screens/UnlockProcess";
 
+/**
+ * Main application UI for creating and managing time-locked vaults.
+ *
+ * Manages wallet connection, vault creation, withdrawal/claim workflows, and displays vault history and status overlays.
+ *
+ * @returns The rendered Home React element, or `null` until the component has mounted on the client.
+ */
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
