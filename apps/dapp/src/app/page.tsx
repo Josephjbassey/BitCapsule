@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useWaitForTransaction, useAddNetwork } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
+import { ConnectButton } from "@midl/satoshi-kit";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
@@ -12,7 +13,6 @@ import { toast } from "sonner";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
 
 // Import Screens
-import WalletConnect from "@/components/screens/WalletConnect";
 import VaultCreation, { VaultType } from "@/components/screens/VaultCreation";
 import VaultArchive from "@/components/screens/VaultArchive";
 import UnlockProcess from "@/components/screens/UnlockProcess";
@@ -20,7 +20,7 @@ import UnlockProcess from "@/components/screens/UnlockProcess";
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
-  const { connectors, connectAsync } = useConnect();
+  const { connectors } = useConnect();
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
@@ -31,18 +31,29 @@ export default function Home() {
 
   // Diagnostics
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log("[BitCapsule] Diagnostics:", {
-        isConnected,
-        address,
-        connectorCount: connectors.length,
-        connectors: connectors.map(c => c.name),
-        windowXfi: !!(window as any).xfi,
-        windowXverse: !!(window as any).xverse,
-        windowXverseProviders: !!(window as any).XverseProviders
-      });
+    if (process.env.NODE_ENV === "development" && typeof window !== 'undefined') {
+      console.log("[BitCapsule] Connection State:", { isConnected, address });
     }
-  }, [isConnected, address, connectors]);
+  }, [isConnected, address]);
+
+  // Handle network auto-switch on connection
+  useEffect(() => {
+    if (isConnected && connectors) {
+      const activeConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
+      if (activeConnector) {
+        addNetworkAsync({
+          connectorId: activeConnector.id,
+          networkConfig: {
+            chainId: 420,
+            chainName: "MIDL Regtest",
+            rpcUrls: ["https://rpc.staging.midl.xyz"],
+            nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
+            blockExplorerUrls: ["https://blockscout.staging.midl.xyz"],
+          }
+        } as any).catch(err => console.warn("Auto network switch failed", err));
+      }
+    }
+  }, [isConnected, connectors, addNetworkAsync]);
 
   // State
   const [view, setView] = useState<'creation' | 'archive'>('creation');
@@ -104,38 +115,6 @@ export default function Home() {
       fetchHistory();
     }
   }, [isConnected, publicClient]);
-
-  const handleConnect = async (connector: any) => {
-    try {
-      await connectAsync({ connector });
-
-      const isXverse = connector.name.toLowerCase().includes("xverse") || connector.id.toLowerCase().includes("xverse");
-      if (isXverse) {
-        try {
-          // @ts-ignore - Handle variable NetworkConfig properties
-          await addNetworkAsync({
-            connectorId: connector.id,
-            networkConfig: {
-              chainId: 420,
-              chainName: "MIDL Regtest",
-              rpcUrls: ["https://rpc.staging.midl.xyz"],
-              nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
-              blockExplorerUrls: ["https://blockscout.staging.midl.xyz"],
-            }
-          } as any);
-          toast.success("Network configured for BitCapsule");
-        } catch (netErr: any) {
-          console.warn("Network switch failed", netErr);
-          toast.warning("Please manually switch to MIDL Regtest in Xverse.");
-        }
-      }
-
-      toast.success(`Connected to ${connector.name}`);
-    } catch (error: any) {
-      console.error("Connection failed", error);
-      toast.error(error.message || "Failed to connect wallet. Please ensure it is unlocked.");
-    }
-  };
 
   const handleMint = async () => {
     if (!message || !amount || !isConnected || isMinting) {
@@ -304,7 +283,40 @@ export default function Home() {
   if (!isMounted) return null;
 
   if (!isConnected) {
-    return <WalletConnect onConnect={handleConnect} onAbort={() => setView('creation')} connectors={connectors} />;
+    return (
+      <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col items-center justify-center p-8 text-center overflow-hidden">
+        <BackgroundEffects />
+        <div className="relative z-10 space-y-8 animate-in fade-in zoom-in duration-700">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center border border-primary shadow-neon">
+              <span className="material-icons text-primary text-3xl">hourglass_empty</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase glow-text">BitCapsule</h1>
+            <p className="text-primary/60 font-mono tracking-widest text-xs uppercase">SECURE CHANNEL V.4.1.0</p>
+          </div>
+
+          <div className="max-w-md mx-auto space-y-6">
+            <h2 className="text-xl md:text-2xl font-light text-gray-300 tracking-wide">Secure your legacy on the Bitcoin timeline.</h2>
+            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-bitcoin-gold/50 to-primary/50">
+               <div className="bg-background-dark rounded-md p-4">
+                 <ConnectButton />
+               </div>
+            </div>
+          </div>
+
+          <div className="pt-12">
+            <a
+              href="https://faucet.staging.midl.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 border border-primary/30 rounded-full text-primary/80 hover:text-white hover:border-primary transition-all text-[10px] font-bold uppercase tracking-widest bg-primary/5 hover:bg-primary/20"
+            >
+              Access MIDL Faucet
+            </a>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
