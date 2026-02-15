@@ -24,6 +24,7 @@ export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
   const { connectors, connectAsync } = useConnect();
+  console.log("Available connectors:", connectors);
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
@@ -134,33 +135,33 @@ export default function Home() {
 
   const handleMint = async () => {
     if (!message || !amount || !isConnected || isMinting) {
-        if (!amount && isConnected) toast.error("Please enter an amount");
-        return;
+      if (!amount && isConnected) toast.error("Please enter an amount");
+      return;
     }
 
     if (vaultType === VaultType.SOCIAL && !isAddress(beneficiary)) {
-        toast.error("Please enter a valid EVM beneficiary address");
-        return;
+      toast.error("Please enter a valid EVM beneficiary address");
+      return;
     }
 
     if (!address) {
-        toast.error("Wallet address not found. Please reconnect.");
-        return;
+      toast.error("Wallet address not found. Please reconnect.");
+      return;
     }
 
     // Validation logic for beneficiary
     let targetBeneficiary: `0x${string}` = address as `0x${string}`;
 
     if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
-        if (!beneficiary || beneficiary === zeroAddress) {
-            toast.error("Beneficiary is required for Social and Legacy vaults.");
-            return;
-        }
-        if (!isAddress(beneficiary)) {
-            toast.error("Invalid beneficiary address format.");
-            return;
-        }
-        targetBeneficiary = beneficiary as `0x${string}`;
+      if (!beneficiary || beneficiary === zeroAddress) {
+        toast.error("Beneficiary is required for Social and Legacy vaults.");
+        return;
+      }
+      if (!isAddress(beneficiary)) {
+        toast.error("Invalid beneficiary address format.");
+        return;
+      }
+      targetBeneficiary = beneficiary as `0x${string}`;
     }
 
     setIsMinting(true);
@@ -225,39 +226,39 @@ export default function Home() {
     setIsWithdrawing(true);
     setUnlockStatus('penalty'); // Show penalty screen
     try {
-        const intention = await addTxIntentionAsync({
-            intention: {
-              evmTransaction: {
-                to: TimeCapsule.address as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: TimeCapsule.abi,
-                  functionName: "withdrawEarly",
-                  args: [id],
-                }),
-              },
-            },
-            reset: true,
-          });
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: "withdrawEarly",
+              args: [id],
+            }),
+          },
+        },
+        reset: true,
+      });
 
-          const { tx } = await finalizeBTCTransactionAsync();
-          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-          setIsBroadcasting(true);
-          await sendBTCTransactionsAsync({
-            serializedTransactions: [signedTransaction],
-            btcTransaction: tx.hex,
-          });
-          await waitForTransactionAsync({ txId: tx.id });
-          toast.success("Early withdrawal successful!");
-          fetchHistory();
-          setUnlockStatus('none'); // Hide penalty screen on completion? Or show success?
-          // Maybe show success screen?
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({
+        serializedTransactions: [signedTransaction],
+        btcTransaction: tx.hex,
+      });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Early withdrawal successful!");
+      fetchHistory();
+      setUnlockStatus('none'); // Hide penalty screen on completion? Or show success?
+      // Maybe show success screen?
     } catch (e: any) {
-        console.error("Withdrawal failed", e);
-        toast.error(e.message || "Withdrawal failed");
-        setUnlockStatus('none');
+      console.error("Withdrawal failed", e);
+      toast.error(e.message || "Withdrawal failed");
+      setUnlockStatus('none');
     } finally {
-        setIsWithdrawing(false);
-        setIsBroadcasting(false);
+      setIsWithdrawing(false);
+      setIsBroadcasting(false);
     }
   };
 
@@ -265,37 +266,37 @@ export default function Home() {
     if (isClaiming) return;
     setIsClaiming(true);
     try {
-        const intention = await addTxIntentionAsync({
-            intention: {
-              evmTransaction: {
-                to: TimeCapsule.address as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: TimeCapsule.abi,
-                  functionName: useLegacy ? "claimLegacy" : "claim",
-                  args: [id],
-                }),
-              },
-            },
-            reset: true,
-          });
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: useLegacy ? "claimLegacy" : "claim",
+              args: [id],
+            }),
+          },
+        },
+        reset: true,
+      });
 
-          const { tx } = await finalizeBTCTransactionAsync();
-          const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-          setIsBroadcasting(true);
-          await sendBTCTransactionsAsync({
-            serializedTransactions: [signedTransaction],
-            btcTransaction: tx.hex,
-          });
-          await waitForTransactionAsync({ txId: tx.id });
-          toast.success("Payload claimed successfully!");
-          fetchHistory();
-          setUnlockStatus('success');
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({
+        serializedTransactions: [signedTransaction],
+        btcTransaction: tx.hex,
+      });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Payload claimed successfully!");
+      fetchHistory();
+      setUnlockStatus('success');
     } catch (e: any) {
-        console.error("Claim failed", e);
-        toast.error(e.message || "Claim failed");
+      console.error("Claim failed", e);
+      toast.error(e.message || "Claim failed");
     } finally {
-        setIsClaiming(false);
-        setIsBroadcasting(false);
+      setIsClaiming(false);
+      setIsBroadcasting(false);
     }
   };
 
@@ -321,15 +322,15 @@ export default function Home() {
         </div>
         <div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">
           <button
-              type="button"
-              onClick={() => setView(view === 'creation' ? 'archive' : 'creation')}
-              className="flex flex-col items-end hover:text-white transition-colors group cursor-pointer"
+            type="button"
+            onClick={() => setView(view === 'creation' ? 'archive' : 'creation')}
+            className="flex flex-col items-end hover:text-white transition-colors group cursor-pointer"
           >
-              <span className="text-primary/70 group-hover:text-primary uppercase tracking-widest text-[10px]">View Mode</span>
-              <span className="text-white font-bold uppercase flex items-center gap-1">
-                  {view === 'creation' ? 'CREATE' : 'ARCHIVE'}
-                  <span className="material-icons text-[10px]">swap_horiz</span>
-              </span>
+            <span className="text-primary/70 group-hover:text-primary uppercase tracking-widest text-[10px]">View Mode</span>
+            <span className="text-white font-bold uppercase flex items-center gap-1">
+              {view === 'creation' ? 'CREATE' : 'ARCHIVE'}
+              <span className="material-icons text-[10px]">swap_horiz</span>
+            </span>
           </button>
           <div className="flex flex-col items-end">
             <span className="text-primary/70 uppercase tracking-widest text-[10px]">Address</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { NetworkScout } from "../NetworkScout";
 
 interface WalletConnectProps {
   onConnect: () => void;
@@ -10,6 +11,7 @@ interface WalletConnectProps {
 export default function WalletConnect({ onConnect, onAbort }: WalletConnectProps) {
   return (
     <div className="fixed inset-0 z-[100] bg-background-dark text-gray-100 min-h-screen w-full flex flex-col relative font-display overflow-hidden">
+      <NetworkScout />
       {/* Background Environment */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-cyber-grid bg-[length:50px_50px] opacity-40 transform perspective-1000 rotate-x-12 scale-110"></div>

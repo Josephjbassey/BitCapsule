@@ -1,11 +1,14 @@
-import { type Config, MaestroSymphonyProvider, regtest } from "@midl/core";
-import { createMidlConfig } from "@midl/satoshi-kit";
+import { type Config, MaestroSymphonyProvider, regtest, createConfig } from "@midl/core";
+// import { createMidlConfig } from "@midl/satoshi-kit";
 import { QueryClient } from "@tanstack/react-query";
+import { xverseConnector, unisatConnector, leatherConnector } from "@midl/connectors";
 
-export const midlConfig = createMidlConfig({
+export const midlConfig = createConfig({
 	networks: [regtest],
 	persist: true,
-	runesProvider: new MaestroSymphonyProvider({regtest: "https://runes.staging.midl.xyz"}),
+	connectors: [xverseConnector(), unisatConnector(), leatherConnector()],
+	// @ts-ignore - runesProvider might not be in the strict Config type from core, but needed by consumers
+	runesProvider: new MaestroSymphonyProvider({ regtest: "https://runes.staging.midl.xyz" }),
 }) as Config;
 
 export const queryClient = new QueryClient({
