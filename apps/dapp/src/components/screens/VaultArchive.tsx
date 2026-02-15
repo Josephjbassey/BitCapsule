@@ -24,6 +24,7 @@ export default function VaultArchive({
   onNavigateBack,
 }: VaultArchiveProps) {
   const [filter, setFilter] = useState<'ALL' | 'LOCKED' | 'UNLOCKED'>('ALL');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const filteredHistory = history.filter(log => {
     const unlockTime = Number(log.args.unlockTime);
@@ -34,202 +35,152 @@ export default function VaultArchive({
   });
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-background-dark text-white font-display">
+    <div className="flex h-full w-full bg-background-dark text-white font-display overflow-hidden relative">
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-20 md:w-64 border-r border-white/10 bg-background-dark/80 backdrop-blur-xl z-30 flex flex-col justify-between relative shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
-        <div>
-          <div className="h-20 flex items-center justify-center md:justify-start md:px-6 border-b border-white/5 cursor-pointer" onClick={onNavigateBack}>
-            <span className="material-symbols-outlined text-3xl text-primary animate-pulse-fast">hourglass_top</span>
-            <span className="hidden md:block ml-3 font-bold tracking-widest text-lg uppercase">Archive</span>
-          </div>
-          <nav className="flex flex-col mt-8 gap-2">
-            <button
-                type="button"
-                onClick={() => setFilter('ALL')}
-                className={`sidebar-item group flex items-center w-full px-4 md:px-6 py-4 text-left transition-colors ${filter === 'ALL' ? 'active text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
-            >
-              <span className="material-symbols-outlined group-hover:text-primary transition-colors">grid_view</span>
-              <span className="hidden md:block ml-4 text-sm font-mono tracking-wide">ALL SHARDS</span>
-              <span className="hidden md:block ml-auto text-xs text-white/30 font-mono">{history.length}</span>
-            </button>
-            <div className="h-px bg-white/5 mx-4 my-2"></div>
-            <button
-                type="button"
-                onClick={() => setFilter('LOCKED')}
-                className={`sidebar-item group flex items-center w-full px-4 md:px-6 py-4 text-left transition-colors ${filter === 'LOCKED' ? 'active text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
-            >
-              <span className="material-symbols-outlined group-hover:text-primary transition-colors">lock</span>
-              <span className="hidden md:block ml-4 text-sm font-mono tracking-wide">LOCKED</span>
-            </button>
-            <button
-                type="button"
-                onClick={() => setFilter('UNLOCKED')}
-                className={`sidebar-item group flex items-center w-full px-4 md:px-6 py-4 text-left transition-colors ${filter === 'UNLOCKED' ? 'active text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
-            >
-              <span className="material-symbols-outlined group-hover:text-primary transition-colors">lock_open</span>
-              <span className="hidden md:block ml-4 text-sm font-mono tracking-wide">UNLOCKED</span>
-            </button>
-          </nav>
-        </div>
-        <div className="p-4 md:p-6 border-t border-white/5">
-          <div className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-sm">settings</span>
+      <aside className={`fixed lg:relative z-50 lg:z-30 w-64 h-full border-r border-white/10 bg-background-dark/95 lg:bg-background-dark/80 backdrop-blur-xl transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+        <div className="flex flex-col h-full justify-between">
+          <div>
+            <div className="h-16 md:h-20 flex items-center px-6 border-b border-white/5 cursor-pointer" onClick={onNavigateBack}>
+              <span className="material-symbols-outlined text-2xl md:text-3xl text-primary animate-pulse-fast">hourglass_top</span>
+              <span className="ml-3 font-bold tracking-widest text-lg uppercase">Archive</span>
             </div>
-            <div className="hidden md:block text-xs font-mono">
-              <div className="text-white">SYSTEM CONFIG</div>
-              <div className="text-white/40">V 2.4.9</div>
+            <nav className="flex flex-col mt-8 gap-2">
+              {[
+                { id: 'ALL', label: 'All Vaults', icon: 'auto_awesome_motion' },
+                { id: 'LOCKED', label: 'Locked', icon: 'lock' },
+                { id: 'UNLOCKED', label: 'Ready', icon: 'lock_open' }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setFilter(item.id as any); setIsSidebarOpen(false); }}
+                  className={`group flex items-center w-full px-6 py-4 text-left transition-all ${filter === item.id ? "text-primary bg-primary/5 border-l-2 border-primary" : "text-white/60 hover:text-white hover:bg-white/5"}`}
+                >
+                  <span className="material-symbols-outlined text-xl mr-4">{item.icon}</span>
+                  <span className="text-[10px] tracking-[0.2em] font-bold uppercase">{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="p-6 border-t border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-sm">settings</span>
+              </div>
+              <div className="text-[10px] font-mono">
+                <div className="text-white">SYS_CONFIG</div>
+                <div className="text-white/40 uppercase">v4.1.0-alpha</div>
+              </div>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 relative overflow-hidden flex flex-col bg-background-dark">
-        <header className="h-20 border-b border-white/5 bg-background-dark/50 backdrop-blur-sm flex items-center justify-between px-8 z-20">
+      <main className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 md:h-20 border-b border-white/5 bg-background-dark/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-8 shrink-0">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60">TEMPORAL ARCHIVE</h1>
-            <div className="hidden md:flex px-2 py-1 bg-primary/10 border border-primary/20 rounded text-[10px] font-mono text-primary items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-              SYNCED
-            </div>
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden text-primary p-1"
+            >
+              <span className="material-icons">filter_list</span>
+            </button>
+            <h1 className="text-lg md:text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 uppercase">Temporal Archive</h1>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-4 text-xs font-mono text-white/40">
-              <span className="hover:text-primary cursor-pointer transition-colors">SORT: CHRONOLOGICAL</span>
-              <span>|</span>
-              <span className="hover:text-primary cursor-pointer transition-colors">VIEW: GRID</span>
-            </div>
-            <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center bg-white/5 hover:bg-white/10 cursor-pointer transition-colors">
-              <span className="material-symbols-outlined text-white/70">search</span>
-            </div>
+          <div className="flex items-center gap-3">
+             <div className="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-[9px] font-mono text-primary flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
+                LIVE_SYNC
+             </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 relative custom-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20">
-            {filteredHistory.map((log, i) => {
-              const id = log.args.id;
-              const unlockTime = Number(log.args.unlockTime);
-              const isLocked = currentTime < unlockTime;
-              const timeLeft = unlockTime - currentTime;
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+          {filteredHistory.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+              <div className="w-20 h-20 rounded-full border border-white/5 flex items-center justify-center mb-6 opacity-20">
+                <span className="material-icons text-6xl">cloud_off</span>
+              </div>
+              <h3 className="text-xl font-bold text-white/40 tracking-widest uppercase">No Records Found</h3>
+              <p className="text-xs text-white/20 font-mono mt-2">Initialize your first vault to begin archiving.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 pb-24">
+              {filteredHistory.map((log, i) => {
+                const id = log.args.id;
+                const unlockTime = Number(log.args.unlockTime);
+                const isLocked = currentTime < unlockTime;
+                const timeLeft = unlockTime - currentTime;
+                const days = Math.floor(timeLeft / (24 * 60 * 60));
+                const unlockYear = new Date(unlockTime * 1000).getFullYear();
 
-              const days = Math.floor(timeLeft / (24 * 60 * 60));
-              const unlockYear = new Date(unlockTime * 1000).getFullYear();
+                const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
+                const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
+                const isLegacy = log.args.vaultType === VaultType.LEGACY;
 
-              const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
-              const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
-              const isLegacy = log.args.vaultType === VaultType.LEGACY;
+                const isGold = isLegacy;
+                const borderColor = isLocked ? "border-primary/20" : "border-green-500/20";
+                const textColor = isLocked ? "text-primary" : "text-green-400";
 
-              // Card Styles
-              const isGold = isLegacy;
-              const borderColor = isGold ? "border-primary/30" : (isLocked ? "border-primary/30" : "border-green-500/30");
-              const glowShadow = isGold ? "shadow-gold-glow" : (isLocked ? "shadow-neon" : "shadow-neon-sm");
-              const textColor = isGold ? "text-primary" : (isLocked ? "text-primary" : "text-green-400");
-              const bgClass = isGold ? "bg-black/40" : "bg-shard-gradient";
-
-              return (
-                <div key={`${log.transactionHash}-${i}`} className="group relative shard-wrapper h-72 perspective-1000">
-                  <div className={`glass-shard w-full h-full rounded-xl p-6 relative flex flex-col justify-between ${bgClass} animate-float cursor-pointer hover:border-opacity-100 border border-transparent ${borderColor} transition-all duration-300`}>
-                    <div className="hologram-scan opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                    <div className="flex justify-between items-start z-10">
-                      <div className="flex flex-col">
-                        <span className={`text-4xl font-bold ${textColor} font-mono tracking-tight drop-shadow-lg`}>{unlockYear}</span>
-                        <span className={`text-[10px] font-mono tracking-widest mt-1 ${
-                            isGold ? "text-primary/80" : (isLocked ? "text-primary/80" : "text-green-400/80")
-                        }`}>
-                            {isLocked ? "LOCKED" : "UNLOCKED"}
+                return (
+                  <div key={`${log.transactionHash}-${i}`} className="group relative">
+                    <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-72 border ${borderColor} transition-all duration-300 hover:border-primary/60`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col">
+                          <span className={`text-4xl font-bold ${textColor} font-mono tracking-tight`}>{unlockYear}</span>
+                          <span className={`text-[9px] font-mono tracking-widest mt-1 ${isLocked ? "text-primary/60" : "text-green-400/60"}`}>
+                              {isLocked ? "LOCKED" : "UNLOCKED"}
+                          </span>
+                        </div>
+                        <span className={`material-symbols-outlined ${isLocked ? "text-primary/40" : "text-green-400/40"}`}>
+                          {isLocked ? "lock" : "lock_open"}
                         </span>
                       </div>
-                      <span className={`material-symbols-outlined ${
-                          isGold ? "text-primary/60" : (isLocked ? "text-primary/60" : "text-green-400/60")
-                      }`}>
-                        {isLocked ? "lock" : "lock_open"}
-                      </span>
-                    </div>
 
-                    <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative border-y border-white/5 bg-black/20 rounded">
-                      <p className={`text-xs text-white/50 font-mono leading-relaxed select-none p-4 ${isLocked ? "message-blur" : ""}`}>
-                        {isLocked ? "Encrypted Content. Time-lock active." : (log.args.message || "Content Decrypted. Ready for access.")}
-                      </p>
-                    </div>
+                      <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative bg-black/20 rounded p-4">
+                        <p className={`text-xs text-white/50 font-mono leading-relaxed ${isLocked ? "blur-sm select-none" : ""}`}>
+                          {isLocked ? "Encrypted Content. Protocol Active." : (log.args.message || "No message found.")}
+                        </p>
+                      </div>
 
-                    <div className="flex justify-between items-center text-xs font-mono text-white/40 z-10">
-                      <span>ID: #{id?.toString()}</span>
-                      <div className="flex gap-1">
-                        <span className={`w-1 h-1 ${isLocked ? "bg-primary" : "bg-green-500"} rounded-full`}></span>
-                        <span className={`w-1 h-1 ${isLocked ? "bg-primary/50" : "bg-green-500/50"} rounded-full`}></span>
-                        <span className={`w-1 h-1 ${isLocked ? "bg-primary/20" : "bg-green-500/20"} rounded-full`}></span>
+                      <div className="flex justify-between items-center text-[10px] font-mono text-white/30">
+                        <span>VAULT_ID: #{id?.toString()}</span>
+                        <div className="flex gap-2">
+                           {isLocked && isOwner && (
+                             <button onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-colors uppercase font-bold">Panic</button>
+                           )}
+                           {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
+                             <button onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-colors uppercase font-bold">Claim</button>
+                           )}
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Detail Pane / Action Menu */}
-                  <div className="detail-pane-trigger absolute top-0 right-[-340px] w-80 h-full bg-background-dark/95 border border-primary/30 backdrop-blur-xl shadow-neon z-50 rounded-r-xl opacity-0 pointer-events-none transition-all duration-300 ease-out flex flex-col group-hover:right-[-20px] group-hover:opacity-100 group-hover:pointer-events-auto transform translate-x-4 group-hover:translate-x-0">
-                    <div className={`h-1 w-full ${isLocked ? "bg-primary" : "bg-green-500"} shadow-[0_0_10px_currentColor]`}></div>
-                    <div className="p-5 flex flex-col h-full justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold text-white mb-1">Vault #{id?.toString()}</h3>
-                        <p className="text-xs text-white/50 font-mono mb-4">Type: {VaultType[log.args.vaultType]}</p>
-
-                        <div className="bg-black/40 border border-white/10 rounded p-3 mb-4">
-                          <div className="text-[10px] uppercase tracking-widest text-primary/80 mb-1">Time Remaining</div>
-                          <div className="text-xl font-mono text-white font-bold">
-                            {isLocked ? `${days} DAYS` : "UNLOCKED"}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs text-white/60 font-mono">
-                            <span>Beneficiary:</span>
-                            <span className="text-blue-400">{log.args.beneficiary?.slice(0, 6)}...</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {isLocked && isOwner && (
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleWithdrawEarly(id); }}
-                                disabled={isSigningOrPending}
-                                className="w-full py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-500 text-xs font-bold tracking-widest uppercase transition-colors"
-                            >
-                                {isSigningOrPending ? "Processing..." : "Panic Withdraw (Penalty)"}
-                            </button>
-                        )}
-
-                        {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleClaim(id, isLegacy); }}
-                                disabled={isSigningOrPending}
-                                className="w-full py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-500 text-xs font-bold tracking-widest uppercase transition-colors"
-                            >
-                                {isSigningOrPending ? "Processing..." : "Claim Content"}
-                            </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="fixed bottom-8 right-8 z-40 group">
-            <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity"></div>
-            <button
-                type="button"
-                onClick={onNavigateBack}
-                className="relative w-14 h-14 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon hover:scale-110 transition-transform duration-300"
-            >
-            <span className="material-symbols-outlined text-3xl">add</span>
-            </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
+
+      <div className="fixed bottom-6 right-6 z-40 lg:hidden">
+          <button
+              onClick={onNavigateBack}
+              className="w-12 h-12 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon active:scale-95 transition-transform"
+          >
+            <span className="material-symbols-outlined">add</span>
+          </button>
+      </div>
     </div>
   );
 }
