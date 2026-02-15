@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
-import { useWaitForTransaction } from "@midl/react";
+import { useWaitForTransaction, useAddNetwork } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
@@ -10,9 +10,6 @@ import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
-import { LockMechanism } from "@/components/ui/vault/LockMechanism";
-import { TemporalSlider } from "@/components/ui/vault/TemporalSlider";
-import { VaultButton, VaultCard } from "@/components/ui/vault";
 
 // Import Screens
 import WalletConnect from "@/components/screens/WalletConnect";
@@ -24,12 +21,12 @@ export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
   const { connectors, connectAsync } = useConnect();
-  console.log("Available connectors:", connectors);
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
   const { sendBTCTransactionsAsync } = useSendBTCTransactions();
   const { waitForTransactionAsync } = useWaitForTransaction();
+  const { addNetworkAsync } = useAddNetwork();
   const publicClient = usePublicClient();
 
   // State
@@ -51,7 +48,7 @@ export default function Home() {
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
 
-  // Derived state: tracks any active transaction process including the new isBroadcasting state
+  // Derived state: tracks any active transaction process
   const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   const fetchHistory = useCallback(async () => {
@@ -84,8 +81,6 @@ export default function Home() {
     }
   }, [publicClient, isConnected]);
 
-
-
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -97,39 +92,38 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [publicClient, isConnected, fetchHistory]);
 
-  const handleConnect = async () => {
-    // Find Xverse connector by name or ID
-    const xverseConnector = connectors.find(
-      (c) =>
-        c.name.toLowerCase().includes("xverse") ||
-        c.id.toLowerCase().includes("xverse")
-    );
-
-    if (xverseConnector) {
-      try {
-        await connectAsync({ connector: xverseConnector });
-      } catch (error: any) {
-        console.error("Connection failed", error);
-        toast.error(error.message || "Failed to connect to Xverse");
+  const handleConnect = async (connector: any) => {
+    try {
+      if (!connector) {
+        toast.error("No connector selected.");
+        return;
       }
-    } else {
-      // Fallback: Try any connector that looks like a Bitcoin/Xverse connector
-      const fallbackConnector = connectors.find(c =>
-        c.name.toLowerCase().includes("bitcoin") ||
-        c.id.toLowerCase().includes("satoshi")
-      );
 
-      if (fallbackConnector) {
-        toast.warning(`Xverse not found. Attempting connection with ${fallbackConnector.name}...`);
+      await connectAsync({ connector });
+
+      // Attempt network setup for Xverse
+      if (connector.name.toLowerCase().includes("xverse")) {
         try {
-          await connectAsync({ connector: fallbackConnector });
-        } catch (error: any) {
-          console.error("Fallback connection failed", error);
-          toast.error("Bitcoin wallet connection failed. Please ensure your wallet is unlocked.");
+          await addNetworkAsync({
+            connectorId: connector.id,
+            networkConfig: {
+              name: "MIDL Regtest",
+              network: "regtest",
+              rpcUrl: "https://rpc.staging.midl.xyz",
+              indexerUrl: "https://mempool.staging.midl.xyz",
+            },
+          });
+          toast.success("Network configured for BitCapsule");
+        } catch (netErr: any) {
+          console.warn("Network switch failed", netErr);
+          toast.warning("Please manually switch to MIDL Regtest in Xverse.");
         }
-      } else {
-        toast.error("No Bitcoin-compatible wallet found. Please ensure the Xverse extension is installed and enabled.");
       }
+
+      toast.success(`Connected to ${connector.name}`);
+    } catch (error: any) {
+      console.error("Connection failed", error);
+      toast.error(error.message || "Failed to connect wallet. Please ensure it is unlocked.");
     }
   };
 
@@ -149,7 +143,6 @@ export default function Home() {
       return;
     }
 
-    // Validation logic for beneficiary
     let targetBeneficiary: `0x${string}` = address as `0x${string}`;
 
     if (vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) {
@@ -166,8 +159,7 @@ export default function Home() {
 
     setIsMinting(true);
     try {
-      const amountInWei = parseEther(amount); // Parse amount in Wei using viem for precision
-      // targetBeneficiary is correctly set above based on vaultType
+      const amountInWei = parseEther(amount);
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       const intention = await addTxIntentionAsync({
@@ -193,7 +185,6 @@ export default function Home() {
       });
 
       const { tx } = await finalizeBTCTransactionAsync();
-
       const signedTransaction = await signIntentionAsync({
         intention,
         txId: tx.id,
@@ -210,6 +201,7 @@ export default function Home() {
         setSuccessTxHash(txHashes[0]);
         setMessage("");
         setAmount("");
+        fetchHistory();
       }
     } catch (error: any) {
       console.error("Action failed", error);
@@ -224,7 +216,7 @@ export default function Home() {
   const handleWithdrawEarly = async (id: bigint) => {
     if (isWithdrawing) return;
     setIsWithdrawing(true);
-    setUnlockStatus('penalty'); // Show penalty screen
+    setUnlockStatus('penalty');
     try {
       const intention = await addTxIntentionAsync({
         intention: {
@@ -250,8 +242,7 @@ export default function Home() {
       await waitForTransactionAsync({ txId: tx.id });
       toast.success("Early withdrawal successful!");
       fetchHistory();
-      setUnlockStatus('none'); // Hide penalty screen on completion? Or show success?
-      // Maybe show success screen?
+      setUnlockStatus('none');
     } catch (e: any) {
       console.error("Withdrawal failed", e);
       toast.error(e.message || "Withdrawal failed");
@@ -303,7 +294,7 @@ export default function Home() {
   if (!isMounted) return null;
 
   if (!isConnected) {
-    return <WalletConnect onConnect={handleConnect} onAbort={() => setView('creation')} />;
+    return <WalletConnect onConnect={handleConnect} onAbort={() => setView('creation')} connectors={connectors} />;
   }
 
   return (
@@ -327,7 +318,7 @@ export default function Home() {
             className="flex flex-col items-end hover:text-white transition-colors group cursor-pointer"
           >
             <span className="text-primary/70 group-hover:text-primary uppercase tracking-widest text-[10px]">View Mode</span>
-            <span className="text-white font-bold uppercase flex items-center gap-1">
+            <span className="text-white font-bold uppercase flex items-center gap-1 transition-transform group-active:scale-95">
               {view === 'creation' ? 'CREATE' : 'ARCHIVE'}
               <span className="material-icons text-[10px]">swap_horiz</span>
             </span>
@@ -339,7 +330,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 flex-grow w-full h-full overflow-hidden">
+      <main className="relative z-10 flex-grow w-full h-full overflow-hidden animate-in fade-in duration-700">
         {view === 'creation' ? (
           <VaultCreation
             vaultType={vaultType}
@@ -386,7 +377,6 @@ export default function Home() {
         />
       )}
 
-      {/* Unlock Process Overlay */}
       {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
@@ -395,7 +385,6 @@ export default function Home() {
         />
       )}
 
-      {/* Generic Loading Overlay for other ops */}
       {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay />}
     </div>
   );
