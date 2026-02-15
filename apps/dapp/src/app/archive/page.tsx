@@ -1,69 +1,234 @@
-import { DepositForm } from "@/components/ui/vault/DepositForm";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
+import { useWaitForTransaction } from "@midl/react";
+import { useAccount, usePublicClient } from "wagmi";
+import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
+import { encodeFunctionData } from "viem";
+import SuccessOverlay from "@/components/SuccessOverlay";
+import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
-import { LockMechanism } from "@/components/ui/vault/LockMechanism";
-import { TemporalSlider } from "@/components/ui/vault/TemporalSlider";
-import { VaultButton, VaultCard } from "@/components/ui/vault";
+import Navbar from "@/components/Navbar";
+import VaultArchive from "@/components/screens/VaultArchive";
+import UnlockProcess from "@/components/screens/UnlockProcess";
+import { toast } from "sonner";
+import Link from "next/link";
 
-export default function TemporalArchivePage() {
-	return (
-		<div className="bg-background-light dark:bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
-			<BackgroundEffects />
+export default function ArchivePage() {
+  const { isConnected } = useAccount();
+  const address = useEVMAddress();
+  const { addTxIntentionAsync } = useAddTxIntention();
+  const { signIntentionAsync } = useSignIntention();
+  const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
+  const { sendBTCTransactionsAsync } = useSendBTCTransactions();
+  const { waitForTransactionAsync } = useWaitForTransaction();
+  const publicClient = usePublicClient();
 
-			{/* Top HUD Interface */}
-			<header className="relative z-20 w-full px-6 py-4 flex justify-between items-center border-b border-primary/20 backdrop-blur-sm bg-obsidian/50">
-				<div className="flex items-center gap-3">
-					<div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary animate-pulse">
-						<span className="material-icons text-primary text-sm">
-							hourglass_empty
-						</span>
-					</div>
-					<div className="flex flex-col">
-						<h1 className="text-lg font-semibold leading-none glow-text">
-							TIMEVIBE
-						</h1>
-						<span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">
-							Secure Channel V.2.0
-						</span>
-					</div>
-				</div>
-				<div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">
-					<div className="hidden md:flex flex-col items-end">
-						<span className="text-primary/70">ENCRYPTION</span>
-						<span className="text-green-400 font-bold">QUANTUM-256</span>
-					</div>
-					<div className="flex flex-col items-end">
-						<span className="text-primary/70">STATUS</span>
-						<span className="text-primary font-bold animate-pulse">LIVE</span>
-					</div>
-				</div>
-			</header>
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
+  const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
 
-			{/* Main Viewport */}
-			<main className="relative z-10 flex-grow flex flex-col md:flex-row items-center justify-center gap-12 px-6 py-8 w-full max-w-7xl mx-auto h-full">
-				<LockMechanism />
+  const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
-				{/* Right Panel: Data Terminal */}
-				<div className="w-full md:w-1/2 max-w-lg relative">
-					<DepositForm />
-				</div>
-			</main>
+  useEffect(() => {
+    setIsMounted(true);
+    const interval = setInterval(() => {
+      setCurrentTime(Math.floor(Date.now() / 1000));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-			{/* Footer HUD */}
-			<footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-obsidian/80 backdrop-blur-md">
-				<div className="flex gap-4">
-					{/* Placeholder links - replaced interactive spans with non-interactive div or links if routes existed */}
-					<span className="opacity-50">
-						PRIVACY_PROTOCOL_V2
-					</span>
-					<span className="opacity-50">
-						TERMS_OF_ENGAGEMENT
-					</span>
-				</div>
-				<div className="mt-2 md:mt-0 font-mono">
-					ID: <span className="text-primary/60">XJ-9200-ALPHA</span>{" // NODE: "}
-					<span className="text-green-500/60">VERIFIED</span>
-				</div>
-			</footer>
-		</div>
-	);
+  const fetchHistory = async () => {
+    if (!publicClient) return;
+    try {
+      const logs = await publicClient.getLogs({
+        address: TimeCapsule.address as `0x${string}`,
+        event: {
+            type: 'event',
+            name: 'CapsuleCreated',
+            inputs: [
+                { type: 'uint256', name: 'id', indexed: true },
+                { type: 'address', name: 'owner', indexed: true },
+                { type: 'address', name: 'token' },
+                { type: 'uint256', name: 'amount' },
+                { type: 'uint256', name: 'unlockTime' },
+                { type: 'address', name: 'beneficiary' },
+                { type: 'uint8', name: 'vaultType' },
+                { type: 'string', name: 'message' }
+            ]
+        },
+        fromBlock: 'earliest'
+      });
+      setHistory(logs);
+    } catch (error) {
+      console.error("Failed to fetch history", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected && publicClient) {
+      fetchHistory();
+    }
+  }, [isConnected, publicClient]);
+
+  const handleWithdrawEarly = async (id: bigint) => {
+    if (isWithdrawing) return;
+    setIsWithdrawing(true);
+    setUnlockStatus('penalty');
+    try {
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: "withdrawEarly",
+              args: [id],
+            }),
+          },
+        },
+        reset: true,
+      });
+
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({
+        serializedTransactions: [signedTransaction],
+        btcTransaction: tx.hex,
+      });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Early withdrawal successful!");
+      fetchHistory();
+      setUnlockStatus('none');
+    } catch (e: any) {
+      console.error("Withdrawal failed", e);
+      toast.error(e.message || "Withdrawal failed");
+      setUnlockStatus('none');
+    } finally {
+      setIsWithdrawing(false);
+      setIsBroadcasting(false);
+    }
+  };
+
+  const handleClaim = async (id: bigint, useLegacy: boolean) => {
+    if (isClaiming) return;
+    setIsClaiming(true);
+    try {
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: useLegacy ? "claimLegacy" : "claim",
+              args: [id],
+            }),
+          },
+        },
+        reset: true,
+      });
+
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({
+        serializedTransactions: [signedTransaction],
+        btcTransaction: tx.hex,
+      });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Payload claimed successfully!");
+      fetchHistory();
+      setUnlockStatus('success');
+    } catch (e: any) {
+      console.error("Claim failed", e);
+      toast.error(e.message || "Claim failed");
+    } finally {
+      setIsClaiming(false);
+      setIsBroadcasting(false);
+    }
+  };
+
+  if (!isMounted) return null;
+
+  if (!isConnected) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col items-center justify-center p-8 text-center overflow-hidden">
+        <BackgroundEffects />
+        <div className="relative z-10 space-y-8 animate-in fade-in zoom-in duration-700">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center border border-primary shadow-neon">
+              <span className="material-icons text-primary text-3xl">hourglass_empty</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase glow-text">BitCapsule</h1>
+            <p className="text-primary/60 font-mono tracking-widest text-xs uppercase">SECURE CHANNEL V.4.1.0</p>
+          </div>
+
+          <div className="max-w-md mx-auto space-y-6">
+            <h2 className="text-xl md:text-2xl font-light text-gray-300 tracking-wide">Connect protocol to access archive.</h2>
+            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-bitcoin-gold/50 to-primary/50">
+               <div className="bg-background-dark rounded-md p-4">
+                 <Link href="/" className="px-8 py-3 bg-primary text-white font-bold rounded hover:bg-primary/80 transition-all uppercase text-sm inline-block">
+                   Establish Link
+                 </Link>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
+      <BackgroundEffects />
+      <Navbar />
+
+      <main className="relative z-10 flex-grow w-full h-full overflow-hidden animate-in fade-in duration-700">
+        <VaultArchive
+          history={history}
+          currentTime={currentTime}
+          handleWithdrawEarly={handleWithdrawEarly}
+          handleClaim={handleClaim}
+          address={address}
+          isSigningOrPending={isSigningOrPending}
+          onNavigateBack={() => window.location.href = '/'}
+        />
+      </main>
+
+      <footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-obsidian/80 backdrop-blur-md">
+        <div className="flex gap-4">
+          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Legacy Protocol v1.2</span>
+          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Archive Active</span>
+        </div>
+        <div className="mt-2 md:mt-0 font-mono uppercase">
+          ID: <span className="text-primary/60">XJ-9200-ALPHA</span> {'//'} Node: <span className="text-green-500/60">Verified</span>
+        </div>
+      </footer>
+
+      {successTxHash && (
+        <SuccessOverlay
+          txHash={successTxHash}
+          onClose={() => setSuccessTxHash(null)}
+          onRefresh={fetchHistory}
+        />
+      )}
+
+      {unlockStatus !== 'none' && (
+        <UnlockProcess
+          status={unlockStatus}
+          onClose={() => setUnlockStatus('none')}
+          txHash={successTxHash || undefined}
+        />
+      )}
+
+      {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay />}
+    </div>
+  );
 }

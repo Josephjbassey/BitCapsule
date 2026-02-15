@@ -11,6 +11,7 @@ import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
+import Navbar from "@/components/Navbar";
 
 // Import Screens
 import VaultCreation, { VaultType } from "@/components/screens/VaultCreation";
@@ -322,35 +323,7 @@ export default function Home() {
   return (
     <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
       <BackgroundEffects />
-
-      <header className="relative z-20 w-full px-6 py-4 flex justify-between items-center border-b border-primary/20 backdrop-blur-sm bg-obsidian/50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary animate-pulse">
-            <span className="material-icons text-primary text-sm">hourglass_empty</span>
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">BitCapsule</h1>
-            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">SECURE CHANNEL V.4.1.0</span>
-          </div>
-        </div>
-        <div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">
-          <button
-            type="button"
-            onClick={() => setView(view === 'creation' ? 'archive' : 'creation')}
-            className="flex flex-col items-end hover:text-white transition-colors group cursor-pointer"
-          >
-            <span className="text-primary/70 group-hover:text-primary uppercase tracking-widest text-[10px]">View Mode</span>
-            <span className="text-white font-bold uppercase flex items-center gap-1 transition-transform group-active:scale-95">
-              {view === 'creation' ? 'CREATE' : 'ARCHIVE'}
-              <span className="material-icons text-[10px]">swap_horiz</span>
-            </span>
-          </button>
-          <div className="flex flex-col items-end">
-            <span className="text-primary/70 uppercase tracking-widest text-[10px]">Address</span>
-            <span className="text-primary font-bold uppercase font-mono">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="relative z-10 flex-grow w-full h-full overflow-hidden animate-in fade-in duration-700">
         {view === 'creation' ? (
