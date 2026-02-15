@@ -20,12 +20,8 @@ const config: HardhatUserConfig = {
 	solidity: "0.8.28",
 	defaultNetwork: MNEMONIC.includes("junk") ? "hardhat" : "regtest",
 	namedAccounts: {
-		deployer: {
-			default: 0,
-		},
-		treasury: {
-			default: 0,
-		},
+		deployer: 0,
+		treasury: 1,
 	},
 	midl: {
 		networks: {
@@ -38,7 +34,6 @@ const config: HardhatUserConfig = {
 				network: {
 					explorerUrl: "https://mempool.staging.midl.xyz",
 					id: "regtest",
-					accounts: { mnemonic: vars.get("MNEMONIC") },
 					network: "regtest",
 				},
 			},

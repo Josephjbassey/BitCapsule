@@ -1,17 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEVMAddress } from "@midl/executor-react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { ConnectButton } from "@midl/satoshi-kit";
+import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 
 export default function Navbar() {
   const pathname = usePathname();
   const address = useEVMAddress();
+  const chainId = useChainId();
   const { isConnected } = useAccount();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFallback, setIsFallback] = useState(false);
+
+  useEffect(() => {
+    try {
+      const currentAddr = TimeCapsule.getAddress();
+      setIsFallback(currentAddr === "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E");
+    } catch (e) {
+      setIsFallback(true);
+    }
+  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -21,8 +33,15 @@ export default function Navbar() {
     { href: "/stats", label: "Stats" },
   ];
 
+  const isCorrectNetwork = chainId === 420;
+
   return (
     <header className="relative z-50 w-full border-b border-primary/20 backdrop-blur-sm bg-background-dark/50">
+      {isFallback && (
+        <div className="bg-primary/10 border-b border-primary/20 py-1 px-4 text-[8px] md:text-[10px] text-center text-primary/80 font-mono tracking-widest uppercase">
+          Warning: Using Fallback Contract Address. Please update your .env.local after deployment.
+        </div>
+      )}
       <div className="px-4 md:px-6 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 md:gap-3 group shrink-0">
           <div className="w-7 h-7 md:w-8 md:h-8 rounded bg-primary/20 flex items-center justify-center border border-primary animate-pulse group-hover:bg-primary/30 transition-colors">
@@ -48,10 +67,12 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {isConnected && address && (
-            <div className="hidden lg:flex flex-col items-end mr-2">
-              <span className="text-primary/70 uppercase tracking-widest text-[8px]">Linked Address</span>
-              <span className="text-primary font-bold uppercase font-mono text-[10px]">{address.slice(0, 6)}...{address.slice(-4)}</span>
+          {isConnected && (
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+               <span className={`w-1.5 h-1.5 rounded-full ${isCorrectNetwork ? "bg-green-500 animate-pulse" : "bg-red-500"}`}></span>
+               <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest">
+                 {isCorrectNetwork ? "Regtest Sync" : "Wrong Network"}
+               </span>
             </div>
           )}
 
@@ -86,9 +107,17 @@ export default function Navbar() {
               </Link>
             ))}
             {isConnected && address && (
-              <div className="pt-6 border-t border-white/10 flex flex-col gap-2">
-                <span className="text-primary/70 uppercase tracking-widest text-[10px]">Linked Address</span>
-                <span className="text-primary font-bold uppercase font-mono text-xs break-all shadow-neon p-2 bg-white/5 rounded-sm">{address}</span>
+              <div className="pt-6 border-t border-white/10 flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                   <span className={`w-2 h-2 rounded-full ${isCorrectNetwork ? "bg-green-500 animate-pulse" : "bg-red-500"}`}></span>
+                   <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+                     Network: {isCorrectNetwork ? "MIDL Regtest" : "Invalid Protocol"}
+                   </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-primary/70 uppercase tracking-widest text-[10px]">Linked Address</span>
+                  <span className="text-primary font-bold uppercase font-mono text-xs break-all shadow-neon p-2 bg-white/5 rounded-sm">{address}</span>
+                </div>
               </div>
             )}
           </nav>

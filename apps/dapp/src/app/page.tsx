@@ -18,13 +18,6 @@ import VaultCreation, { VaultType } from "@/components/screens/VaultCreation";
 import VaultArchive from "@/components/screens/VaultArchive";
 import UnlockProcess from "@/components/screens/UnlockProcess";
 
-/**
- * Main application UI for creating and managing time-locked vaults.
- *
- * Manages wallet connection, vault creation, withdrawal/claim workflows, and displays vault history and status overlays.
- *
- * @returns The rendered Home React element, or `null` until the component has mounted on the client.
- */
 export default function Home() {
   const { isConnected } = useAccount();
   const address = useEVMAddress();
@@ -77,6 +70,7 @@ export default function Home() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+  const [successBtcTxHash, setSuccessBtcTxHash] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
@@ -194,8 +188,14 @@ export default function Home() {
       });
 
       if (txHashes && txHashes.length > 0) {
+        console.log("[BitCapsule] Tx hashes:", txHashes);
+        console.log("[BitCapsule] BTC Tx ID:", tx.id);
+
         await waitForTransactionAsync({ txId: tx.id });
-        setSuccessTxHash(txHashes[0]);
+
+        setSuccessTxHash(txHashes[0]); // EVM hash
+        setSuccessBtcTxHash(tx.id);    // BTC hash
+
         setMessage("");
         setAmount("");
         fetchHistory();
@@ -204,6 +204,7 @@ export default function Home() {
       console.error("Action failed", error);
       toast.error(error.message || "Transaction failed");
       setSuccessTxHash(null);
+      setSuccessBtcTxHash(null);
     } finally {
       setIsMinting(false);
       setIsBroadcasting(false);
@@ -232,11 +233,15 @@ export default function Home() {
       const { tx } = await finalizeBTCTransactionAsync();
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
       setIsBroadcasting(true);
-      await sendBTCTransactionsAsync({
+      const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
       await waitForTransactionAsync({ txId: tx.id });
+
+      setSuccessTxHash(txHashes[0]);
+      setSuccessBtcTxHash(tx.id);
+
       toast.success("Early withdrawal successful!");
       fetchHistory();
       setUnlockStatus('none');
@@ -271,11 +276,15 @@ export default function Home() {
       const { tx } = await finalizeBTCTransactionAsync();
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
       setIsBroadcasting(true);
-      await sendBTCTransactionsAsync({
+      const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
       await waitForTransactionAsync({ txId: tx.id });
+
+      setSuccessTxHash(txHashes[0]);
+      setSuccessBtcTxHash(tx.id);
+
       toast.success("Payload claimed successfully!");
       fetchHistory();
       setUnlockStatus('success');
@@ -444,7 +453,8 @@ export default function Home() {
       {successTxHash && (
         <SuccessOverlay
           txHash={successTxHash}
-          onClose={() => setSuccessTxHash(null)}
+          btcTxHash={successBtcTxHash || undefined}
+          onClose={() => { setSuccessTxHash(null); setSuccessBtcTxHash(null); }}
           onRefresh={fetchHistory}
         />
       )}
@@ -452,8 +462,8 @@ export default function Home() {
       {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
-          onClose={() => setUnlockStatus('none')}
           txHash={successTxHash || undefined}
+          onClose={() => setUnlockStatus('none')}
         />
       )}
 

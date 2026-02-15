@@ -25,3 +25,4 @@ export const queryClient = new QueryClient({
 });
 
 export const EXPLORER_BASE_URL = "https://blockscout.staging.midl.xyz";
+export const BTC_EXPLORER_BASE_URL = "https://mempool.staging.midl.xyz";

@@ -30,6 +30,7 @@ export default function ArchivePage() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+  const [successBtcTxHash, setSuccessBtcTxHash] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
@@ -99,11 +100,15 @@ export default function ArchivePage() {
       const { tx } = await finalizeBTCTransactionAsync();
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
       setIsBroadcasting(true);
-      await sendBTCTransactionsAsync({
+      const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
       await waitForTransactionAsync({ txId: tx.id });
+
+      setSuccessTxHash(txHashes[0]);
+      setSuccessBtcTxHash(tx.id);
+
       toast.success("Early withdrawal successful!");
       fetchHistory();
       setUnlockStatus('none');
@@ -138,11 +143,15 @@ export default function ArchivePage() {
       const { tx } = await finalizeBTCTransactionAsync();
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
       setIsBroadcasting(true);
-      await sendBTCTransactionsAsync({
+      const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
       await waitForTransactionAsync({ txId: tx.id });
+
+      setSuccessTxHash(txHashes[0]);
+      setSuccessBtcTxHash(tx.id);
+
       toast.success("Payload claimed successfully!");
       fetchHistory();
       setUnlockStatus('success');
@@ -215,7 +224,8 @@ export default function ArchivePage() {
       {successTxHash && (
         <SuccessOverlay
           txHash={successTxHash}
-          onClose={() => setSuccessTxHash(null)}
+          btcTxHash={successBtcTxHash || undefined}
+          onClose={() => { setSuccessTxHash(null); setSuccessBtcTxHash(null); }}
           onRefresh={fetchHistory}
         />
       )}
@@ -223,8 +233,8 @@ export default function ArchivePage() {
       {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
-          onClose={() => setUnlockStatus('none')}
           txHash={successTxHash || undefined}
+          onClose={() => setUnlockStatus('none')}
         />
       )}
 
