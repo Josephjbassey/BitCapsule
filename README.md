@@ -47,6 +47,9 @@ This is a monorepo managed by `pnpm`:
 
 ---
 
+## 📜 Smart Contract Deployment
+For detailed instructions on how to deploy the BitCapsule smart contracts to the MIDL Regtest network, please refer to the [Deployment Guide](./packages/contracts/DEPLOYMENT.md).
+
 ## ✨ Features & Use Cases
 
 ### ⏳ Temporal Vaults (Personal Growth)
