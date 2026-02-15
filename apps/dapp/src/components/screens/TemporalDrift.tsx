@@ -4,10 +4,10 @@ import React from "react";
 
 export default function TemporalDrift() {
   return (
-    <div className="flex flex-col h-full w-full p-8 animate-in fade-in duration-700">
-      <div className="flex justify-between items-end mb-8 border-b border-white/5 pb-6">
+    <div className="flex flex-col min-h-full w-full p-4 md:p-8 animate-in fade-in duration-700">
+      <div className="flex justify-between items-end mb-6 md:mb-8 border-b border-white/5 pb-4 md:pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tighter uppercase glow-text">Temporal Analytics</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tighter uppercase glow-text">Temporal Analytics</h1>
           <p className="text-primary/60 font-mono text-xs uppercase tracking-widest mt-1">System Health & Chain Metrics</p>
         </div>
         <div className="flex gap-2">

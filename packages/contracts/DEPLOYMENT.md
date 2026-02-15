@@ -34,7 +34,7 @@ pnpm exec hardhat vars set MNEMONIC
 ## 3. Deployment
 
 ### Step C: Clean Previous Deployments (Optional)
-If you've deployed before and want a fresh start:
+If you've deployed before and want a fresh start, or if you want to see the deployment logs again:
 ```bash
 rm -rf ./deployments
 ```
@@ -42,6 +42,11 @@ rm -rf ./deployments
 ### Step D: Deploy to Regtest
 ```bash
 pnpm exec hardhat deploy --network regtest
+```
+
+**Note on Output**: If you see "compiled successfully" but no deployment logs, it means Hardhat thinks the contracts are already deployed. Use `rm -rf ./deployments` or the `--reset` flag to force a redeployment and see the logs:
+```bash
+pnpm exec hardhat deploy --network regtest --reset
 ```
 
 ### Step E: Verify (Optional)
@@ -56,7 +61,7 @@ pnpm exec hardhat verify --network regtest <CONTRACT_ADDRESS>
 
 Once your contracts are deployed, you must update the dApp to point to your new `TimeCapsule` address.
 
-1.  Find the `TimeCapsule` address in the deployment logs (or in `deployments/TimeCapsule.json`).
+1.  Find the `TimeCapsule` address in the deployment logs (or in `deployments/regtest/TimeCapsule.json`).
 2.  Open `apps/dapp/.env.local`.
 3.  Update the `NEXT_PUBLIC_TIME_CAPSULE_ADDRESS` variable:
     ```env
@@ -65,4 +70,6 @@ Once your contracts are deployed, you must update the dApp to point to your new 
 4.  Rebuild or restart your dApp.
 
 ---
-**Note**: If you see an error like "No Hardhat config file found", ensure you are running the command from inside the `packages/contracts` folder.
+**Troubleshooting**:
+- **"No Hardhat config file found"**: Ensure you are running the command from inside the `packages/contracts` folder.
+- **Silent Deployment**: Hardhat-deploy is idempotent. If bytecode hasn't changed, it won't redeploy. Use `--reset` to force it.

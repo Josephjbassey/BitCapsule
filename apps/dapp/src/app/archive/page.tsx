@@ -159,7 +159,7 @@ export default function ArchivePage() {
 
   if (!isConnected) {
     return (
-      <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col items-center justify-center p-8 text-center overflow-hidden">
+      <div className="relative min-h-screen bg-background-dark text-white font-display flex flex-col items-center justify-center p-8 text-center overflow-x-hidden">
         <BackgroundEffects />
         <div className="relative z-10 space-y-8 animate-in fade-in zoom-in duration-700">
           <div className="flex flex-col items-center gap-4">
@@ -172,9 +172,9 @@ export default function ArchivePage() {
 
           <div className="max-w-md mx-auto space-y-6">
             <h2 className="text-xl md:text-2xl font-light text-gray-300 tracking-wide">Connect protocol to access archive.</h2>
-            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-primary/50 to-primary/50">
+            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-xverse-orange/50 to-primary/50">
                <div className="bg-background-dark rounded-md p-4">
-                 <Link href="/" className="px-8 py-3 bg-primary text-white font-bold rounded hover:bg-primary/80 transition-all uppercase text-sm inline-block">
+                 <Link href="/" className="px-8 py-3 bg-primary text-black font-bold rounded-sm hover:bg-white transition-all uppercase text-sm inline-block font-display tracking-widest">
                    Establish Link
                  </Link>
                </div>
@@ -186,11 +186,11 @@ export default function ArchivePage() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
+    <div className="relative min-h-screen bg-background-dark text-white font-display flex flex-col selection:bg-primary selection:text-white">
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full h-full overflow-hidden animate-in fade-in duration-700">
+      <main className="relative z-10 flex-grow w-full h-full animate-in fade-in duration-700">
         <VaultArchive
           history={history}
           currentTime={currentTime}
@@ -204,8 +204,8 @@ export default function ArchivePage() {
 
       <footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-background-dark/80 backdrop-blur-md">
         <div className="flex gap-4">
-          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Legacy Protocol v1.2</span>
-          <span className="hover:text-primary cursor-pointer transition-colors uppercase">Archive Active</span>
+          <span className="hover:text-primary cursor-pointer transition-colors uppercase font-mono">Legacy Protocol v1.2</span>
+          <span className="hover:text-primary cursor-pointer transition-colors uppercase font-mono">Archive Active</span>
         </div>
         <div className="mt-2 md:mt-0 font-mono uppercase">
           ID: <span className="text-primary/60">XJ-9200-ALPHA</span> {'//'} Node: <span className="text-green-500/60">Verified</span>

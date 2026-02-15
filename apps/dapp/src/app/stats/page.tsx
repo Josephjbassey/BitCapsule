@@ -7,11 +7,11 @@ import TemporalDrift from "@/components/screens/TemporalDrift";
 
 export default function StatsPage() {
   return (
-    <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
+    <div className="relative min-h-screen bg-background-dark text-white font-display flex flex-col selection:bg-primary selection:text-white">
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full h-full overflow-y-auto">
+      <main className="relative z-10 flex-grow w-full h-full">
         <TemporalDrift />
       </main>
 

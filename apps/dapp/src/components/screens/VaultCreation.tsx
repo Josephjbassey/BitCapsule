@@ -39,11 +39,11 @@ export default function VaultCreation({
   isSigningOrPending,
 }: VaultCreationProps) {
   return (
-    <div className="relative z-10 flex-grow flex flex-col md:flex-row items-center justify-center gap-12 px-6 py-8 w-full max-w-7xl mx-auto h-full">
+    <div className="relative z-10 flex-grow flex flex-col lg:flex-row items-center justify-center gap-8 md:gap-12 px-4 md:px-6 py-4 md:py-8 w-full max-w-7xl mx-auto h-full">
       {/* Left Panel: The Lock Mechanism */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative group perspective-1000">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center relative group perspective-1000">
         {/* Decorative concentric circles representing the 'Lock' */}
-        <div className="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
+        <div className="relative w-64 h-64 md:w-72 md:h-72 md:w-96 md:h-96 flex items-center justify-center">
           {/* Outer Ring */}
           <div className="absolute inset-0 rounded-full border border-primary/20 border-dashed animate-[spin_60s_linear_infinite]"></div>
           <div className="absolute inset-4 rounded-full border-2 border-primary/10 border-t-primary/60 animate-spin-reverse"></div>
@@ -80,7 +80,7 @@ export default function VaultCreation({
       </div>
 
       {/* Right Panel: Data Terminal */}
-      <div className="w-full md:w-1/2 max-w-lg relative">
+      <div className="w-full lg:w-1/2 max-w-lg relative z-10">
         {/* Terminal Container */}
         <div className="bg-surface-dark/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group">
           {/* Corner accents */}
