@@ -7,6 +7,10 @@ import { type HardhatUserConfig, vars } from "hardhat/config";
 export default (<HardhatUserConfig>{
 	solidity: "0.8.28",
 	defaultNetwork: "regtest",
+	namedAccounts: {
+		deployer: 0,
+		treasury: 1,
+	},
 	midl: {
 		networks: {
 			regtest: {

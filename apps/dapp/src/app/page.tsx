@@ -292,17 +292,10 @@ export default function Home() {
 
   if (!isConnected) {
     return (
-      <div className="fixed inset-0 z-[100] bg-background-dark text-gray-100 min-h-screen w-full flex flex-col relative font-display overflow-hidden">
-        {/* Background Environment */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute inset-0 grid-bg opacity-40 transform perspective-1000 rotate-x-12 scale-110"></div>
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full opacity-20 animate-float"></div>
-          <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-xverse-orange rounded-full opacity-40 animate-float-delayed"></div>
-          <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-primary/50 rounded-full opacity-30 animate-pulse"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[100px]"></div>
-        </div>
+      <div className="relative min-h-screen bg-background-dark text-gray-100 flex flex-col font-display overflow-x-hidden">
+        <BackgroundEffects />
 
-        <div className="relative z-10 w-full h-full flex flex-col justify-between p-8 md:p-12 overflow-y-auto">
+        <div className="relative z-10 w-full flex-grow flex flex-col justify-between p-8 md:p-12">
           <header className="flex justify-between items-center animate-fade-in-down flex-shrink-0">
             <div className="flex items-center gap-4 text-primary/80">
               <span className="material-icons text-sm animate-pulse">wifi_tethering</span>
@@ -389,12 +382,12 @@ export default function Home() {
           </main>
 
           <footer className="relative z-20 flex justify-between items-end mt-8 flex-shrink-0">
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start text-left">
                <span className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mb-1">Vault Status</span>
                <span className="text-xs font-bold text-primary/70 tracking-widest uppercase">Temporal Archive Online</span>
             </div>
             <div className="hidden md:block text-right">
-              <p className="text-gray-500 text-xs max-w-xs font-mono">
+              <p className="text-gray-500 text-[10px] max-w-xs font-mono">
                 By establishing a link, you agree to the BitCapsule <a className="text-primary hover:underline decoration-1 underline-offset-4" href="#">Temporal Terms</a> &amp; <a className="text-primary hover:underline decoration-1 underline-offset-4" href="#">Protocol Policy</a>.
               </p>
             </div>
@@ -405,11 +398,11 @@ export default function Home() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background-dark text-white font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white">
+    <div className="relative min-h-screen bg-background-dark text-white font-display flex flex-col selection:bg-primary selection:text-white">
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full h-full overflow-hidden animate-in fade-in duration-700">
+      <main className="relative z-10 flex-grow w-full h-full animate-in fade-in duration-700">
         {view === 'creation' ? (
           <VaultCreation
             vaultType={vaultType}
