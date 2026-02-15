@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NetworkScout } from "../NetworkScout";
 
 interface WalletConnectProps {
@@ -10,6 +10,14 @@ interface WalletConnectProps {
 }
 
 export default function WalletConnect({ onConnect, onAbort, connectors = [] }: WalletConnectProps) {
+  const [isSearching, setIsSearching] = useState(true);
+
+  // Give extensions a moment to inject
+  useEffect(() => {
+    const timer = setTimeout(() => setIsSearching(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Filter for Bitcoin/MIDL compatible connectors
   const bitcoinConnectors = connectors.filter(c =>
     c.name.toLowerCase().includes("xverse") ||
@@ -21,6 +29,12 @@ export default function WalletConnect({ onConnect, onAbort, connectors = [] }: W
 
   // If no specific bitcoin connectors found, use all of them as fallback
   const displayConnectors = bitcoinConnectors.length > 0 ? bitcoinConnectors : connectors;
+
+  const handleRefresh = () => {
+    setIsSearching(true);
+    setTimeout(() => setIsSearching(false), 1000);
+    // Force a small state update if needed, but connectors from wagmi should update automatically
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-background-dark text-gray-100 min-h-screen w-full flex flex-col relative font-display overflow-hidden">
@@ -50,16 +64,21 @@ export default function WalletConnect({ onConnect, onAbort, connectors = [] }: W
         <main className="flex-grow flex flex-col items-center justify-center relative py-12">
           <div className="text-center mb-10 relative z-20">
             <h1 className="text-primary text-sm md:text-base font-mono mb-2 tracking-widest opacity-80 animate-pulse">
-              &gt; INITIALIZING TEMPORAL HANDSHAKE...
+              {isSearching ? "> SCANNING FOR TEMPORAL ANCHORS..." : "> INITIALIZING TEMPORAL HANDSHAKE..."}
             </h1>
             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-              Establish Secure Protocol
+              {isSearching ? "Detecting Protocols" : "Establish Secure Protocol"}
             </h2>
             <div className="w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4 animate-pulse"></div>
           </div>
 
           <div className="relative w-full max-w-5xl flex flex-wrap items-center justify-center gap-8 md:gap-12 z-20">
-            {displayConnectors.length > 0 ? (
+            {isSearching ? (
+              <div className="flex flex-col items-center gap-6 animate-pulse">
+                <div className="w-20 h-20 border-t-2 border-primary rounded-full animate-spin"></div>
+                <p className="text-xs text-primary font-mono tracking-widest">Searching for injected modules...</p>
+              </div>
+            ) : displayConnectors.length > 0 ? (
               displayConnectors.map((connector) => {
                 const isXverse = connector.name.toLowerCase().includes("xverse");
                 return (
@@ -103,16 +122,25 @@ export default function WalletConnect({ onConnect, onAbort, connectors = [] }: W
                   </div>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-widest">Signal Lost</h3>
-                <p className="text-gray-400 text-sm mb-8 font-mono leading-relaxed">No Bitcoin-compatible protocols detected. Please install Xverse to establish a secure temporal link.</p>
-                <a
-                  href="https://www.xverse.app/download"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-primary/20 border border-primary text-primary font-bold rounded hover:bg-primary hover:text-white transition-all uppercase tracking-widest text-xs active:scale-95 group"
-                >
-                  <span className="material-icons text-sm">download</span>
-                  Install Xverse
-                </a>
+                <p className="text-gray-400 text-sm mb-6 font-mono leading-relaxed">No Bitcoin-compatible protocols detected. Please ensure your wallet extension is unlocked and set to a compatible network.</p>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleRefresh}
+                    className="w-full py-3 bg-primary/10 border border-primary/40 text-primary text-xs font-bold uppercase tracking-widest rounded hover:bg-primary/20 transition-all active:scale-95"
+                  >
+                    Retry Scan
+                  </button>
+                  <a
+                    href="https://www.xverse.app/download"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-3 bg-white/5 border border-white/20 text-gray-300 text-xs font-bold uppercase tracking-widest rounded hover:bg-white/10 transition-all active:scale-95"
+                  >
+                    <span className="material-icons text-sm">download</span>
+                    Install Xverse
+                  </a>
+                </div>
               </div>
             )}
           </div>
