@@ -308,7 +308,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">BitCapsule</h1>
-            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.4.0</span>
+            <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">SECURE CHANNEL V.4.1.0</span>
           </div>
         </div>
         <div className="flex gap-4 md:gap-8 text-[10px] tracking-widest text-gray-400">

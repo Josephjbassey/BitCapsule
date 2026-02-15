@@ -38,7 +38,7 @@ export default function WalletConnect({ onConnect, onAbort, connectors = [] }: W
         <header className="flex justify-between items-center animate-fade-in-down flex-shrink-0">
           <div className="flex items-center gap-4 text-primary/80">
             <span className="material-icons text-sm animate-pulse">wifi_tethering</span>
-            <span className="text-xs tracking-[0.2em] font-bold">BITCAPSULE // SECURE LINK v.4.1.0</span>
+            <span className="text-xs tracking-[0.2em] font-bold">BITCAPSULE // SECURE CHANNEL V.4.1.0</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 font-mono">
             <span>NETWORK: <span className="text-primary">REGTEST</span></span>
