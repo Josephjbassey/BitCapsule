@@ -13,7 +13,7 @@ export default function Navbar() {
   const { isConnected } = useAccount();
 
   return (
-    <header className="relative z-20 w-full px-6 py-4 flex justify-between items-center border-b border-primary/20 backdrop-blur-sm bg-obsidian/50">
+    <header className="relative z-20 w-full px-6 py-4 flex justify-between items-center border-b border-primary/20 backdrop-blur-sm bg-background-dark/50">
       <Link href="/" className="flex items-center gap-3 group">
         <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary animate-pulse group-hover:bg-primary/30 transition-colors">
           <span className="material-icons text-primary text-sm">hourglass_empty</span>
@@ -36,6 +36,12 @@ export default function Navbar() {
           className={`text-[10px] tracking-[0.3em] uppercase font-bold transition-all hover:text-primary ${pathname === "/archive" ? "text-primary border-b border-primary pb-1" : "text-gray-400"}`}
         >
           Archive
+        </Link>
+        <Link
+          href="/stats"
+          className={`text-[10px] tracking-[0.3em] uppercase font-bold transition-all hover:text-primary ${pathname === "/stats" ? "text-primary border-b border-primary pb-1" : "text-gray-400"}`}
+        >
+          Stats
         </Link>
       </nav>
 

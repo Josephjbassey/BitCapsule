@@ -149,7 +149,7 @@ export const TemporalSlider = ({ value, onChange, min, max }: TemporalSliderProp
                 </div>
                 {/* Thumb/Knob */}
                 <div
-                    className="absolute w-6 h-6 bg-obsidian border-2 border-primary rounded-full shadow-neon z-10 flex items-center justify-center transform -translate-x-1/2 group-hover:scale-110 transition-transform"
+                    className="absolute w-6 h-6 bg-background-dark border-2 border-primary rounded-full shadow-neon z-10 flex items-center justify-center transform -translate-x-1/2 group-hover:scale-110 transition-transform"
                     style={{ left: `${percentage}%` }}
                 >
                     <div className="w-1.5 h-1.5 bg-white rounded-full" />

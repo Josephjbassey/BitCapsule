@@ -172,7 +172,7 @@ export default function ArchivePage() {
 
           <div className="max-w-md mx-auto space-y-6">
             <h2 className="text-xl md:text-2xl font-light text-gray-300 tracking-wide">Connect protocol to access archive.</h2>
-            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-bitcoin-gold/50 to-primary/50">
+            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-primary/50 to-primary/50">
                <div className="bg-background-dark rounded-md p-4">
                  <Link href="/" className="px-8 py-3 bg-primary text-white font-bold rounded hover:bg-primary/80 transition-all uppercase text-sm inline-block">
                    Establish Link
@@ -202,7 +202,7 @@ export default function ArchivePage() {
         />
       </main>
 
-      <footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-obsidian/80 backdrop-blur-md">
+      <footer className="relative z-20 w-full px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 border-t border-primary/10 bg-background-dark/80 backdrop-blur-md">
         <div className="flex gap-4">
           <span className="hover:text-primary cursor-pointer transition-colors uppercase">Legacy Protocol v1.2</span>
           <span className="hover:text-primary cursor-pointer transition-colors uppercase">Archive Active</span>

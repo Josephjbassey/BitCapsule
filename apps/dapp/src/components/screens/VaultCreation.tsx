@@ -49,7 +49,7 @@ export default function VaultCreation({
           <div className="absolute inset-4 rounded-full border-2 border-primary/10 border-t-primary/60 animate-spin-reverse"></div>
 
           {/* Middle Ring with Data */}
-          <div className="absolute inset-12 rounded-full border border-primary/30 bg-obsidian/80 backdrop-blur-md shadow-neon flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-12 rounded-full border border-primary/30 bg-background-dark/80 backdrop-blur-md shadow-neon flex items-center justify-center overflow-hidden">
             <img
               alt="Abstract neon geometric pattern"
               className="w-full h-full object-cover opacity-40 mix-blend-overlay"
@@ -59,14 +59,14 @@ export default function VaultCreation({
           </div>
 
           {/* Core Lock */}
-          <div className="absolute w-32 h-32 bg-obsidian rounded-full border-4 border-primary shadow-neon-intense flex items-center justify-center z-10">
+          <div className="absolute w-32 h-32 bg-background-dark rounded-full border-4 border-primary shadow-neon-intense flex items-center justify-center z-10">
             <span className="material-icons text-6xl text-primary drop-shadow-[0_0_15px_rgba(52,132,244,1)]">lock</span>
           </div>
 
           {/* Floating Particles/Embers */}
           <div className="absolute -top-10 -right-10 w-2 h-2 bg-primary rounded-full blur-[1px] animate-bounce"></div>
           <div className="absolute top-20 -left-12 w-1 h-1 bg-white rounded-full blur-[0.5px] animate-pulse"></div>
-          <div className="absolute bottom-10 right-0 w-1.5 h-1.5 bg-bitcoin-gold rounded-full blur-[1px] animate-pulse"></div>
+          <div className="absolute bottom-10 right-0 w-1.5 h-1.5 bg-primary rounded-full blur-[1px] animate-pulse"></div>
 
           {/* Holographic projection lines */}
           <div className="absolute top-1/2 left-1/2 w-[140%] h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent -translate-x-1/2 -translate-y-1/2 transform rotate-45"></div>
@@ -82,7 +82,7 @@ export default function VaultCreation({
       {/* Right Panel: Data Terminal */}
       <div className="w-full md:w-1/2 max-w-lg relative">
         {/* Terminal Container */}
-        <div className="bg-obsidian-light/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group">
+        <div className="bg-surface-dark/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group">
           {/* Corner accents */}
           <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary rounded-tl-lg"></div>
           <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary rounded-tr-lg"></div>
@@ -101,7 +101,7 @@ export default function VaultCreation({
                   id="vault-type-selector"
                   value={vaultType}
                   onChange={(e) => setVaultType(Number(e.target.value))}
-                  className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
+                  className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
               >
                   <option value={VaultType.TEMPORAL}>TEMPORAL VAULT (Personal)</option>
                   <option value={VaultType.LEGACY}>LEGACY SWITCH (Inheritance)</option>
@@ -112,14 +112,14 @@ export default function VaultCreation({
 
             {vaultType === VaultType.SOCIAL && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                    <label htmlFor="beneficiary-input" className="text-xs tracking-wider text-bitcoin-gold uppercase font-semibold block">Friend's EVM Address</label>
+                    <label htmlFor="beneficiary-input" className="text-xs tracking-wider text-primary uppercase font-semibold block">Friend's EVM Address</label>
                     <input
                         id="beneficiary-input"
                         type="text"
                         value={beneficiary}
                         onChange={(e) => setBeneficiary(e.target.value)}
                         placeholder="0x..."
-                        className="w-full bg-obsidian border border-bitcoin-gold/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-bitcoin-gold focus:ring-1 focus:ring-bitcoin-gold/30 transition-all hover:border-bitcoin-gold/60"
+                        className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
                     />
                 </div>
             )}
@@ -133,7 +133,7 @@ export default function VaultCreation({
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.01"
-                    className="w-full bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
+                    className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
                 />
             </div>
 
@@ -148,7 +148,7 @@ export default function VaultCreation({
                   id="message-input"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full h-32 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
+                  className="w-full h-32 bg-background-dark border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
                   placeholder="Initializing encryption... Write to your future self..."
                 ></textarea>
                 {/* Glowing line at bottom of active input */}
@@ -191,7 +191,7 @@ export default function VaultCreation({
                 </div>
                 {/* Thumb/Knob (Visual only, aligned with real input) */}
                 <div
-                    className="absolute w-6 h-6 bg-obsidian border-2 border-primary rounded-full shadow-neon cursor-pointer hover:scale-110 transition-transform z-10 flex items-center justify-center pointer-events-none"
+                    className="absolute w-6 h-6 bg-background-dark border-2 border-primary rounded-full shadow-neon cursor-pointer hover:scale-110 transition-transform z-10 flex items-center justify-center pointer-events-none"
                     style={{ left: `calc(${(unlockTimeDays / 3650) * 100}% - 12px)` }}
                 >
                   <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
@@ -211,7 +211,7 @@ export default function VaultCreation({
                 type="button"
                 onClick={handleMint}
                 disabled={isSigningOrPending}
-                className="relative w-full group overflow-hidden rounded-lg bg-obsidian-light border border-bitcoin-gold/30 hover:border-bitcoin-gold/80 transition-all duration-300 disabled:opacity-50"
+                className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50"
               >
                 {/* Gold Circuitry Pattern Background */}
                 <div className="absolute inset-0 circuit-pattern opacity-10 group-hover:opacity-20 transition-opacity"></div>
@@ -220,17 +220,17 @@ export default function VaultCreation({
 
                 <div className="relative flex items-center justify-between px-6 py-5">
                   <div className="flex flex-col items-start">
-                    <span className="text-xs text-bitcoin-gold/80 uppercase tracking-widest mb-1 group-hover:text-bitcoin-gold transition-colors">Confirm Protocol</span>
+                    <span className="text-xs text-primary/80 uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">Confirm Protocol</span>
                     <span className="text-xl font-bold text-white tracking-wide group-hover:drop-shadow-[0_0_8px_rgba(247,147,26,0.6)] transition-all uppercase">
                         {isSigningOrPending ? "Syncing..." : "SEAL VIBE"}
                     </span>
                   </div>
-                  <div className="w-12 h-12 rounded-lg border border-bitcoin-gold/50 bg-bitcoin-gold/10 flex items-center justify-center shadow-gold-glow group-hover:bg-bitcoin-gold group-hover:text-black transition-all duration-300">
+                  <div className="w-12 h-12 rounded-lg border border-primary/50 bg-primary/10 flex items-center justify-center shadow-gold-glow group-hover:bg-primary group-hover:text-black transition-all duration-300">
                     <span className="material-icons text-2xl transform -rotate-45 group-hover:rotate-0 transition-transform">send</span>
                   </div>
                 </div>
                 {/* Bottom warning strip */}
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-bitcoin-gold/50"></div>
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary/50"></div>
               </button>
               <div className="text-center mt-6 pt-4 border-t border-primary/10">
                 <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3">Running low on Regtest BTC?</p>

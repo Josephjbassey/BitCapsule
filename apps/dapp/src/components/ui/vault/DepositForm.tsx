@@ -110,7 +110,7 @@ export const DepositForm = () => {
                             id="token-address"
                             type="text"
                             placeholder="Token Address (0x...)"
-                            className="bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
+                            className="bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
                             value={tokenAddress}
                             onChange={(e) => setTokenAddress(e.target.value)}
                         />
@@ -121,7 +121,7 @@ export const DepositForm = () => {
                             id="amount"
                             type="number"
                             placeholder="Amount"
-                            className="bg-obsidian border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
+                            className="bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-sm focus:outline-none focus:border-primary"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                         />
@@ -137,7 +137,7 @@ export const DepositForm = () => {
                 <div className="relative group">
                     <textarea
                         id="input-stream"
-                        className="w-full h-32 bg-obsidian border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
+                        className="w-full h-32 bg-background-dark border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
                         placeholder="Initializing encryption... Write to your future self..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
@@ -160,14 +160,14 @@ export const DepositForm = () => {
                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <div className="flex flex-col items-start">
-                        <span className="text-xs text-bitcoin-gold/80 uppercase tracking-widest mb-1 group-hover:text-bitcoin-gold transition-colors">
+                        <span className="text-xs text-primary/80 uppercase tracking-widest mb-1 group-hover:text-primary transition-colors">
                             {isPending ? "Confirming..." : isConfirming ? "Sealing..." : "Confirm Protocol"}
                         </span>
                         <span className="text-xl font-bold text-white tracking-wide group-hover:drop-shadow-[0_0_8px_rgba(247,147,26,0.6)] transition-all">
                             SEAL VIBE
                         </span>
                     </div>
-                    <div className="w-12 h-12 rounded-lg border border-bitcoin-gold/50 bg-bitcoin-gold/10 flex items-center justify-center shadow-gold-glow group-hover:bg-bitcoin-gold group-hover:text-black transition-all duration-300">
+                    <div className="w-12 h-12 rounded-lg border border-primary/50 bg-primary/10 flex items-center justify-center shadow-neon group-hover:bg-primary group-hover:text-black transition-all duration-300">
                         <span className="material-icons text-2xl transform -rotate-45 group-hover:rotate-0 transition-transform">
                             send
                         </span>
