@@ -21,7 +21,7 @@ export default (<HardhatUserConfig>{
 			default: 0,
 		},
 		treasury: {
-			default: 1,
+			default: 0,
 		},
 	},
 	midl: {
@@ -35,6 +35,7 @@ export default (<HardhatUserConfig>{
 				network: {
 					explorerUrl: "https://mempool.staging.midl.xyz",
 					id: "regtest",
+					accounts: { mnemonic: vars.get("MNEMONIC") },
 					network: "regtest",
 				},
 			},
