@@ -316,7 +316,7 @@ export default function Home() {
             <span className="material-icons text-primary text-sm">hourglass_empty</span>
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">TimeVibe</h1>
+            <h1 className="text-lg font-bold tracking-widest leading-none glow-text uppercase">BitCapsule</h1>
             <span className="text-[10px] text-primary/60 tracking-[0.2em] uppercase">Secure Channel V.4.0</span>
           </div>
         </div>

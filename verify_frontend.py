@@ -15,11 +15,11 @@ async def verify_render():
 
             # Check for branding
             content = await page.content()
-            if "TimeVibe" in content:
-                print("Verification successful: TimeVibe branding found.")
+            if "BitCapsule" in content:
+                print("Verification successful: BitCapsule branding found.")
                 return True
             else:
-                print("Verification failed: TimeVibe branding not found.")
+                print("Verification failed: BitCapsule branding not found.")
                 return False
         except Exception as e:
             print(f"Verification error: {e}")

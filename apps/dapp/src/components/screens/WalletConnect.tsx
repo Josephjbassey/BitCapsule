@@ -25,7 +25,7 @@ export default function WalletConnect({ onConnect, onAbort }: WalletConnectProps
         <header className="flex justify-between items-center animate-fade-in-down">
           <div className="flex items-center gap-4 text-primary/80">
             <span className="material-icons text-sm animate-pulse">wifi_tethering</span>
-            <span className="text-xs tracking-[0.2em] font-bold">TIMEVIBE // SECURE LINK v.3.0.1</span>
+            <span className="text-xs tracking-[0.2em] font-bold">BITCAPSULE // SECURE LINK v.3.0.1</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 font-mono">
             <span>ENCRYPTION: AES-256</span>
@@ -111,7 +111,7 @@ export default function WalletConnect({ onConnect, onAbort }: WalletConnectProps
           </button>
           <div className="hidden md:block text-right">
             <p className="text-gray-500 text-xs max-w-xs font-mono">
-              By connecting a wallet, you agree to the TimeVibe <a className="text-primary hover:underline decoration-1 underline-offset-4" href="#">Temporal Terms</a> &amp; <a className="text-primary hover:underline decoration-1 underline-offset-4" href="#">Protocol Policy</a>.
+              By connecting a wallet, you agree to the BitCapsule <a className="text-primary hover:underline decoration-1 underline-offset-4" href="#">Temporal Terms</a> &amp; <a className="text-primary hover:underline decoration-1 underline-offset-4" href="#">Protocol Policy</a>.
             </p>
           </div>
         </footer>

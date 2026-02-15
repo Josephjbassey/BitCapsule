@@ -6,7 +6,7 @@ import "./globals.css";
 import "@/styles/cinematic.css";
 
 export const metadata: Metadata = {
-	title: "TimeVibe Cinematic Vault",
+	title: "BitCapsule Cinematic Vault",
 	description: "Secure Channel V.2.0 - Temporal Vault System",
 };
 
