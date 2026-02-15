@@ -2,14 +2,27 @@ import "@nomicfoundation/hardhat-verify";
 import "hardhat-deploy";
 import "@midl/hardhat-deploy";
 import { midlRegtest } from "@midl/executor";
-import { type HardhatUserConfig, vars } from "hardhat/config";
+import { type HardhatUserConfig, vars, task } from "hardhat/config";
+
+task("list-accounts", "Prints the list of named accounts", async (taskArgs, hre) => {
+  const namedAccounts = await hre.getNamedAccounts();
+  console.log("\nNamed Accounts:");
+  for (const [name, address] of Object.entries(namedAccounts)) {
+    console.log(`  - ${name}: ${address}`);
+  }
+  console.log("\nNote: These addresses are derived from your configured MNEMONIC.");
+});
 
 export default (<HardhatUserConfig>{
 	solidity: "0.8.28",
 	defaultNetwork: "regtest",
 	namedAccounts: {
-		deployer: 0,
-		treasury: 1,
+		deployer: {
+			default: 0,
+		},
+		treasury: {
+			default: 1,
+		},
 	},
 	midl: {
 		networks: {
