@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useWaitForTransaction, useAddNetwork } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
@@ -29,6 +29,21 @@ export default function Home() {
   const { addNetworkAsync } = useAddNetwork();
   const publicClient = usePublicClient();
 
+  // Diagnostics
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log("[BitCapsule] Diagnostics:", {
+        isConnected,
+        address,
+        connectorCount: connectors.length,
+        connectors: connectors.map(c => c.name),
+        windowXfi: !!(window as any).xfi,
+        windowXverse: !!(window as any).xverse,
+        windowXverseProviders: !!(window as any).XverseProviders
+      });
+    }
+  }, [isConnected, address, connectors]);
+
   // State
   const [view, setView] = useState<'creation' | 'archive'>('creation');
   const [message, setMessage] = useState("");
@@ -38,81 +53,76 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
 
   const [isMinting, setIsMinting] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
 
-  const [isMounted, setIsMounted] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
-  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
-
-  // Derived state: tracks any active transaction process
   const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
-
-  const fetchHistory = useCallback(async () => {
-    if (!publicClient || !isConnected) return;
-    try {
-      const logs = await publicClient.getLogs({
-        address: TimeCapsule.address,
-        event: {
-          type: 'event',
-          name: 'CapsuleCreated',
-          inputs: [
-            { indexed: true, name: 'id', type: 'uint256' },
-            { indexed: true, name: 'owner', type: 'address' },
-            { indexed: true, name: 'beneficiary', type: 'address' },
-            { indexed: false, name: 'unlockTime', type: 'uint256' },
-            { indexed: false, name: 'vaultType', type: 'uint8' },
-            { indexed: false, name: 'amount', type: 'uint256' },
-            { indexed: false, name: 'token', type: 'address' },
-            { indexed: false, name: 'message', type: 'string' }
-          ]
-        },
-        fromBlock: BigInt(0),
-      });
-      const sortedLogs = [...logs].sort((a, b) =>
-        Number((b.blockNumber || BigInt(0)) - (a.blockNumber || BigInt(0)))
-      );
-      setHistory(sortedLogs);
-    } catch (error) {
-      console.error("Failed to fetch history", error);
-    }
-  }, [publicClient, isConnected]);
 
   useEffect(() => {
     setIsMounted(true);
+    const interval = setInterval(() => {
+      setCurrentTime(Math.floor(Date.now() / 1000));
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
+  const fetchHistory = async () => {
+    if (!publicClient) return;
+    try {
+      const logs = await publicClient.getLogs({
+        address: TimeCapsule.address as `0x${string}`,
+        event: {
+            type: 'event',
+            name: 'CapsuleCreated',
+            inputs: [
+                { type: 'uint256', name: 'id', indexed: true },
+                { type: 'address', name: 'owner', indexed: true },
+                { type: 'address', name: 'token' },
+                { type: 'uint256', name: 'amount' },
+                { type: 'uint256', name: 'unlockTime' },
+                { type: 'address', name: 'beneficiary' },
+                { type: 'uint8', name: 'vaultType' },
+                { type: 'string', name: 'message' }
+            ]
+        },
+        fromBlock: 'earliest'
+      });
+      setHistory(logs);
+    } catch (error) {
+      console.error("Failed to fetch history", error);
+    }
+  };
+
   useEffect(() => {
-    if (!publicClient || !isConnected) return;
-    fetchHistory();
-    const interval = setInterval(fetchHistory, 30000);
-    return () => clearInterval(interval);
-  }, [publicClient, isConnected, fetchHistory]);
+    if (isConnected && publicClient) {
+      fetchHistory();
+    }
+  }, [isConnected, publicClient]);
 
   const handleConnect = async (connector: any) => {
     try {
-      if (!connector) {
-        toast.error("No connector selected.");
-        return;
-      }
-
       await connectAsync({ connector });
 
-      // Attempt network setup for Xverse
-      if (connector.name.toLowerCase().includes("xverse")) {
+      const isXverse = connector.name.toLowerCase().includes("xverse") || connector.id.toLowerCase().includes("xverse");
+      if (isXverse) {
         try {
+          // @ts-ignore - Handle variable NetworkConfig properties
           await addNetworkAsync({
             connectorId: connector.id,
             networkConfig: {
-              name: "MIDL Regtest",
-              network: "regtest",
-              rpcUrl: "https://rpc.staging.midl.xyz",
-              indexerUrl: "https://mempool.staging.midl.xyz",
-            },
-          });
+              chainId: 420,
+              chainName: "MIDL Regtest",
+              rpcUrls: ["https://rpc.staging.midl.xyz"],
+              nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
+              blockExplorerUrls: ["https://blockscout.staging.midl.xyz"],
+            }
+          } as any);
           toast.success("Network configured for BitCapsule");
         } catch (netErr: any) {
           console.warn("Network switch failed", netErr);
