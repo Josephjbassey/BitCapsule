@@ -53,7 +53,7 @@ export default function Navbar() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-sm md:text-lg font-bold tracking-widest leading-none glow-text uppercase">BitCapsule</h1>
-            <span className="text-[8px] md:text-[10px] text-primary/60 tracking-[0.2em] uppercase hidden xs:block">SECURE CHANNEL V.4.1.0</span>
+
           </div>
         </Link>
 

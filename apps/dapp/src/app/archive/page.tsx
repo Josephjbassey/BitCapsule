@@ -48,10 +48,22 @@ export default function ArchivePage() {
   const fetchHistory = async () => {
     if (!publicClient) return;
     try {
-      const logs = await publicClient.getLogs({
+            const logs = await publicClient.getLogs({
         address: TimeCapsule.getAddress(),
-        abi: TimeCapsule.abi,
-        eventName: 'CapsuleCreated',
+        event: {
+          type: 'event',
+          name: 'CapsuleCreated',
+          inputs: [
+            { type: 'uint256', name: 'id', indexed: true },
+            { type: 'address', name: 'owner', indexed: true },
+            { type: 'address', name: 'beneficiary', indexed: true },
+            { type: 'uint256', name: 'unlockTime', indexed: false },
+            { type: 'uint8', name: 'vaultType', indexed: false },
+            { type: 'uint256', name: 'amount', indexed: false },
+            { type: 'address', name: 'token', indexed: false },
+            { type: 'string', name: 'message', indexed: false }
+          ]
+        } as any,
         fromBlock: 'earliest'
       });
       setHistory(logs);
@@ -166,7 +178,7 @@ export default function ArchivePage() {
               <span className="material-icons text-primary text-3xl">hourglass_empty</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase glow-text">BitCapsule</h1>
-            <p className="text-primary/60 font-mono tracking-widest text-xs uppercase">SECURE CHANNEL V.4.1.0</p>
+
           </div>
 
           <div className="max-w-md mx-auto space-y-6">
