@@ -35,3 +35,12 @@
 - **Local Logs**: The app logs key events to the browser console when `process.env.NODE_ENV === 'development'`.
 - **Explorer**: Always verify state on [Blockscout](https://blockscout.staging.midl.xyz/address/0x9e0C86386C8f6B223bE48f6834bEa6011749826E).
 - **Network Tab**: Check for failed RPC calls to `https://rpc.staging.midl.xyz`.
+
+### 5. Network Sync Issues (Mobile/Desktop)
+**Symptoms**: App shows "Incompatible Network" or "Switch Network" warning.
+**Cause**: Wallet is not on MIDL Regtest (Chain ID 420).
+**Solution**:
+- The dApp will attempt an **Auto-Sync** on connection.
+- If it fails, click the **Switch Network** button in the Navbar.
+- On Mobile: Some wallets require you to manually open the wallet app and change the network to Regtest if the auto-switch prompt doesn't appear.
+- Verify your chain ID matches **420** and RPC is `https://rpc.staging.midl.xyz`.

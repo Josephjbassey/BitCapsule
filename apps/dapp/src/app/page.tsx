@@ -39,24 +39,6 @@ export default function Home() {
     }
   }, [isConnected, address]);
 
-  // Handle network auto-switch on connection
-  useEffect(() => {
-    if (isConnected && connectors) {
-      const activeConnector = connectors.find(c => ["xverse", "leather", "unisat", "phantom", "okx"].some(name => c.name.toLowerCase().includes(name)));
-      if (activeConnector) {
-        addNetworkAsync({
-          connectorId: activeConnector.id,
-          networkConfig: {
-            chainId: 420,
-            chainName: "MIDL Regtest",
-            rpcUrls: ["https://rpc.staging.midl.xyz"],
-            nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
-            blockExplorerUrls: ["https://blockscout.staging.midl.xyz"],
-          }
-        } as any).catch(err => console.warn("Auto network switch failed", err));
-      }
-    }
-  }, [isConnected, connectors, addNetworkAsync]);
 
   // State
   const [view, setView] = useState<'creation' | 'archive'>('creation');
