@@ -90,10 +90,22 @@ export default function Home() {
   const fetchHistory = async () => {
     if (!publicClient) return;
     try {
-      const logs = await publicClient.getLogs({
+            const logs = await publicClient.getLogs({
         address: TimeCapsule.getAddress(),
-        abi: TimeCapsule.abi,
-        eventName: 'CapsuleCreated',
+        event: {
+          type: 'event',
+          name: 'CapsuleCreated',
+          inputs: [
+            { type: 'uint256', name: 'id', indexed: true },
+            { type: 'address', name: 'owner', indexed: true },
+            { type: 'address', name: 'beneficiary', indexed: true },
+            { type: 'uint256', name: 'unlockTime', indexed: false },
+            { type: 'uint8', name: 'vaultType', indexed: false },
+            { type: 'uint256', name: 'amount', indexed: false },
+            { type: 'address', name: 'token', indexed: false },
+            { type: 'string', name: 'message', indexed: false }
+          ]
+        } as any,
         fromBlock: 'earliest'
       });
       setHistory(logs);
@@ -304,7 +316,7 @@ export default function Home() {
           <header className="flex justify-between items-center animate-fade-in-down flex-shrink-0">
             <div className="flex items-center gap-4 text-primary/80">
               <span className="material-icons text-sm animate-pulse">wifi_tethering</span>
-              <span className="text-xs tracking-[0.2em] font-bold uppercase">BitCapsule // SECURE CHANNEL V.4.1.0</span>
+              <span className="text-xs tracking-[0.2em] font-bold uppercase">BitCapsule</span>
             </div>
             <div className="hidden md:flex items-center gap-2 text-xs text-gray-500 font-mono">
               <span>ENCRYPTION: <span className="text-primary">AES-256</span></span>
@@ -432,7 +444,6 @@ export default function Home() {
             address={address}
             isSigningOrPending={isSigningOrPending}
             onNavigateBack={() => setView('creation')}
-            onRefresh={fetchHistory}
             onRefresh={fetchHistory}
           />
         )}

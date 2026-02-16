@@ -80,7 +80,7 @@ export default function VaultArchive({
               </div>
               <div className="text-[10px] font-mono">
                 <div className="text-white">SYS_CONFIG</div>
-                <div className="text-white/40 uppercase">SECURE CHANNEL V.4.1.0</div>
+
               </div>
             </div>
           </div>

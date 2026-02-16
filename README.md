@@ -1,8 +1,8 @@
-# BitCapsule // SECURE CHANNEL V.4.1.0
+# BitCapsule
 
 BitCapsule is a cinematic temporal vault protocol built on **MIDL**. Secure Bitcoin and encrypted messages in the future, establishing immutable temporal anchors on both Bitcoin and EVM.
 
-## 🚀 Quick Start (Production/Staging)
+## 🚀 Quick Start
 
 ### 1. Prerequisites
 - **Node.js** (v18+) & **pnpm**
@@ -50,4 +50,4 @@ For deploying your own instance of the protocol, see [packages/contracts/DEPLOYM
 - **🎁 SOCIAL**: Encrypted peer-to-peer temporal gifting.
 
 ---
-*Built with MIDL SDK. Verified Secure Channel Active.*
+*Built with MIDL SDK.*

@@ -7,7 +7,7 @@ import "@/styles/cinematic.css";
 
 export const metadata: Metadata = {
 	title: "BitCapsule Cinematic Vault",
-	description: "BITCAPSULE // SECURE CHANNEL V.4.1.0 - Temporal Vault System",
+	description: "BitCapsule - Temporal Vault System",
 };
 
 export const viewport: Viewport = {
