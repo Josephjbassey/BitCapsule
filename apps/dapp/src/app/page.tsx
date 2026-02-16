@@ -61,6 +61,7 @@ export default function Home() {
   // State
   const [view, setView] = useState<'creation' | 'archive'>('creation');
   const [message, setMessage] = useState("");
+  const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
   const [beneficiary, setBeneficiary] = useState("");
@@ -90,25 +91,61 @@ export default function Home() {
   const fetchHistory = async () => {
     if (!publicClient) return;
     try {
-            const logs = await publicClient.getLogs({
-        address: TimeCapsule.getAddress(),
-        event: {
-          type: 'event',
-          name: 'CapsuleCreated',
-          inputs: [
-            { type: 'uint256', name: 'id', indexed: true },
-            { type: 'address', name: 'owner', indexed: true },
-            { type: 'address', name: 'beneficiary', indexed: true },
-            { type: 'uint256', name: 'unlockTime', indexed: false },
-            { type: 'uint8', name: 'vaultType', indexed: false },
-            { type: 'uint256', name: 'amount', indexed: false },
-            { type: 'address', name: 'token', indexed: false },
-            { type: 'string', name: 'message', indexed: false }
-          ]
-        } as any,
-        fromBlock: 'earliest'
-      });
-      setHistory(logs);
+      const [logs, claimedLogs, withdrawnLogs] = await Promise.all([
+        publicClient.getLogs({
+          address: TimeCapsule.getAddress(),
+          event: {
+            type: 'event',
+            name: 'CapsuleCreated',
+            inputs: [
+              { type: 'uint256', name: 'id', indexed: true },
+              { type: 'address', name: 'owner', indexed: true },
+              { type: 'address', name: 'beneficiary', indexed: true },
+              { type: 'uint256', name: 'unlockTime', indexed: false },
+              { type: 'uint8', name: 'vaultType', indexed: false },
+              { type: 'uint256', name: 'amount', indexed: false },
+              { type: 'address', name: 'token', indexed: false },
+              { type: 'string', name: 'message', indexed: false }
+            ]
+          } as any,
+          fromBlock: 'earliest'
+        }),
+        publicClient.getLogs({
+          address: TimeCapsule.getAddress(),
+          event: {
+            type: 'event',
+            name: 'CapsuleClaimed',
+            inputs: [
+              { type: 'uint256', name: 'id', indexed: true },
+              { type: 'address', name: 'claimant', indexed: true }
+            ]
+          } as any,
+          fromBlock: 'earliest'
+        }),
+        publicClient.getLogs({
+          address: TimeCapsule.getAddress(),
+          event: {
+            type: 'event',
+            name: 'EarlyWithdrawal',
+            inputs: [
+              { type: 'uint256', name: 'id', indexed: true },
+              { type: 'address', name: 'owner', indexed: true },
+              { type: 'uint256', name: 'userAmount', indexed: false },
+              { type: 'uint256', name: 'treasuryAmount', indexed: false },
+              { type: 'address', name: 'token', indexed: false }
+            ]
+          } as any,
+          fromBlock: 'earliest'
+        })
+      ]);
+
+      const processedIds = new Set([
+        ...claimedLogs.map(l => (l as any).args.id?.toString()),
+        ...withdrawnLogs.map(l => (l as any).args.id?.toString())
+      ]);
+
+      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
+      setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
     }
@@ -157,6 +194,12 @@ export default function Home() {
       const amountInWei = parseEther(amount);
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
+      // Combine label and message into a JSON string
+      const combinedMessage = JSON.stringify({
+        label: label || "Unnamed Vault",
+        secret: message
+      });
+
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -171,7 +214,7 @@ export default function Home() {
                 unlockTimestamp,
                 targetBeneficiary as `0x${string}`,
                 vaultType,
-                message
+                combinedMessage
               ],
             }),
           },
@@ -205,6 +248,7 @@ export default function Home() {
         setSuccessBtcTxHash(tx.id);    // BTC hash
 
         setMessage("");
+        setLabel("");
         setAmount("");
         setTimeout(fetchHistory, 2000);
       }
@@ -307,7 +351,7 @@ export default function Home() {
 
   if (!isMounted) return null;
 
-  if (!isConnected) {
+  if (false && !isConnected) {
     return (
       <div className="relative min-h-screen bg-background-dark text-gray-100 flex flex-col font-display overflow-x-hidden">
         <BackgroundEffects />
@@ -430,6 +474,8 @@ export default function Home() {
             setUnlockTimeDays={setUnlockTimeDays}
             message={message}
             setMessage={setMessage}
+            label={label}
+            setLabel={setLabel}
             amount={amount}
             setAmount={setAmount}
             handleMint={handleMint}

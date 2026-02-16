@@ -18,6 +18,8 @@ interface VaultCreationProps {
   setUnlockTimeDays: (days: number) => void;
   message: string;
   setMessage: (msg: string) => void;
+  label: string;
+  setLabel: (lbl: string) => void;
   amount: string;
   setAmount: (amt: string) => void;
   handleMint: () => void;
@@ -33,6 +35,8 @@ export default function VaultCreation({
   setUnlockTimeDays,
   message,
   setMessage,
+  label,
+  setLabel,
   amount,
   setAmount,
   handleMint,
@@ -87,9 +91,21 @@ export default function VaultCreation({
               </select>
             </div>
 
+            <div className="space-y-2">
+                <label htmlFor="label-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Vault Label (Public)</label>
+                <input
+                    id="label-input"
+                    type="text"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    placeholder="e.g., Retirement Fund, 2030 Savings"
+                    className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
+                />
+            </div>
+
             {(vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                    <label htmlFor="beneficiary-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block">Beneficiary EVM Address</label>
+                    <label htmlFor="beneficiary-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Beneficiary EVM Address</label>
                     <input
                         id="beneficiary-input"
                         type="text"
@@ -102,7 +118,7 @@ export default function VaultCreation({
             )}
 
             <div className="space-y-2">
-                <label htmlFor="amount-input" className="text-[10px] sm:text-xs tracking-wider text-primary/80 uppercase font-semibold block">Deposit Amount (BTC)</label>
+                <label htmlFor="amount-input" className="text-[10px] sm:text-xs tracking-wider text-primary/80 uppercase font-semibold block text-left">Deposit Amount (BTC)</label>
                 <input
                     id="amount-input"
                     type="number"
@@ -115,7 +131,7 @@ export default function VaultCreation({
 
             <div className="space-y-3">
               <label htmlFor="message-input" className="flex justify-between text-[10px] sm:text-xs tracking-wider text-primary/80 uppercase font-semibold">
-                <span>Input Stream</span>
+                <span>Input Stream (Secret)</span>
                 <span className="animate-pulse">_Ready</span>
               </label>
               <div className="relative group">
@@ -123,7 +139,7 @@ export default function VaultCreation({
                   id="message-input"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full h-24 sm:h-32 bg-background-dark border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
+                  className="w-full h-20 sm:h-24 bg-background-dark border border-primary/40 rounded-lg p-4 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder-primary/30 resize-none leading-relaxed"
                   placeholder="Encrypting... Write to the future..."
                 ></textarea>
                 <div className="absolute bottom-0 left-2 right-2 h-[1px] bg-primary shadow-[0_0_10px_rgba(242,185,13,1)] opacity-50 group-hover:opacity-100 transition-opacity"></div>

@@ -48,25 +48,61 @@ export default function ArchivePage() {
   const fetchHistory = async () => {
     if (!publicClient) return;
     try {
-            const logs = await publicClient.getLogs({
-        address: TimeCapsule.getAddress(),
-        event: {
-          type: 'event',
-          name: 'CapsuleCreated',
-          inputs: [
-            { type: 'uint256', name: 'id', indexed: true },
-            { type: 'address', name: 'owner', indexed: true },
-            { type: 'address', name: 'beneficiary', indexed: true },
-            { type: 'uint256', name: 'unlockTime', indexed: false },
-            { type: 'uint8', name: 'vaultType', indexed: false },
-            { type: 'uint256', name: 'amount', indexed: false },
-            { type: 'address', name: 'token', indexed: false },
-            { type: 'string', name: 'message', indexed: false }
-          ]
-        } as any,
-        fromBlock: 'earliest'
-      });
-      setHistory(logs);
+      const [logs, claimedLogs, withdrawnLogs] = await Promise.all([
+        publicClient.getLogs({
+          address: TimeCapsule.getAddress(),
+          event: {
+            type: 'event',
+            name: 'CapsuleCreated',
+            inputs: [
+              { type: 'uint256', name: 'id', indexed: true },
+              { type: 'address', name: 'owner', indexed: true },
+              { type: 'address', name: 'beneficiary', indexed: true },
+              { type: 'uint256', name: 'unlockTime', indexed: false },
+              { type: 'uint8', name: 'vaultType', indexed: false },
+              { type: 'uint256', name: 'amount', indexed: false },
+              { type: 'address', name: 'token', indexed: false },
+              { type: 'string', name: 'message', indexed: false }
+            ]
+          } as any,
+          fromBlock: 'earliest'
+        }),
+        publicClient.getLogs({
+          address: TimeCapsule.getAddress(),
+          event: {
+            type: 'event',
+            name: 'CapsuleClaimed',
+            inputs: [
+              { type: 'uint256', name: 'id', indexed: true },
+              { type: 'address', name: 'claimant', indexed: true }
+            ]
+          } as any,
+          fromBlock: 'earliest'
+        }),
+        publicClient.getLogs({
+          address: TimeCapsule.getAddress(),
+          event: {
+            type: 'event',
+            name: 'EarlyWithdrawal',
+            inputs: [
+              { type: 'uint256', name: 'id', indexed: true },
+              { type: 'address', name: 'owner', indexed: true },
+              { type: 'uint256', name: 'userAmount', indexed: false },
+              { type: 'uint256', name: 'treasuryAmount', indexed: false },
+              { type: 'address', name: 'token', indexed: false }
+            ]
+          } as any,
+          fromBlock: 'earliest'
+        })
+      ]);
+
+      const processedIds = new Set([
+        ...claimedLogs.map(l => (l as any).args.id?.toString()),
+        ...withdrawnLogs.map(l => (l as any).args.id?.toString())
+      ]);
+
+      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
+      setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
     }

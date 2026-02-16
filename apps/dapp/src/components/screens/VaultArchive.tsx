@@ -36,6 +36,23 @@ export default function VaultArchive({
     return true;
   });
 
+  const parseMessage = (msg: string) => {
+    if (!msg) return { label: "Unnamed Vault", secret: "" };
+    try {
+      const data = JSON.parse(msg);
+      return {
+        label: data.label || "Unnamed Vault",
+        secret: data.secret || ""
+      };
+    } catch (e) {
+      // Handle legacy messages that aren't JSON
+      return {
+        label: "Archive Record",
+        secret: msg
+      };
+    }
+  };
+
   return (
     <div className="flex h-full w-full bg-background-dark text-white font-display overflow-hidden relative">
       {/* Sidebar Overlay for Mobile */}
@@ -78,9 +95,9 @@ export default function VaultArchive({
               <div className="w-8 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center">
                 <span className="material-symbols-outlined text-sm">settings</span>
               </div>
-              <div className="text-[10px] font-mono">
-                <div className="text-white">SYS_CONFIG</div>
-
+              <div className="text-[10px] font-mono text-left">
+                <div className="text-white uppercase tracking-tighter">BitCapsule OS</div>
+                <div className="text-primary/40 text-[8px]">STABLE_CONNECTION</div>
               </div>
             </div>
           </div>
@@ -123,7 +140,7 @@ export default function VaultArchive({
               <div className="w-20 h-20 rounded-full border border-white/5 flex items-center justify-center mb-6 opacity-20">
                 <span className="material-icons text-6xl">cloud_off</span>
               </div>
-              <h3 className="text-xl font-bold text-white/40 tracking-widest uppercase">No Records Found</h3>
+              <h3 className="text-xl font-bold text-white/40 tracking-widest uppercase text-left">No Records Found</h3>
               <p className="text-xs text-white/20 font-mono mt-2">Initialize your first vault to begin archiving.</p>
             </div>
           ) : (
@@ -132,36 +149,35 @@ export default function VaultArchive({
                 const id = log.args.id;
                 const unlockTime = Number(log.args.unlockTime);
                 const isLocked = currentTime < unlockTime;
-                const timeLeft = unlockTime - currentTime;
-                const days = Math.floor(timeLeft / (24 * 60 * 60));
-                const unlockYear = new Date(unlockTime * 1000).getFullYear();
+                const { label, secret } = parseMessage(log.args.message);
 
                 const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
                 const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
                 const isLegacy = log.args.vaultType === VaultType.LEGACY;
 
-                const isGold = isLegacy;
                 const borderColor = isLocked ? "border-primary/20" : "border-green-500/20";
                 const textColor = isLocked ? "text-primary" : "text-green-400";
+                const unlockYear = new Date(unlockTime * 1000).getFullYear();
 
                 return (
                   <div key={`${log.transactionHash}-${i}`} className="group relative holographic-card">
-                    <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-72 border ${borderColor} transition-all duration-300 hover:border-primary/60`}>
+                    <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-80 border ${borderColor} transition-all duration-300 hover:border-primary/60`}>
                       <div className="flex justify-between items-start">
-                        <div className="flex flex-col">
-                          <span className={`text-4xl font-bold ${textColor} font-mono tracking-tight`}>{unlockYear}</span>
-                          <span className={`text-[9px] font-mono tracking-widest mt-1 ${isLocked ? "text-primary/60" : "text-green-400/60"}`}>
-                              {isLocked ? "LOCKED" : "UNLOCKED"}
+                        <div className="flex flex-col text-left">
+                          <span className={`text-[10px] font-mono tracking-widest mb-1 ${isLocked ? "text-primary/60" : "text-green-400/60"}`}>
+                              {label}
                           </span>
+                          <span className={`text-3xl font-bold ${textColor} font-mono tracking-tight`}>{unlockYear}</span>
                         </div>
                         <span className={`material-symbols-outlined ${isLocked ? "text-primary/40" : "text-green-400/40"}`}>
                           {isLocked ? "lock" : "lock_open"}
                         </span>
                       </div>
 
-                      <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative bg-black/20 rounded p-4">
-                        <p className={`text-xs text-white/50 font-mono leading-relaxed ${isLocked ? "blur-sm select-none" : ""}`}>
-                          {isLocked ? "Encrypted Content. Protocol Active." : (log.args.message || "No message found.")}
+                      <div className="flex-1 flex flex-col items-start justify-center my-4 overflow-hidden relative bg-black/20 rounded p-4">
+                        <span className="text-[8px] text-white/20 uppercase font-mono mb-2">Payload Data:</span>
+                        <p className={`text-xs text-white/50 font-mono leading-relaxed text-left break-all line-clamp-4 ${isLocked ? "blur-sm select-none" : ""}`}>
+                          {isLocked ? "Encrypted Content. Protocol Active." : (secret || "No message found.")}
                         </p>
                       </div>
 
