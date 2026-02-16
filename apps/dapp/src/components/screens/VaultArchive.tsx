@@ -62,7 +62,7 @@ export default function VaultArchive({
                   key={item.id}
                   type="button"
                   onClick={() => { setFilter(item.id as any); setIsSidebarOpen(false); }}
-                  className={`group flex items-center w-full px-6 py-4 text-left transition-all ${filter === item.id ? "text-primary bg-primary/5 border-l-2 border-primary" : "text-white/60 hover:text-white hover:bg-white/5"}`}
+                  className={`group flex items-center w-full px-6 py-4 text-left transition-all hover:translate-x-1 active:scale-[0.98] ${filter === item.id ? "text-primary bg-primary/5 border-l-2 border-primary" : "text-white/60 hover:text-white hover:bg-white/5"}`}
                 >
                   <span className="material-symbols-outlined text-xl mr-4">{item.icon}</span>
                   <span className="text-[10px] tracking-[0.2em] font-bold uppercase">{item.label}</span>
@@ -133,7 +133,7 @@ export default function VaultArchive({
                 const textColor = isLocked ? "text-primary" : "text-green-400";
 
                 return (
-                  <div key={`${log.transactionHash}-${i}`} className="group relative">
+                  <div key={`${log.transactionHash}-${i}`} className="group relative holographic-card">
                     <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-72 border ${borderColor} transition-all duration-300 hover:border-primary/60`}>
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col">

@@ -13,7 +13,7 @@ export default function Navbar() {
   const address = useEVMAddress();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  const { isConnected, isConnecting } = useAccount();
+  const { isConnected, isConnecting, chain } = useAccount();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
 
@@ -35,7 +35,7 @@ export default function Navbar() {
   ];
 
   // Regtest is 420. If connected but chainId is wrong, show warning.
-  const isCorrectNetwork = chainId === 420;
+  const isCorrectNetwork = chain?.id === 420 || chainId === 420;
   const showNetworkWarning = isConnected && !isCorrectNetwork && !isConnecting;
 
   return (
@@ -78,7 +78,7 @@ export default function Navbar() {
             >
                <span className={`w-1.5 h-1.5 rounded-full ${isCorrectNetwork ? "bg-green-500 animate-pulse" : "bg-red-500 animate-ping"}`}></span>
                <span className={`text-[9px] font-mono uppercase tracking-widest ${!isCorrectNetwork ? "text-red-400" : "text-gray-400"}`}>
-                 {isCorrectNetwork ? "Regtest Sync" : "Switch Network"}
+                 {isCorrectNetwork ? "MIDL Regtest Sync" : "Switch Network"}
                </span>
             </button>
           )}
