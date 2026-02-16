@@ -347,13 +347,17 @@ export const abi = [
   }
 ] as const;
 
-export const getAddress = () => {
+export const getAddress = (): `0x${string}` => {
     const FALLBACK_ADDRESS = "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E";
     const envAddr = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
     const address = (envAddr && envAddr !== "undefined") ? envAddr : FALLBACK_ADDRESS;
 
     if (address === FALLBACK_ADDRESS && (!envAddr || envAddr === "undefined")) {
-        console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set or invalid — using fallback address. Do NOT use in production.");
+        // Only log warning once to avoid spamming console
+        if (typeof window !== "undefined" && !(window as any)._TC_ADDR_WARNED) {
+            console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set or invalid — using fallback address. Do NOT use in production.");
+            (window as any)._TC_ADDR_WARNED = true;
+        }
     }
 
     if (!isAddress(address)) {
@@ -365,14 +369,4 @@ export const getAddress = () => {
     return address as `0x${string}`;
 }
 
-export const address = (() => {
-    if (typeof window !== "undefined") {
-        try {
-            return getAddress();
-        } catch (e) {
-            console.error("Critical error sourcing TimeCapsule address:", e);
-            return "0x0000000000000000000000000000000000000000" as `0x${string}`;
-        }
-    }
-    return "0x0000000000000000000000000000000000000000" as `0x${string}`;
-})();
+export const address = getAddress();
