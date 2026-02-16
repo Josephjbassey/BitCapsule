@@ -91,21 +91,9 @@ export default function Home() {
     if (!publicClient) return;
     try {
       const logs = await publicClient.getLogs({
-        address: TimeCapsule.address as `0x${string}`,
-        event: {
-            type: 'event',
-            name: 'CapsuleCreated',
-            inputs: [
-                { type: 'uint256', name: 'id', indexed: true },
-                { type: 'address', name: 'owner', indexed: true },
-                { type: 'address', name: 'token' },
-                { type: 'uint256', name: 'amount' },
-                { type: 'uint256', name: 'unlockTime' },
-                { type: 'address', name: 'beneficiary' },
-                { type: 'uint8', name: 'vaultType' },
-                { type: 'string', name: 'message' }
-            ]
-        },
+        address: TimeCapsule.getAddress(),
+        abi: TimeCapsule.abi,
+        eventName: 'CapsuleCreated',
         fromBlock: 'earliest'
       });
       setHistory(logs);
@@ -117,6 +105,8 @@ export default function Home() {
   useEffect(() => {
     if (isConnected && publicClient) {
       fetchHistory();
+      const interval = setInterval(fetchHistory, 15000); // Poll every 15s
+      return () => clearInterval(interval);
     }
   }, [isConnected, publicClient]);
 
@@ -204,7 +194,7 @@ export default function Home() {
 
         setMessage("");
         setAmount("");
-        fetchHistory();
+        setTimeout(fetchHistory, 2000);
       }
     } catch (error: any) {
       console.error("Action failed", error);
@@ -249,7 +239,7 @@ export default function Home() {
       setSuccessBtcTxHash(tx.id);
 
       toast.success("Early withdrawal successful!");
-      fetchHistory();
+      setTimeout(fetchHistory, 2000);
       setUnlockStatus('none');
     } catch (e: any) {
       console.error("Withdrawal failed", e);
@@ -292,7 +282,7 @@ export default function Home() {
       setSuccessBtcTxHash(tx.id);
 
       toast.success("Payload claimed successfully!");
-      fetchHistory();
+      setTimeout(fetchHistory, 2000);
       setUnlockStatus('success');
     } catch (e: any) {
       console.error("Claim failed", e);
@@ -442,6 +432,8 @@ export default function Home() {
             address={address}
             isSigningOrPending={isSigningOrPending}
             onNavigateBack={() => setView('creation')}
+            onRefresh={fetchHistory}
+            onRefresh={fetchHistory}
           />
         )}
       </main>

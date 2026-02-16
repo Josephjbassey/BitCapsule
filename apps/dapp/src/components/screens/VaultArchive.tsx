@@ -12,6 +12,7 @@ interface VaultArchiveProps {
   address: string | undefined;
   isSigningOrPending: boolean;
   onNavigateBack: () => void;
+  onRefresh?: () => void;
 }
 
 export default function VaultArchive({
@@ -22,6 +23,7 @@ export default function VaultArchive({
   address,
   isSigningOrPending,
   onNavigateBack,
+  onRefresh,
 }: VaultArchiveProps) {
   const [filter, setFilter] = useState<'ALL' | 'LOCKED' | 'UNLOCKED'>('ALL');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -78,7 +80,7 @@ export default function VaultArchive({
               </div>
               <div className="text-[10px] font-mono">
                 <div className="text-white">SYS_CONFIG</div>
-                <div className="text-white/40 uppercase">v4.1.0-alpha</div>
+                <div className="text-white/40 uppercase">SECURE CHANNEL V.4.1.0</div>
               </div>
             </div>
           </div>
@@ -98,6 +100,16 @@ export default function VaultArchive({
             <h1 className="text-lg md:text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 uppercase">Temporal Archive</h1>
           </div>
           <div className="flex items-center gap-3">
+             {onRefresh && (
+               <button
+                 onClick={onRefresh}
+                 className="p-2 text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group"
+                 title="Force Temporal Sync"
+               >
+                 <span className="material-icons text-sm group-active:rotate-180 transition-transform duration-500">sync</span>
+                 <span className="text-[10px] font-mono tracking-widest hidden sm:inline">SYNC</span>
+               </button>
+             )}
              <div className="px-2 py-1 bg-primary/10 border border-primary/20 rounded text-[9px] font-mono text-primary flex items-center gap-2">
                 <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
                 LIVE_SYNC
@@ -157,10 +169,10 @@ export default function VaultArchive({
                         <span>VAULT_ID: #{id?.toString()}</span>
                         <div className="flex gap-2">
                            {isLocked && isOwner && (
-                             <button onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-colors uppercase font-bold">Panic</button>
+                             <button onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-95">Panic</button>
                            )}
                            {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
-                             <button onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-colors uppercase font-bold">Claim</button>
+                             <button onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-95">Claim</button>
                            )}
                         </div>
                       </div>
