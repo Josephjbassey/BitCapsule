@@ -42,13 +42,17 @@ export default function VaultArchive({
       const data = JSON.parse(msg);
       return {
         label: data.label || "Unnamed Vault",
-        secret: data.secret || ""
+        secret: data.secret || "",
+        file: data.file || null,
+        origAmount: data.amount || null
       };
     } catch (e) {
       // Handle legacy messages that aren't JSON
       return {
         label: "Archive Record",
-        secret: msg
+        secret: msg,
+        file: null,
+        origAmount: null
       };
     }
   };
@@ -120,7 +124,7 @@ export default function VaultArchive({
              {onRefresh && (
                <button
                  onClick={onRefresh}
-                 className="p-2 text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group"
+                 className="p-2 text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group active:scale-[0.98]"
                  title="Force Temporal Sync"
                >
                  <span className="material-icons text-sm group-active:rotate-180 transition-transform duration-500">sync</span>
@@ -149,7 +153,7 @@ export default function VaultArchive({
                 const id = log.args.id;
                 const unlockTime = Number(log.args.unlockTime);
                 const isLocked = currentTime < unlockTime;
-                const { label, secret } = parseMessage(log.args.message);
+                const { label, secret, file, origAmount } = parseMessage(log.args.message);
 
                 const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
                 const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
@@ -179,16 +183,25 @@ export default function VaultArchive({
                         <p className={`text-xs text-white/50 font-mono leading-relaxed text-left break-all line-clamp-4 ${isLocked ? "blur-sm select-none" : ""}`}>
                           {isLocked ? "Encrypted Content. Protocol Active." : (secret || "No message found.")}
                         </p>
+                        {file && (
+                          <div className="mt-2 flex items-center gap-2 text-[8px] text-primary/40 uppercase font-bold">
+                            <span className="material-icons text-[10px]">attachment</span>
+                            <span>{file.name}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex justify-between items-center text-[10px] font-mono text-white/30">
                         <span>VAULT_ID: #{id?.toString()}</span>
                         <div className="flex gap-2">
-                           {isLocked && isOwner && (
-                             <button onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-95">Panic</button>
+                           {isLocked && isOwner && !isLegacy && (
+                             <button onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-[0.98]">Panic</button>
+                           )}
+                           {isLocked && isOwner && isLegacy && (
+                             <span className="text-gray-600 cursor-not-allowed uppercase font-bold" title="Legacy vaults cannot be breached prematurely">Locked</span>
                            )}
                            {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
-                             <button onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-95">Claim</button>
+                             <button onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-[0.98]">Claim</button>
                            )}
                         </div>
                       </div>
@@ -204,7 +217,7 @@ export default function VaultArchive({
       <div className="fixed bottom-6 right-6 z-40 lg:hidden">
           <button
               onClick={onNavigateBack}
-              className="w-12 h-12 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon active:scale-95 transition-transform"
+              className="w-12 h-12 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon active:scale-[0.98] transition-transform"
           >
             <span className="material-symbols-outlined">add</span>
           </button>

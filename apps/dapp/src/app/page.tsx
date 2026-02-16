@@ -45,6 +45,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
   const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
   const [beneficiary, setBeneficiary] = useState("");
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
@@ -59,6 +60,7 @@ export default function Home() {
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
+  const [revealedData, setRevealedData] = useState<any>(null);
 
   const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
@@ -176,10 +178,12 @@ export default function Home() {
       const amountInWei = parseEther(amount);
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
-      // Combine label and message into a JSON string
+      // Combine label, message, and fileInfo into a JSON string
       const combinedMessage = JSON.stringify({
         label: label || "Unnamed Vault",
-        secret: message
+        secret: message,
+        file: fileInfo,
+        amount: amount // Store original BTC amount for reveal
       });
 
       const intention = await addTxIntentionAsync({
@@ -232,6 +236,7 @@ export default function Home() {
         setMessage("");
         setLabel("");
         setAmount("");
+        setFileInfo(null);
         setTimeout(fetchHistory, 2000);
       }
     } catch (error: any) {
@@ -249,6 +254,22 @@ export default function Home() {
     if (isWithdrawing) return;
     setIsWithdrawing(true);
     setUnlockStatus('penalty');
+
+    // Find the log to extract original message/amount
+    const log = history.find(l => (l as any).args.id === id);
+    if (log) {
+      try {
+        const data = JSON.parse(log.args.message);
+        setRevealedData({
+          message: data.secret,
+          amount: data.amount || "---",
+          file: data.file
+        });
+      } catch (e) {
+        setRevealedData({ message: log.args.message });
+      }
+    }
+
     try {
       const intention = await addTxIntentionAsync({
         intention: {
@@ -292,6 +313,22 @@ export default function Home() {
   const handleClaim = async (id: bigint, useLegacy: boolean) => {
     if (isClaiming) return;
     setIsClaiming(true);
+
+    // Find the log to extract original message/amount
+    const log = history.find(l => (l as any).args.id === id);
+    if (log) {
+      try {
+        const data = JSON.parse(log.args.message);
+        setRevealedData({
+          message: data.secret,
+          amount: data.amount || "---",
+          file: data.file
+        });
+      } catch (e) {
+        setRevealedData({ message: log.args.message });
+      }
+    }
+
     try {
       const intention = await addTxIntentionAsync({
         intention: {
@@ -333,7 +370,7 @@ export default function Home() {
 
   if (!isMounted) return null;
 
-  if (false && !isConnected) {
+  if (!isConnected) {
     return (
       <div className="relative min-h-screen bg-background-dark text-gray-100 flex flex-col font-display overflow-x-hidden">
         <BackgroundEffects />
@@ -461,6 +498,8 @@ export default function Home() {
             amount={amount}
             setAmount={setAmount}
             handleMint={handleMint}
+            fileInfo={fileInfo}
+            setFileInfo={setFileInfo}
             isSigningOrPending={isSigningOrPending}
           />
         ) : (
@@ -499,8 +538,9 @@ export default function Home() {
       {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
+          revealedData={revealedData}
           txHash={successTxHash || undefined}
-          onClose={() => setUnlockStatus('none')}
+          onClose={() => { setUnlockStatus('none'); setRevealedData(null); }}
         />
       )}
 
