@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 
 import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
@@ -14,9 +15,10 @@ import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
 import Navbar from "@/components/Navbar";
 
 // Import Screens
-import VaultCreation, { VaultType } from "@/components/screens/VaultCreation";
-import VaultArchive from "@/components/screens/VaultArchive";
-import UnlockProcess from "@/components/screens/UnlockProcess";
+import { VaultType } from "@/components/screens/VaultCreation";
+const VaultCreation = dynamic(() => import("@/components/screens/VaultCreation"), { ssr: false });
+const VaultArchive = dynamic(() => import("@/components/screens/VaultArchive"), { ssr: false });
+const UnlockProcess = dynamic(() => import("@/components/screens/UnlockProcess"), { ssr: false });
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -40,7 +42,7 @@ export default function Home() {
   // Handle network auto-switch on connection
   useEffect(() => {
     if (isConnected && connectors) {
-      const activeConnector = connectors.find(c => c.name.toLowerCase().includes("xverse"));
+      const activeConnector = connectors.find(c => ["xverse", "leather", "unisat", "phantom", "okx"].some(name => c.name.toLowerCase().includes(name)));
       if (activeConnector) {
         addNetworkAsync({
           connectorId: activeConnector.id,
@@ -171,6 +173,10 @@ export default function Home() {
               ],
             }),
           },
+          // Explicitly include deposit for native BTC funding from Bitcoin side to resolve PSBT issues
+          deposit: amountInWei > 0n ? {
+            satoshis: Number(amountInWei / BigInt(10**10))
+          } : undefined,
         },
         reset: true,
       });
@@ -321,7 +327,7 @@ export default function Home() {
               <h1 className="text-primary text-sm md:text-base font-mono mb-2 tracking-widest opacity-80 animate-pulse uppercase">
                 &gt; ESTABLISHING TEMPORAL CONNECTION...
               </h1>
-              <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              <h2 className="text-3xl md:text-5xl font-bold text-white group-hover:text-primary transition-colors duration-500 tracking-tight uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                 Select Authentication Protocol
               </h2>
               <div className="w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto mt-4 animate-pulse"></div>

@@ -69,10 +69,11 @@
 
 @utility holographic-card {
   transition: all 0.4s ease;
-  &:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 0 30px rgba(247, 147, 26, 0.3), inset 0 0 20px rgba(247, 147, 26, 0.1);
-  }
+}
+
+.holographic-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 0 30px rgba(247, 147, 26, 0.3), inset 0 0 20px rgba(247, 147, 26, 0.1);
 }
 
 @utility scanline {

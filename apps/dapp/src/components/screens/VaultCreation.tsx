@@ -62,7 +62,7 @@ export default function VaultCreation({
 
       {/* Right Panel: Data Terminal */}
       <div className="w-full lg:w-7/12 max-w-lg relative z-10">
-        <div className="bg-surface-dark/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group">
+        <div className="bg-surface-dark/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group hover:shadow-primary/10 transition-shadow duration-500">
           <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary rounded-tl-lg"></div>
           <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary rounded-tr-lg"></div>
           <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-lg"></div>
@@ -173,7 +173,7 @@ export default function VaultCreation({
                 type="button"
                 onClick={handleMint}
                 disabled={isSigningOrPending}
-                className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50"
+                className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50 active:scale-[0.98]"
               >
                 <div className="absolute inset-0 circuit-pattern opacity-10 group-hover:opacity-20 transition-opacity"></div>
                 <div className="relative flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5">
