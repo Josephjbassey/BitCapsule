@@ -1,6 +1,7 @@
-import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 "use client";
+import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 
+import WalletConnect from "@/components/screens/WalletConnect";
 import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
 import { useWaitForTransaction } from "@midl/react";
@@ -223,31 +224,7 @@ export default function ArchivePage() {
   if (!isMounted) return null;
 
   if (!isConnected) {
-    return (
-      <div className="relative min-h-screen bg-background-dark text-white font-display flex flex-col items-center justify-center p-8 text-center overflow-x-hidden">
-        <BackgroundEffects />
-        <div className="relative z-10 space-y-8 animate-in fade-in zoom-in duration-700">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center border border-primary shadow-neon">
-              <span className="material-icons text-primary text-3xl">hourglass_empty</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase glow-text">BitCapsule</h1>
-
-          </div>
-
-          <div className="max-w-md mx-auto space-y-6">
-            <h2 className="text-xl md:text-2xl font-light text-gray-300 tracking-wide">Connect protocol to access archive.</h2>
-            <div className="p-1 rounded-lg bg-gradient-to-r from-primary/50 via-xverse-orange/50 to-primary/50">
-               <div className="bg-background-dark rounded-md p-4">
-                 <Link href="/" className="px-8 py-3 bg-primary text-black font-bold rounded-sm hover:bg-white transition-all uppercase text-sm inline-block font-display tracking-widest">
-                   Establish Link
-                 </Link>
-               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <WalletConnect />;
   }
 
   return (

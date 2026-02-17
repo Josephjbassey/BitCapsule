@@ -1,17 +1,14 @@
 "use client";
 
 import React from "react";
+import { RevealedData } from "@/shared/utils/vault";
 import { EXPLORER_BASE_URL } from "@/app/config";
 
 interface UnlockProcessProps {
   status: 'none' | 'penalty' | 'success';
   onClose: () => void;
   txHash?: string;
-  revealedData?: {
-    message?: string;
-    amount?: string;
-    file?: { name: string; size: number } | null;
-  };
+  revealedData?: RevealedData | null;
 }
 
 export default function UnlockProcess({ status, onClose, txHash, revealedData }: UnlockProcessProps) {
