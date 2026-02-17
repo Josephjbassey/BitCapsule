@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { isAddressEqual } from "viem";
+import { parseVaultMessage } from "@/shared/utils/vault";
 import { VaultType } from "./VaultCreation";
 
 interface VaultArchiveProps {
@@ -36,26 +37,7 @@ export default function VaultArchive({
     return true;
   });
 
-  const parseMessage = (msg: string) => {
-    if (!msg) return { label: "Unnamed Vault", secret: "" };
-    try {
-      const data = JSON.parse(msg);
-      return {
-        label: data.label || "Unnamed Vault",
-        secret: data.secret || "",
-        file: data.file || null,
-        origAmount: data.amount || null
-      };
-    } catch (e) {
-      // Handle legacy messages that aren't JSON
-      return {
-        label: "Archive Record",
-        secret: msg,
-        file: null,
-        origAmount: null
-      };
-    }
-  };
+
 
   return (
     <div className="flex flex-grow w-full h-full min-h-[500px] bg-background-dark text-white font-display overflow-hidden relative">
@@ -152,7 +134,7 @@ export default function VaultArchive({
                 const id = log.args.id;
                 const unlockTime = Number(log.args.unlockTime);
                 const isLocked = currentTime < unlockTime;
-                const { label, secret, file, origAmount } = parseMessage(log.args.message);
+                const { label, secret, file } = parseVaultMessage(log.args.message);
 
                 const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
                 const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);

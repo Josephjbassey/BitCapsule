@@ -107,11 +107,12 @@ export default function VaultCreation({
                 />
             </div>
 
-                        {vaultType === VaultType.LEGACY && (
+            {vaultType === VaultType.LEGACY && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                    <label className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Digital Assets (Heritage)</label>
+                    <label htmlFor="legacy-file-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Digital Assets (Heritage)</label>
                     <div className="relative group">
                         <input
+                            id="legacy-file-input"
                             type="file"
                             onChange={(e) => {
                                 const file = e.target.files?.[0];

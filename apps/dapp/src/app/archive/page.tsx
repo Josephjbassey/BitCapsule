@@ -1,3 +1,4 @@
+import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -34,7 +35,7 @@ export default function ArchivePage() {
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
-  const [revealedData, setRevealedData] = useState<any>(null);
+  const [revealedData, setRevealedData] = useState<RevealedData | null>(null);
 
   const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
@@ -125,16 +126,7 @@ export default function ArchivePage() {
     // Find the log to extract original message/amount
     const log = history.find(l => (l as any).args.id === id);
     if (log) {
-      try {
-        const data = JSON.parse(log.args.message);
-        setRevealedData({
-          message: data.secret,
-          amount: data.amount || "---",
-          file: data.file
-        });
-      } catch (e) {
-        setRevealedData({ message: log.args.message });
-      }
+      setRevealedData(parseRevealedData(log));
     }
 
     try {
@@ -171,6 +163,7 @@ export default function ArchivePage() {
       console.error("Withdrawal failed", e);
       toast.error(e.message || "Withdrawal failed");
       setUnlockStatus('none');
+      setRevealedData(null);
     } finally {
       setIsWithdrawing(false);
       setIsBroadcasting(false);
@@ -184,16 +177,7 @@ export default function ArchivePage() {
     // Find the log to extract original message/amount
     const log = history.find(l => (l as any).args.id === id);
     if (log) {
-      try {
-        const data = JSON.parse(log.args.message);
-        setRevealedData({
-          message: data.secret,
-          amount: data.amount || "---",
-          file: data.file
-        });
-      } catch (e) {
-        setRevealedData({ message: log.args.message });
-      }
+      setRevealedData(parseRevealedData(log));
     }
 
     try {
@@ -229,6 +213,7 @@ export default function ArchivePage() {
     } catch (e: any) {
       console.error("Claim failed", e);
       toast.error(e.message || "Claim failed");
+      setRevealedData(null);
     } finally {
       setIsClaiming(false);
       setIsBroadcasting(false);

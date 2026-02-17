@@ -6,7 +6,7 @@ async def verify_render():
         browser = await p.chromium.launch()
         try:
             page = await browser.new_page()
-            await page.goto("http://localhost:3002")
+            await page.goto("http://localhost:3000")
             # Wait for content to load deterministically
             await page.wait_for_load_state("networkidle")
 
