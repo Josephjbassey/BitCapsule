@@ -24,6 +24,8 @@ interface VaultCreationProps {
   setAmount: (amt: string) => void;
   handleMint: () => void;
   isSigningOrPending: boolean;
+  fileInfo: { name: string; size: number } | null;
+  setFileInfo: (info: { name: string; size: number } | null) => void;
 }
 
 export default function VaultCreation({
@@ -41,9 +43,11 @@ export default function VaultCreation({
   setAmount,
   handleMint,
   isSigningOrPending,
+  fileInfo,
+  setFileInfo,
 }: VaultCreationProps) {
   return (
-    <div className="relative z-10 flex-grow flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 px-4 md:px-6 py-6 md:py-12 w-full max-w-7xl mx-auto min-h-screen lg:min-h-0">
+    <div className="relative z-10 flex-grow flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 px-4 md:px-6 py-12 md:py-20 w-full max-w-7xl mx-auto overflow-x-hidden">
       {/* Left Panel: The Lock Mechanism */}
       <div className="w-full lg:w-5/12 flex flex-col items-center justify-center relative group perspective-1000">
         <div className="relative w-56 h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 flex items-center justify-center">
@@ -103,6 +107,27 @@ export default function VaultCreation({
                 />
             </div>
 
+            {vaultType === VaultType.LEGACY && (
+                <div className="space-y-2 animate-in slide-in-from-top duration-300">
+                    <label htmlFor="legacy-file-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Digital Assets (Heritage)</label>
+                    <div className="relative group">
+                        <input
+                            id="legacy-file-input"
+                            type="file"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setFileInfo({ name: file.name, size: file.size });
+                                else setFileInfo(null);
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                        />
+                        <div className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-400 font-display text-[10px] flex items-center justify-between group-hover:border-primary/60 transition-all">
+                            <span>{fileInfo ? `${fileInfo.name} (${(fileInfo.size / 1024).toFixed(1)} KB)` : "Upload file (Documents, Keys, Media)"}</span>
+                            <span className="material-icons text-sm text-primary/60">{fileInfo ? "check_circle" : "upload_file"}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
             {(vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
                     <label htmlFor="beneficiary-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Beneficiary EVM Address</label>
@@ -131,7 +156,7 @@ export default function VaultCreation({
 
             <div className="space-y-3">
               <label htmlFor="message-input" className="flex justify-between text-[10px] sm:text-xs tracking-wider text-primary/80 uppercase font-semibold">
-                <span>Input Stream (Secret)</span>
+                <span>{vaultType === VaultType.SOCIAL ? "Temporal Greeting" : "Input Stream (Secret)"}</span>
                 <span className="animate-pulse">_Ready</span>
               </label>
               <div className="relative group">
@@ -185,8 +210,7 @@ export default function VaultCreation({
             </div>
 
             <div className="pt-2 sm:pt-4">
-              <button
-                type="button"
+              <button type="button"
                 onClick={handleMint}
                 disabled={isSigningOrPending}
                 className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50 active:scale-[0.98]"

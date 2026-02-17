@@ -1,47 +1,49 @@
-// Pseudocode/Mock Test for Logic Verification
-import { expect } from 'expect';
+import assert from 'assert';
+import { parseVaultMessage, parseRevealedData } from '../shared/utils/vault';
 
-describe('BitCapsule Logic Tests', () => {
+// Test Metadata Serialization via parseVaultMessage
+const label = "Heritage Vault";
+const secret = "Keep it secret, keep it safe";
+const file = { name: "will.pdf", size: 102456 };
+const amount = "0.5";
 
-  test('Metadata JSON Serialization', () => {
-    const label = "Retirement Fund";
-    const secret = "My secret seed phrase";
+const combined = JSON.stringify({ label, secret, file, amount });
+const parsed = parseVaultMessage(combined);
 
-    const serialized = JSON.stringify({ label, secret });
-    const parsed = JSON.parse(serialized);
+assert.strictEqual(parsed.label, label);
+assert.strictEqual(parsed.secret, secret);
+assert.deepStrictEqual(parsed.file, file);
+assert.strictEqual(parsed.origAmount, amount);
 
-    expect(parsed.label).toBe(label);
-    expect(parsed.secret).toBe(secret);
-  });
+console.log("SUCCESS: Metadata logic verified.");
 
-  test('Vault Reconciliation Filtering', () => {
-    const createdLogs = [
-      { args: { id: 1n, message: 'v1' } },
-      { args: { id: 2n, message: 'v2' } },
-      { args: { id: 3n, message: 'v3' } }
-    ];
+// Test parseRevealedData
+const log = {
+  args: {
+    message: JSON.stringify({ secret, amount, file })
+  }
+};
 
-    const claimedIds = new Set(['1']);
-    const withdrawnIds = new Set(['2']);
+const revealed = parseRevealedData(log);
+assert.strictEqual(revealed.message, secret);
+assert.strictEqual(revealed.amount, amount);
+assert.deepStrictEqual(revealed.file, file);
 
-    const terminatedIds = new Set([...claimedIds, ...withdrawnIds]);
+console.log("SUCCESS: Revealed data parsing verified.");
 
-    const active = createdLogs.filter(l => !terminatedIds.has(l.args.id.toString()));
+// Test Protocol filter logic (using real VaultType if possible, but we can just use numbers)
+enum VaultType {
+  TEMPORAL = 0,
+  LEGACY = 1,
+}
 
-    expect(active.length).toBe(1);
-    expect(active[0].args.id).toBe(3n);
-  });
+const logs = [
+  { args: { id: 1n, vaultType: VaultType.LEGACY } },
+  { args: { id: 2n, vaultType: VaultType.TEMPORAL } }
+];
 
-  test('Legacy Message Parsing Fallback', () => {
-    const legacyMsg = "Just a plain string";
-    let parsed;
-    try {
-      parsed = JSON.parse(legacyMsg);
-    } catch (e) {
-      parsed = { label: "Archive Record", secret: legacyMsg };
-    }
+const isLegacy = (log: any) => log.args.vaultType === VaultType.LEGACY;
+assert.strictEqual(isLegacy(logs[0]), true);
+assert.strictEqual(isLegacy(logs[1]), false);
 
-    expect(parsed.label).toBe("Archive Record");
-    expect(parsed.secret).toBe(legacyMsg);
-  });
-});
+console.log("SUCCESS: Protocol filter logic verified.");

@@ -83,7 +83,7 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh }
                 )}
             </div>
 
-            <button onClick={handleReturn} className="w-full py-4 bg-primary text-black font-black tracking-[0.3em] uppercase rounded-sm hover:bg-white transition-all duration-300 transform active:scale-95 shadow-neon">
+            <button type="button" onClick={handleReturn} className="w-full py-4 bg-primary text-black font-black tracking-[0.3em] uppercase rounded-sm hover:bg-white transition-all duration-300 transform active:scale-[0.98] shadow-neon">
                 Return to Core
             </button>
         </div>

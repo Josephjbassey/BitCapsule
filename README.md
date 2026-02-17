@@ -4,63 +4,61 @@ BitCapsule is a cinematic temporal vault protocol built on **MIDL**. Secure Bitc
 
 > "Time is the ultimate currency. Lock it. Store it. Transmit it."
 
-## 🚀 Zero to Hero: Getting Started
+## 🚀 Quick Start (Zero to Hero)
+
+Follow these 4 steps to establish your temporal link:
 
 ### 1. Prerequisites
-- **Node.js** (v20+) & **pnpm**
-- **Xverse Wallet** installed in your browser.
+*   **Node.js** (v20 or higher)
+*   **pnpm** (Install via `npm install -g pnpm`)
+*   **Xverse Wallet** (Browser Extension)
 
-### 2. Wallet Configuration
-To interact with BitCapsule, you must configure Xverse for the **MIDL Regtest** network:
-1. Open Xverse Settings.
-2. Go to **Network**.
-3. Select **Regtest**.
-4. Fund your address using the [MIDL Faucet](https://faucet.staging.midl.xyz).
+### 2. Configure Your Wallet (CRITICAL)
+BitCapsule operates on the **MIDL Regtest** network. You MUST switch your wallet:
+1.  Open **Xverse**.
+2.  Go to **Settings** -> **Network**.
+3.  Select **Regtest**.
+4.  Get testnet BTC from the [MIDL Faucet](https://faucet.staging.midl.xyz).
 
-### 3. Rapid Deployment
-Clone and configure the secure channel:
+### 3. Setup the Project
 ```bash
 git clone https://github.com/midl-xyz/dapp-demo.git
 cd dapp-demo
 pnpm install
 cp apps/dapp/.env.example apps/dapp/.env.local
 ```
-*Note: The system uses 0x9e0C...826E on MIDL Regtest by default.*
+*Default contract: `0x9e0C...826E` is pre-configured for Regtest.*
 
-### 4. Initiate Interface
+### 4. Launch Neural Interface
 ```bash
 pnpm --filter @dapp-demo/dapp dev
 ```
-Open [http://localhost:3000](http://localhost:3000) - **Neural Sync Initiated.**
+Open **[http://localhost:3000](http://localhost:3000)**. **Welcome to the future.**
 
 ---
 
-## ✨ Core Protocols
+## ✨ Vault Protocols
 
-- **⏳ TEMPORAL**: Standard time-locked personal vaults.
-- **📜 LEGACY**: Dead Man's Switch. Requires a `ping()` every 365 days or the beneficiary can claim.
-- **🛡️ HODL**: Disciplinary lockers. Early withdrawal (Force Crack) incurs a **20% Panic Fee**.
-- **🎁 SOCIAL**: Encrypted peer-to-peer temporal gifting for specific beneficiaries.
+*   **⏳ TEMPORAL**: Standard time-locked personal vaults.
+*   **📜 LEGACY**: Dead Man's Switch. Requires a `ping()` every 365 days or the beneficiary can claim.
+*   **🛡️ HODL**: Disciplinary lockers. Early withdrawal (Force Crack) incurs a **20% Panic Fee**.
+*   **🎁 SOCIAL**: Encrypted peer-to-peer temporal gifting for specific beneficiaries.
 
 ## 🛠 Advanced Features
 
-### 🏷️ Vault Labeling
-BitCapsule now supports **Metadata Labeling**. When creating a vault, you can provide a public label (visible in the archive) while keeping the actual payload encrypted until the unlock timestamp is reached.
+### 🏷️ Metadata Labeling
+Identify your vaults with public labels (e.g., "Kids College Fund") while keeping the contents encrypted until the temporal lock expires.
 
-### ⚡ Temporal Sync (Archive)
-The archive automatically tracks your active positions.
-- **Active Vaults**: View all your locked and ready-to-claim vaults.
-- **Real-time Updates**: The interface polls for contract events to ensure your "Force Crack" or "Claim" actions are reflected immediately.
-- **Micro-animations**: Every interaction is met with haptic-like visual feedback.
+### ⚡ Real-Time Archive Sync
+The archive automatically tracks your active positions using blockchain events. Every "Force Crack" or "Claim" is reflected instantly with cinematic micro-animations.
 
 ---
 
-## 🔐 Network Technical Specifications
-- **Network Name**: MIDL Regtest
-- **Chain ID**: 420
-- **Currency**: BTC
-- **RPC**: `https://rpc.staging.midl.xyz`
-- **Explorer**: [https://blockscout.staging.midl.xyz](https://blockscout.staging.midl.xyz)
+## 🔧 Troubleshooting Wallet Connection
+
+*   **"Invalid PSBT"**: Ensure your wallet is on **Regtest** and you have enough BTC from the faucet.
+*   **Stuck on "Connecting"**: Refresh the page. The app will attempt to auto-sync your network to Chain ID 420.
+*   **Missing Assets**: Click the **SYNC** button in the Archive header to force a re-fetch of your temporal anchors.
 
 ---
-*Built with the MIDL SDK. Powered by Bitcoin.*
+*Built with the [MIDL SDK](https://js.midl.xyz/). Powered by Bitcoin.*

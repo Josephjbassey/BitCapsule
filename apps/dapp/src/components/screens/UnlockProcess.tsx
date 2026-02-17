@@ -1,15 +1,17 @@
 "use client";
 
 import React from "react";
+import { RevealedData } from "@/shared/utils/vault";
 import { EXPLORER_BASE_URL } from "@/app/config";
 
 interface UnlockProcessProps {
   status: 'none' | 'penalty' | 'success';
   onClose: () => void;
   txHash?: string;
+  revealedData?: RevealedData | null;
 }
 
-export default function UnlockProcess({ status, onClose, txHash }: UnlockProcessProps) {
+export default function UnlockProcess({ status, onClose, txHash, revealedData }: UnlockProcessProps) {
   if (status === 'none') return null;
 
   // Penalty State (Premature Access Warning)
@@ -130,13 +132,39 @@ export default function UnlockProcess({ status, onClose, txHash }: UnlockProcess
                         <span>Source: Bitcoin Blockchain</span>
                         <span>Status: Verified</span>
                     </div>
-                    <p className="text-gray-200 leading-relaxed italic text-lg text-center py-4">
-                        "Your temporal message has been decrypted and your assets returned to your secure wallet."
-                    </p>
+
+                    <div className="py-4 space-y-4">
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-primary/60 uppercase mb-1">Recovered Value</span>
+                            <span className="text-3xl font-bold text-white tracking-tighter">{revealedData?.amount || "---"} BTC</span>
+                        </div>
+
+                        <div className="h-px w-24 bg-primary/20 mx-auto"></div>
+
+                        <p className="text-gray-200 leading-relaxed italic text-lg text-center px-4">
+                            "{revealedData?.message || "Protocol Active. Payload Recovered."}"
+                        </p>
+
+                        {revealedData?.file && (
+                            <div className="mt-4 p-4 bg-white/5 rounded border border-white/10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="material-icons text-primary">description</span>
+                                    <div className="text-left">
+                                        <div className="text-xs text-white font-bold">{revealedData.file.name}</div>
+                                        <div className="text-[10px] text-gray-500">{(revealedData.file.size / 1024).toFixed(1)} KB</div>
+                                    </div>
+                                </div>
+                                <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
+                                    <span className="material-icons text-sm">info</span>
+                                    Metadata Verified</div>
+                            </div>
+                        )}
+                    </div>
+
                     {txHash && (
-                        <div className="text-center">
+                        <div className="text-center pt-4 border-t border-white/5">
                             <a href={`${EXPLORER_BASE_URL}/tx/${txHash}`} target="_blank" rel="noreferrer" className="text-[10px] text-primary/60 hover:text-primary transition-colors underline decoration-dashed uppercase tracking-widest">
-                                View On Explorer: {txHash.slice(0, 16)}...
+                                Finalizing on Blockchain: {txHash.slice(0, 16)}...
                             </a>
                         </div>
                     )}
@@ -144,7 +172,7 @@ export default function UnlockProcess({ status, onClose, txHash }: UnlockProcess
             </div>
 
             <div className="relative z-30">
-                <button onClick={onClose} className="px-12 py-4 bg-primary text-black font-bold tracking-[0.2em] uppercase rounded-sm hover:bg-white transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-neon">
+                <button type="button" onClick={onClose} className="px-12 py-4 bg-primary text-black font-bold tracking-[0.2em] uppercase rounded-sm hover:bg-white transition-all duration-300 transform hover:scale-105 active:scale-[0.98] shadow-neon">
                     Close Archive
                 </button>
             </div>

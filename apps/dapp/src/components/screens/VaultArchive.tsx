@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { isAddressEqual } from "viem";
+import { parseVaultMessage } from "@/shared/utils/vault";
 import { VaultType } from "./VaultCreation";
 
 interface VaultArchiveProps {
@@ -36,25 +37,10 @@ export default function VaultArchive({
     return true;
   });
 
-  const parseMessage = (msg: string) => {
-    if (!msg) return { label: "Unnamed Vault", secret: "" };
-    try {
-      const data = JSON.parse(msg);
-      return {
-        label: data.label || "Unnamed Vault",
-        secret: data.secret || ""
-      };
-    } catch (e) {
-      // Handle legacy messages that aren't JSON
-      return {
-        label: "Archive Record",
-        secret: msg
-      };
-    }
-  };
+
 
   return (
-    <div className="flex h-full w-full bg-background-dark text-white font-display overflow-hidden relative">
+    <div className="flex flex-grow w-full h-full min-h-[500px] bg-background-dark text-white font-display overflow-hidden relative">
       {/* Sidebar Overlay for Mobile */}
       {isSidebarOpen && (
         <div
@@ -77,9 +63,8 @@ export default function VaultArchive({
                 { id: 'LOCKED', label: 'Locked', icon: 'lock' },
                 { id: 'UNLOCKED', label: 'Ready', icon: 'lock_open' }
               ].map((item) => (
-                <button
+                <button type="button"
                   key={item.id}
-                  type="button"
                   onClick={() => { setFilter(item.id as any); setIsSidebarOpen(false); }}
                   className={`group flex items-center w-full px-6 py-4 text-left transition-all hover:translate-x-1 active:scale-[0.98] ${filter === item.id ? "text-primary bg-primary/5 border-l-2 border-primary" : "text-white/60 hover:text-white hover:bg-white/5"}`}
                 >
@@ -108,7 +93,7 @@ export default function VaultArchive({
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-16 md:h-20 border-b border-white/5 bg-background-dark/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-8 shrink-0">
           <div className="flex items-center gap-4">
-            <button
+            <button type="button"
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden text-primary p-1"
             >
@@ -118,9 +103,9 @@ export default function VaultArchive({
           </div>
           <div className="flex items-center gap-3">
              {onRefresh && (
-               <button
+               <button type="button"
                  onClick={onRefresh}
-                 className="p-2 text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group"
+                 className="p-2 text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group active:scale-[0.98]"
                  title="Force Temporal Sync"
                >
                  <span className="material-icons text-sm group-active:rotate-180 transition-transform duration-500">sync</span>
@@ -149,7 +134,7 @@ export default function VaultArchive({
                 const id = log.args.id;
                 const unlockTime = Number(log.args.unlockTime);
                 const isLocked = currentTime < unlockTime;
-                const { label, secret } = parseMessage(log.args.message);
+                const { label, secret, file } = parseVaultMessage(log.args.message);
 
                 const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
                 const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
@@ -179,16 +164,25 @@ export default function VaultArchive({
                         <p className={`text-xs text-white/50 font-mono leading-relaxed text-left break-all line-clamp-4 ${isLocked ? "blur-sm select-none" : ""}`}>
                           {isLocked ? "Encrypted Content. Protocol Active." : (secret || "No message found.")}
                         </p>
+                        {file && (
+                          <div className="mt-2 flex items-center gap-2 text-[8px] text-primary/40 uppercase font-bold">
+                            <span className="material-icons text-[10px]">attachment</span>
+                            <span>{file.name}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex justify-between items-center text-[10px] font-mono text-white/30">
                         <span>VAULT_ID: #{id?.toString()}</span>
                         <div className="flex gap-2">
-                           {isLocked && isOwner && (
-                             <button onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-95">Panic</button>
+                           {isLocked && isOwner && !isLegacy && (
+                             <button type="button" onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-[0.98]">Panic</button>
+                           )}
+                           {isLocked && isOwner && isLegacy && (
+                             <span className="text-gray-600 cursor-not-allowed uppercase font-bold" title="Legacy vaults cannot be breached prematurely">Locked</span>
                            )}
                            {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
-                             <button onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-95">Claim</button>
+                             <button type="button" onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-[0.98]">Claim</button>
                            )}
                         </div>
                       </div>
@@ -202,9 +196,9 @@ export default function VaultArchive({
       </main>
 
       <div className="fixed bottom-6 right-6 z-40 lg:hidden">
-          <button
+          <button type="button"
               onClick={onNavigateBack}
-              className="w-12 h-12 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon active:scale-95 transition-transform"
+              className="w-12 h-12 bg-background-dark border border-primary text-primary rounded-full flex items-center justify-center shadow-neon active:scale-[0.98] transition-transform"
           >
             <span className="material-symbols-outlined">add</span>
           </button>
