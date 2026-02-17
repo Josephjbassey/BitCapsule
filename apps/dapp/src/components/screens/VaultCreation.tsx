@@ -47,7 +47,7 @@ export default function VaultCreation({
   setFileInfo,
 }: VaultCreationProps) {
   return (
-    <div className="relative z-10 flex-grow flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 px-4 md:px-6 py-6 md:py-12 w-full max-w-7xl mx-auto min-h-screen lg:min-h-0">
+    <div className="relative z-10 flex-grow flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 px-4 md:px-6 py-12 md:py-20 w-full max-w-7xl mx-auto overflow-x-hidden">
       {/* Left Panel: The Lock Mechanism */}
       <div className="w-full lg:w-5/12 flex flex-col items-center justify-center relative group perspective-1000">
         <div className="relative w-56 h-56 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 flex items-center justify-center">

@@ -482,7 +482,7 @@ export default function Home() {
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full h-full animate-in fade-in duration-700">
+      <main className="relative z-10 flex-grow w-full flex flex-col items-center animate-in fade-in duration-700">
         {view === 'creation' ? (
           <VaultCreation
             vaultType={vaultType}

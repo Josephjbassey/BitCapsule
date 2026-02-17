@@ -58,7 +58,7 @@ export default function VaultArchive({
   };
 
   return (
-    <div className="flex h-full w-full bg-background-dark text-white font-display overflow-hidden relative">
+    <div className="flex flex-grow w-full h-full min-h-[500px] bg-background-dark text-white font-display overflow-hidden relative">
       {/* Sidebar Overlay for Mobile */}
       {isSidebarOpen && (
         <div
