@@ -75,7 +75,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2 md:gap-4">
           {isConnected && (
-            <button
+            <button type="button"
               onClick={async () => {
                 if (!isCorrectNetwork) {
                   try {
@@ -113,8 +113,7 @@ export default function Navbar() {
             <ConnectButton />
           </div>
 
-          <button
-            type="button"
+          <button type="button"
             onClick={toggleMenu}
             className="md:hidden text-primary p-1 hover:bg-white/5 rounded transition-colors"
             aria-label="Toggle Menu"
@@ -140,7 +139,7 @@ export default function Navbar() {
             ))}
 
             {showNetworkWarning && (
-              <button
+              <button type="button"
                 onClick={async () => {
                   try {
                     const activeConnector = connector || connectors.find(c => ["xverse", "leather", "unisat", "phantom", "okx"].some(name => c.name.toLowerCase().includes(name)));

@@ -209,8 +209,7 @@ export default function VaultCreation({
             </div>
 
             <div className="pt-2 sm:pt-4">
-              <button
-                type="button"
+              <button type="button"
                 onClick={handleMint}
                 disabled={isSigningOrPending}
                 className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50 active:scale-[0.98]"

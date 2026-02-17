@@ -157,10 +157,9 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
                                         <div className="text-[10px] text-gray-500">{(revealedData.file.size / 1024).toFixed(1)} KB</div>
                                     </div>
                                 </div>
-                                <button className="text-[10px] text-primary hover:text-white transition-colors uppercase font-bold flex items-center gap-1">
-                                    <span className="material-icons text-sm">download</span>
-                                    Download
-                                </button>
+                                <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
+                                    <span className="material-icons text-sm">info</span>
+                                    Metadata Verified</div>
                             </div>
                         )}
                     </div>
@@ -176,7 +175,7 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
             </div>
 
             <div className="relative z-30">
-                <button onClick={onClose} className="px-12 py-4 bg-primary text-black font-bold tracking-[0.2em] uppercase rounded-sm hover:bg-white transition-all duration-300 transform hover:scale-105 active:scale-[0.98] shadow-neon">
+                <button type="button" onClick={onClose} className="px-12 py-4 bg-primary text-black font-bold tracking-[0.2em] uppercase rounded-sm hover:bg-white transition-all duration-300 transform hover:scale-105 active:scale-[0.98] shadow-neon">
                     Close Archive
                 </button>
             </div>

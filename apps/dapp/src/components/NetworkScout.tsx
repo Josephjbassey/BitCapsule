@@ -28,8 +28,7 @@ export const NetworkScout = () => {
 
     return (
         <div className="absolute top-4 right-4 z-50">
-            <button
-                type="button"
+            <button type="button"
                 onClick={handleAddNetwork}
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
