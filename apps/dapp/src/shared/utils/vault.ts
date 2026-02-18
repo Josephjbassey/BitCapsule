@@ -4,6 +4,7 @@ export interface RevealedData {
   file?: {
     name: string;
     size: number;
+    url?: string;
   } | null;
 }
 
@@ -13,7 +14,7 @@ export function parseRevealedData(log: any): RevealedData {
     return {
       message: data.secret || "Protocol Active. Payload Recovered.",
       amount: data.amount || "---",
-      file: data.file || null
+      file: data.file ? { ...data.file, url: data.file.url } : null
     };
   } catch (e) {
     return {

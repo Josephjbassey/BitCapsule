@@ -11,7 +11,7 @@ import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 export default function Navbar() {
   const pathname = usePathname();
   const address = useEVMAddress();
-  const { isConnected, isConnecting, chain, connector } = useAccount();
+  const { isConnected } = useAccount();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
 
@@ -32,7 +32,6 @@ export default function Navbar() {
     { href: "/stats", label: "Stats" },
   ];
 
-
   return (
     <header className="relative z-50 w-full border-b border-primary/20 backdrop-blur-sm bg-background-dark/50">
       {isFallback && (
@@ -48,7 +47,6 @@ export default function Navbar() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-sm md:text-lg font-bold tracking-widest leading-none glow-text uppercase">BitCapsule</h1>
-
           </div>
         </Link>
 
@@ -66,8 +64,6 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
-
-
           <div className="scale-75 sm:scale-90 md:scale-100 origin-right">
             <ConnectButton />
           </div>
@@ -96,8 +92,6 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-
-
 
             {isConnected && address && (
               <div className="pt-6 border-t border-white/10 flex flex-col gap-2">
