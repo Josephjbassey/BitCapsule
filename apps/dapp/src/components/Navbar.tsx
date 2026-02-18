@@ -104,7 +104,7 @@ export default function Navbar() {
             >
                <span className={`w-1.5 h-1.5 rounded-full ${isCorrectNetwork ? "bg-green-500 animate-pulse" : "bg-red-500 animate-ping"}`}></span>
                <span className={`text-[9px] font-mono uppercase tracking-widest ${!isCorrectNetwork ? "text-red-400" : "text-gray-400"}`}>
-                 {isCorrectNetwork ? "MIDL Regtest Sync" : "Switch Network"}
+                 {isCorrectNetwork ? "MIDL Regtest" : "Wrong Network"}
                </span>
             </button>
           )}

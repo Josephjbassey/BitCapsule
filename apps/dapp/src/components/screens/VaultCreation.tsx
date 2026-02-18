@@ -122,21 +122,22 @@ export default function VaultCreation({
                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
                         />
                         <div className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-400 font-display text-[10px] flex items-center justify-between group-hover:border-primary/60 transition-all">
-                            <span>{fileInfo ? `${fileInfo.name} (${(fileInfo.size / 1024).toFixed(1)} KB)` : "Upload file (Documents, Keys, Media)"}</span>
+                            <span>{fileInfo ? `${fileInfo.name} (${(fileInfo.size / 1024).toFixed(1)} KB)` : "Archive metadata (Name, Size) only"}</span>
                             <span className="material-icons text-sm text-primary/60">{fileInfo ? "check_circle" : "upload_file"}</span>
                         </div>
                     </div>
+                        <p className="text-[8px] text-gray-500 font-mono mt-1 text-left px-1">* BitCapsule currently archives file metadata only for temporal verification.</p>
                 </div>
             )}
             {(vaultType === VaultType.SOCIAL || vaultType === VaultType.LEGACY) && (
                 <div className="space-y-2 animate-in slide-in-from-top duration-300">
-                    <label htmlFor="beneficiary-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Beneficiary EVM Address</label>
+                    <label htmlFor="beneficiary-input" className="text-[10px] sm:text-xs tracking-wider text-primary uppercase font-semibold block text-left">Beneficiary Address (EVM or Bitcoin)</label>
                     <input
                         id="beneficiary-input"
                         type="text"
                         value={beneficiary}
                         onChange={(e) => setBeneficiary(e.target.value)}
-                        placeholder="0x..."
+                        placeholder="0x... or 1, 3, bc1..."
                         className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-mono text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
                     />
                 </div>

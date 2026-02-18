@@ -6,13 +6,13 @@ import { toast } from "sonner";
 import Wallet from "sats-connect";
 
 export default function NetworkGuard({ children }: { children: React.ReactNode }) {
-  const { isConnected } = useAccount();
+  const { isConnected, isConnecting } = useAccount();
   const chainId = useChainId();
   const [hasNotified, setHasNotified] = useState(false);
 
   useEffect(() => {
     const handleNetworkSync = async () => {
-      if (!isConnected) return;
+      if (!isConnected || isConnecting) return;
 
       try {
         // 1. Check EVM Chain ID (420 for MIDL Regtest)
@@ -20,7 +20,7 @@ export default function NetworkGuard({ children }: { children: React.ReactNode }
            if (!hasNotified) {
               toast.warning("Protocol Mismatch", {
                 description: "EVM chain is not MIDL Regtest (420). Please switch in your wallet.",
-                duration: 5000
+                duration: 3000
               });
               setHasNotified(true);
            }

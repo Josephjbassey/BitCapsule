@@ -53,6 +53,7 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
 
   const [isMinting, setIsMinting] = useState(false);
+  const [mintStep, setMintStep] = useState<string>("");
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -64,7 +65,15 @@ export default function Home() {
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
   const [revealedData, setRevealedData] = useState<RevealedData | null>(null);
 
-  const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
+
+  const extractRevealedData = (id: bigint) => {
+    const log = history.find(l => (l as any).args.id === id);
+    if (log) {
+      setRevealedData(parseRevealedData(log));
+    }
+  };
+
+const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
 
   useEffect(() => {
     setIsMounted(true);
@@ -146,8 +155,13 @@ export default function Home() {
   }, [isConnected, publicClient]);
 
   const handleMint = async () => {
-    if (!message || !amount || !isConnected || isMinting) {
-      if (!amount && isConnected) toast.error("Please enter an amount");
+    if (!isConnected || isMinting) return;
+    if (!amount) {
+      toast.error("Please enter a deposit amount");
+      return;
+    }
+    if (!message) {
+      toast.error("Please enter a secret message for your capsule");
       return;
     }
 
@@ -168,14 +182,24 @@ export default function Home() {
         toast.error("Beneficiary is required for Social and Legacy vaults.");
         return;
       }
-      if (!isAddress(beneficiary)) {
-        toast.error("Invalid beneficiary address format.");
+      const isEvm = isAddress(beneficiary);
+      const isBtc = /^(1|3|bc1)[a-zA-Z0-9]{25,59}$/.test(beneficiary);
+
+      if (!isEvm && !isBtc) {
+        toast.error("Invalid beneficiary format. Use EVM (0x...) or Bitcoin (1, 3, bc1...) address.");
         return;
       }
-      targetBeneficiary = beneficiary as `0x${string}`;
+
+      if (isEvm) {
+        targetBeneficiary = beneficiary as `0x${string}`;
+      } else {
+        toast.info("Bitcoin beneficiary detected. Metadata archived.");
+        targetBeneficiary = zeroAddress;
+      }
     }
 
     setIsMinting(true);
+    setMintStep("Preparing Vault Protocol...");
     try {
       const amountInWei = parseEther(amount);
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
@@ -188,6 +212,8 @@ export default function Home() {
         amount: amount // Store original BTC amount for reveal
       });
 
+      setMintStep("Initializing Temporal Intention...");
+      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -214,12 +240,18 @@ export default function Home() {
         reset: true,
       });
 
+      setMintStep("Finalizing Bitcoin Anchor...");
+      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
+      setMintStep("Awaiting Neural Signature...");
+      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({
         intention,
         txId: tx.id,
       });
 
+      setMintStep("Broadcasting to Blockchain...");
+      setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
@@ -230,7 +262,9 @@ export default function Home() {
         console.log("[BitCapsule] Tx hashes:", txHashes);
         console.log("[BitCapsule] BTC Tx ID:", tx.id);
 
-        await waitForTransactionAsync({ txId: tx.id });
+        setMintStep("Confirming Temporal Link...");
+      setMintStep("Confirming Temporal Link...");
+      await waitForTransactionAsync({ txId: tx.id });
 
         setSuccessTxHash(txHashes[0]); // EVM hash
         setSuccessBtcTxHash(tx.id);    // BTC hash
@@ -249,6 +283,7 @@ export default function Home() {
     } finally {
       setIsMinting(false);
       setIsBroadcasting(false);
+      setMintStep("");
     }
   };
 
@@ -258,12 +293,11 @@ export default function Home() {
     setUnlockStatus('penalty');
 
     // Find the log to extract original message/amount
-    const log = history.find(l => (l as any).args.id === id);
-    if (log) {
-      setRevealedData(parseRevealedData(log));
-    }
+    extractRevealedData(id);
 
     try {
+      setMintStep("Initializing Temporal Intention...");
+      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -278,13 +312,21 @@ export default function Home() {
         reset: true,
       });
 
+      setMintStep("Finalizing Bitcoin Anchor...");
+      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
+      setMintStep("Awaiting Neural Signature...");
+      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setMintStep("Broadcasting to Blockchain...");
+      setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
+      setMintStep("Confirming Temporal Link...");
+      setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
       setSuccessTxHash(txHashes[0]);
@@ -309,12 +351,11 @@ export default function Home() {
     setIsClaiming(true);
 
     // Find the log to extract original message/amount
-    const log = history.find(l => (l as any).args.id === id);
-    if (log) {
-      setRevealedData(parseRevealedData(log));
-    }
+    extractRevealedData(id);
 
     try {
+      setMintStep("Initializing Temporal Intention...");
+      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -329,13 +370,21 @@ export default function Home() {
         reset: true,
       });
 
+      setMintStep("Finalizing Bitcoin Anchor...");
+      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
+      setMintStep("Awaiting Neural Signature...");
+      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setMintStep("Broadcasting to Blockchain...");
+      setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
+      setMintStep("Confirming Temporal Link...");
+      setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
       setSuccessTxHash(txHashes[0]);
@@ -427,7 +476,7 @@ export default function Home() {
         />
       )}
 
-      {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay />}
+      {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay message={mintStep} />}
     </div>
   );
 }
