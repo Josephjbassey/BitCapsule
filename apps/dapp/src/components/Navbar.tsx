@@ -4,19 +4,14 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEVMAddress } from "@midl/executor-react";
-import { useAccount, useChainId, useSwitchChain, useConnect } from "wagmi";
-import { useAddNetwork } from "@midl/react";
+import { useAccount } from "wagmi";
 import { ConnectButton } from "@midl/satoshi-kit";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 
 export default function Navbar() {
   const pathname = usePathname();
   const address = useEVMAddress();
-  const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
   const { isConnected, isConnecting, chain, connector } = useAccount();
-  const { addNetworkAsync } = useAddNetwork();
-  const { connectors } = useConnect();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
 
@@ -37,9 +32,6 @@ export default function Navbar() {
     { href: "/stats", label: "Stats" },
   ];
 
-  // Regtest is 420. If connected but chainId is wrong, show warning.
-  const isCorrectNetwork = chainId === 420;
-  const showNetworkWarning = isConnected && !isCorrectNetwork && !isConnecting;
 
   return (
     <header className="relative z-50 w-full border-b border-primary/20 backdrop-blur-sm bg-background-dark/50">
@@ -74,40 +66,7 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
-          {isConnected && (
-            <button type="button"
-              onClick={async () => {
-                if (!isCorrectNetwork) {
-                  try {
-                    const activeConnector = connector || connectors.find(c => ["xverse", "leather", "unisat", "phantom", "okx"].some(name => c.name.toLowerCase().includes(name)));
-                    if (activeConnector) {
-                      await addNetworkAsync({
-                        connectorId: activeConnector.id,
-                        networkConfig: {
-                          chainId: 420,
-                          chainName: "MIDL Regtest",
-                          rpcUrls: ["https://rpc.staging.midl.xyz"],
-                          nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
-                          blockExplorerUrls: ["https://blockscout.staging.midl.xyz"],
-                        }
-                      } as any);
-                    } else {
-                      switchChain?.({ chainId: 420 });
-                    }
-                  } catch (e) {
-                    console.error("Manual network switch failed", e);
-                    switchChain?.({ chainId: 420 });
-                  }
-                }
-              }}
-              className={`hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full transition-all ${!isCorrectNetwork ? "hover:bg-red-500/10 border-red-500/50" : ""}`}
-            >
-               <span className={`w-1.5 h-1.5 rounded-full ${isCorrectNetwork ? "bg-green-500 animate-pulse" : "bg-red-500 animate-ping"}`}></span>
-               <span className={`text-[9px] font-mono uppercase tracking-widest ${!isCorrectNetwork ? "text-red-400" : "text-gray-400"}`}>
-                 {isCorrectNetwork ? "MIDL Regtest" : "Wrong Network"}
-               </span>
-            </button>
-          )}
+
 
           <div className="scale-75 sm:scale-90 md:scale-100 origin-right">
             <ConnectButton />
@@ -138,36 +97,7 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {showNetworkWarning && (
-              <button type="button"
-                onClick={async () => {
-                  try {
-                    const activeConnector = connector || connectors.find(c => ["xverse", "leather", "unisat", "phantom", "okx"].some(name => c.name.toLowerCase().includes(name)));
-                    if (activeConnector) {
-                      await addNetworkAsync({
-                        connectorId: activeConnector.id,
-                        networkConfig: {
-                          chainId: 420,
-                          chainName: "MIDL Regtest",
-                          rpcUrls: ["https://rpc.staging.midl.xyz"],
-                          nativeCurrency: { name: "Bitcoin", symbol: "BTC", decimals: 18 },
-                          blockExplorerUrls: ["https://blockscout.staging.midl.xyz"],
-                        }
-                      } as any);
-                    } else {
-                      switchChain?.({ chainId: 420 });
-                    }
-                  } catch (e) {
-                    switchChain?.({ chainId: 420 });
-                  }
-                  setIsMenuOpen(false);
-                }}
-                className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-[10px] font-bold uppercase tracking-widest"
-              >
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                Fix Connection: Switch to MIDL Regtest
-              </button>
-            )}
+
 
             {isConnected && address && (
               <div className="pt-6 border-t border-white/10 flex flex-col gap-2">

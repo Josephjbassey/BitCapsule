@@ -6,7 +6,6 @@ import { MidlProvider } from "@midl/react";
 import { SatoshiKitProvider } from "@midl/satoshi-kit";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useMemo } from "react";
-import NetworkGuard from "@/components/NetworkGuard";
 
 export default function Web3Provider({
 	children,
@@ -19,7 +18,7 @@ export default function Web3Provider({
 		<QueryClientProvider client={client}>
 			<MidlProvider config={midlConfig}>
 				<SatoshiKitProvider>
-					<WagmiMidlProvider><NetworkGuard>{children}</NetworkGuard></WagmiMidlProvider>
+					<WagmiMidlProvider>{children}</WagmiMidlProvider>
 				</SatoshiKitProvider>
 			</MidlProvider>
 		</QueryClientProvider>
