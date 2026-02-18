@@ -17,7 +17,7 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
   // Penalty State (Premature Access Warning)
   if (status === 'penalty') {
     return (
-      <div className="fixed inset-0 z-[200] bg-background-dark text-white font-display overflow-hidden flex flex-col items-center justify-center p-6">
+      <div className="fixed inset-0 z-[200] bg-background-dark text-white font-display overflow-y-auto flex flex-col items-center p-6 py-12 md:py-24">
         <div className="fixed inset-0 grid-bg pointer-events-none z-0 opacity-20"></div>
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(255,60,0,0.05)_0%,rgba(0,0,0,1)_90%)] pointer-events-none z-0"></div>
 
@@ -101,7 +101,7 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
 
   // Success State (Post-Breach Message Reveal)
   return (
-    <div className="fixed inset-0 z-[200] bg-background-dark text-white font-display overflow-hidden flex flex-col items-center justify-center relative">
+    <div className="fixed inset-0 z-[200] bg-background-dark text-white font-display overflow-y-auto flex flex-col items-center relative py-12 md:py-24">
         <div className="fixed inset-0 z-0 grid-bg opacity-20 pointer-events-none transform rotate-x-12 scale-125 origin-center"></div>
 
         <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-4xl px-6">
@@ -154,18 +154,9 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
                                         <div className="text-[10px] text-gray-500">{(revealedData.file.size / 1024).toFixed(1)} KB</div>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
-                                        <span className="material-icons text-sm">info</span>
-                                        File Metadata Verified
-                                    </div>
-                                    {revealedData.file.url && (
-                                        <a href={revealedData.file.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-primary/20 hover:bg-primary/30 text-primary text-[10px] font-bold uppercase rounded border border-primary/30 transition-all flex items-center gap-1">
-                                            <span className="material-icons text-xs">download</span>
-                                            Retrieve from IPFS
-                                        </a>
-                                    )}
-                                </div>
+                                <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
+                                    <span className="material-icons text-sm">info</span>
+                                    File Metadata Verified</div>
                             </div>
                         )}
                     </div>

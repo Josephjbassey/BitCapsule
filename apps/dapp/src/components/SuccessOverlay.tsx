@@ -7,16 +7,18 @@ interface SuccessOverlayProps {
   btcTxHash?: string;
   onClose: () => void;
   onRefresh: () => void;
+  message?: string;
+  amount?: string;
 }
 
-export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh }: SuccessOverlayProps) {
+export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, message, amount }: SuccessOverlayProps) {
   const handleReturn = () => {
     onRefresh();
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-background-dark text-white font-display overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center p-6 bg-background-dark text-white font-display overflow-y-auto py-12 md:py-24">
         <div className="fixed inset-0 grid-bg opacity-30 transform perspective-1000 rotate-x-12 scale-110 pointer-events-none"></div>
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(242,185,13,0.05)_0%,rgba(0,0,0,1)_90%)] pointer-events-none"></div>
 
@@ -50,6 +52,23 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh }
                     &gt; TEMPORAL ANCHOR ESTABLISHED
                 </p>
             </div>
+
+            {(message || amount) && (
+              <div className="w-full bg-white/5 border border-primary/20 rounded-xl p-6 mb-8 text-left space-y-4">
+                  {amount && (
+                    <div className="flex flex-col items-center border-b border-white/10 pb-4">
+                        <span className="text-[10px] text-primary/60 uppercase tracking-widest mb-1">Locked Value</span>
+                        <span className="text-2xl font-bold text-white tracking-tighter">{amount} BTC</span>
+                    </div>
+                  )}
+                  {message && (
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-primary/60 uppercase tracking-widest mb-2 text-center">Temporal Message</span>
+                        <p className="text-gray-300 italic text-sm text-center leading-relaxed px-2">"{message}"</p>
+                    </div>
+                  )}
+              </div>
+            )}
 
             <div className="w-full space-y-4 mb-8">
                 <div className="bg-black/40 border border-white/5 rounded-lg p-4 relative overflow-hidden text-left group hover:border-primary/30 transition-colors">

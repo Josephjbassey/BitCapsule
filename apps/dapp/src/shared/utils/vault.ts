@@ -1,3 +1,5 @@
+import { formatEther } from "viem";
+
 export interface RevealedData {
   message: string;
   amount: string | number;
@@ -9,20 +11,29 @@ export interface RevealedData {
 }
 
 export function parseRevealedData(log: any): RevealedData {
+  let message = "Protocol Active. Payload Recovered.";
+  let amount = "---";
+  let file = null;
+
+  // Fallback to event amount if possible
+  if (log.args?.amount) {
+    try {
+      amount = formatEther(log.args.amount);
+    } catch (e) {
+      console.warn("Failed to format ether from log amount", e);
+    }
+  }
+
   try {
     const data = JSON.parse(log.args.message);
-    return {
-      message: data.secret || "Protocol Active. Payload Recovered.",
-      amount: data.amount || "---",
-      file: data.file ? { ...data.file, url: data.file.url } : null
-    };
+    message = data.secret || message;
+    amount = data.amount || amount;
+    file = data.file ? { ...data.file, url: data.file.url } : null;
   } catch (e) {
-    return {
-      message: log.args.message,
-      amount: "---",
-      file: null
-    };
+    message = log.args.message;
   }
+
+  return { message, amount, file };
 }
 
 export function parseVaultMessage(msg: string) {

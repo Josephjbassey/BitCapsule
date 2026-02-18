@@ -24,8 +24,8 @@ interface VaultCreationProps {
   setAmount: (amt: string) => void;
   handleMint: () => void;
   isSigningOrPending: boolean;
-  fileInfo: { name: string; size: number; file?: File } | null;
-  setFileInfo: (info: { name: string; size: number; file?: File } | null) => void;
+  fileInfo: { name: string; size: number } | null;
+  setFileInfo: (info: { name: string; size: number } | null) => void;
 }
 
 export default function VaultCreation({
@@ -116,7 +116,7 @@ export default function VaultCreation({
                             type="file"
                             onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (file) setFileInfo({ name: file.name, size: file.size, file });
+                                if (file) setFileInfo({ name: file.name, size: file.size });
                                 else setFileInfo(null);
                             }}
                             className="absolute inset-0 opacity-0 cursor-pointer z-10"
