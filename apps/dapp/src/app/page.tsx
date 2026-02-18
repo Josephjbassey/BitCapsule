@@ -1,15 +1,17 @@
 "use client";
 import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
+import { uploadToIPFS } from "@/shared/utils/ipfs";
 import dynamic from "next/dynamic";
 import WalletConnect from "@/components/screens/WalletConnect";
 
 import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
+
 import { useWaitForTransaction, useAddNetwork } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { ConnectButton } from "@midl/satoshi-kit";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
+import { encodeFunctionData, zeroAddress, isAddress, parseEther, isAddressEqual } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
@@ -47,7 +49,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
-  const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: number; file?: File } | null>(null);
   const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
   const [beneficiary, setBeneficiary] = useState("");
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
@@ -139,7 +141,14 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         ...withdrawnLogs.map(l => (l as any).args.id?.toString())
       ]);
 
-      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
+      const activeLogs = logs.filter(l => {
+        const isNotProcessed = !processedIds.has((l as any).args.id?.toString());
+        const isRelevant = address && (
+          isAddressEqual((l as any).args.owner as `0x${string}`, address as `0x${string}`) ||
+          isAddressEqual((l as any).args.beneficiary as `0x${string}`, address as `0x${string}`)
+        );
+        return isNotProcessed && isRelevant;
+      });
       setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
@@ -201,30 +210,53 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     setIsMinting(true);
     setMintStep("Preparing Vault Protocol...");
     try {
+      let fileUrl = "";
+      let storageFee = 0n;
+
+      if (fileInfo?.file) {
+        setMintStep("Uploading to IPFS Archive...");
+        try {
+          fileUrl = await uploadToIPFS(fileInfo.file);
+          // Simulate a storage fee calculation (e.g., 0.0001 BTC)
+          storageFee = parseEther("0.0001");
+          toast.success("File archived on IPFS");
+        } catch (e) {
+          toast.error("IPFS Upload Failed");
+          throw e;
+        }
+      }
+
       const amountInWei = parseEther(amount);
+      const netAmount = amountInWei - storageFee;
+
+      if (netAmount <= 0n && amountInWei > 0n) {
+        toast.error("Insufficient funds for storage fees.");
+        return;
+      }
+
+      const finalAmount = netAmount > 0n ? netAmount : amountInWei;
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       // Combine label, message, and fileInfo into a JSON string
       const combinedMessage = JSON.stringify({
         label: label || "Unnamed Vault",
         secret: message,
-        file: fileInfo,
+        file: { ...fileInfo, url: fileUrl },
         amount: amount // Store original BTC amount for reveal
       });
 
-      setMintStep("Initializing Temporal Intention...");
       setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
             to: TimeCapsule.address as `0x${string}`,
-            value: amountInWei,
+            value: amountInWei, // Send full amount, fee stays in contract or sent to treasury
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
               functionName: "createCapsule",
               args: [
                 zeroAddress,
-                amountInWei,
+                finalAmount,
                 unlockTimestamp,
                 targetBeneficiary as `0x${string}`,
                 vaultType,
@@ -241,16 +273,13 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       });
 
       setMintStep("Finalizing Bitcoin Anchor...");
-      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
-      setMintStep("Awaiting Neural Signature...");
       setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({
         intention,
         txId: tx.id,
       });
 
-      setMintStep("Broadcasting to Blockchain...");
       setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
@@ -263,7 +292,6 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         console.log("[BitCapsule] BTC Tx ID:", tx.id);
 
         setMintStep("Confirming Temporal Link...");
-      setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
         setSuccessTxHash(txHashes[0]); // EVM hash
@@ -297,7 +325,6 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
     try {
       setMintStep("Initializing Temporal Intention...");
-      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -313,19 +340,15 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       });
 
       setMintStep("Finalizing Bitcoin Anchor...");
-      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
       setMintStep("Awaiting Neural Signature...");
-      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-      setMintStep("Broadcasting to Blockchain...");
       setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
-      setMintStep("Confirming Temporal Link...");
       setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
@@ -355,7 +378,6 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
     try {
       setMintStep("Initializing Temporal Intention...");
-      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -371,19 +393,15 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       });
 
       setMintStep("Finalizing Bitcoin Anchor...");
-      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
       setMintStep("Awaiting Neural Signature...");
-      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-      setMintStep("Broadcasting to Blockchain...");
       setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
-      setMintStep("Confirming Temporal Link...");
       setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 

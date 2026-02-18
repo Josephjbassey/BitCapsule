@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { isAddressEqual } from "viem";
 import { parseVaultMessage } from "@/shared/utils/vault";
 import { VaultType } from "./VaultCreation";
+import { CountdownTimer } from "../ui/vault/CountdownTimer";
 
 interface VaultArchiveProps {
   history: any[];
@@ -149,9 +150,12 @@ export default function VaultArchive({
                     <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-80 border ${borderColor} transition-all duration-300 hover:border-primary/60`}>
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col text-left">
-                          <span className={`text-[10px] font-mono tracking-widest mb-1 ${isLocked ? "text-primary/60" : "text-green-400/60"}`}>
-                              {label}
-                          </span>
+                          <div className="flex justify-between items-center w-full mb-1">
+                            <span className={`text-[10px] font-mono tracking-widest ${isLocked ? "text-primary/60" : "text-green-400/60"}`}>
+                                {label}
+                            </span>
+                            {isLocked && <CountdownTimer unlockTimestamp={unlockTime} />}
+                          </div>
                           <span className={`text-3xl font-bold ${textColor} font-mono tracking-tight`}>{unlockYear}</span>
                         </div>
                         <span className={`material-symbols-outlined ${isLocked ? "text-primary/40" : "text-green-400/40"}`}>
@@ -165,9 +169,17 @@ export default function VaultArchive({
                           {isLocked ? "Encrypted Content. Protocol Active." : (secret || "No message found.")}
                         </p>
                         {file && (
-                          <div className="mt-2 flex items-center gap-2 text-[8px] text-primary/40 uppercase font-bold">
-                            <span className="material-icons text-[10px]">attachment</span>
-                            <span>{file.name}</span>
+                          <div className="mt-2 flex flex-col gap-1">
+                            <div className="flex items-center gap-2 text-[8px] text-primary/40 uppercase font-bold">
+                              <span className="material-icons text-[10px]">attachment</span>
+                              <span>{file.name}</span>
+                            </div>
+                            {file.url && !isLocked && (
+                              <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-[8px] text-blue-400 hover:text-blue-300 underline flex items-center gap-1 font-mono uppercase">
+                                <span className="material-icons text-[8px]">download</span>
+                                IPFS Link
+                              </a>
+                            )}
                           </div>
                         )}
                       </div>

@@ -4,10 +4,11 @@ import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 import WalletConnect from "@/components/screens/WalletConnect";
 import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
+import { getEVMAddress } from "@midl/executor";
 import { useWaitForTransaction } from "@midl/react";
 import { useAccount, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, isAddressEqual } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
@@ -113,7 +114,14 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
         ...withdrawnLogs.map(l => (l as any).args.id?.toString())
       ]);
 
-      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
+      const activeLogs = logs.filter(l => {
+        const isNotProcessed = !processedIds.has((l as any).args.id?.toString());
+        const isRelevant = address && (
+          isAddressEqual((l as any).args.owner as `0x${string}`, address as `0x${string}`) ||
+          isAddressEqual((l as any).args.beneficiary as `0x${string}`, address as `0x${string}`)
+        );
+        return isNotProcessed && isRelevant;
+      });
       setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
