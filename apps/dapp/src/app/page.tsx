@@ -1,17 +1,15 @@
 "use client";
 import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
-import { uploadToIPFS } from "@/shared/utils/ipfs";
 import dynamic from "next/dynamic";
 import WalletConnect from "@/components/screens/WalletConnect";
 
 import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
-
 import { useWaitForTransaction, useAddNetwork } from "@midl/react";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { ConnectButton } from "@midl/satoshi-kit";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, zeroAddress, isAddress, parseEther, isAddressEqual } from "viem";
+import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
@@ -49,7 +47,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
-  const [fileInfo, setFileInfo] = useState<{ name: string; size: number; file?: File } | null>(null);
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
   const [vaultType, setVaultType] = useState<VaultType>(VaultType.TEMPORAL);
   const [beneficiary, setBeneficiary] = useState("");
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
@@ -62,6 +60,8 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const [successBtcTxHash, setSuccessBtcTxHash] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successAmount, setSuccessAmount] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
@@ -71,8 +71,11 @@ export default function Home() {
   const extractRevealedData = (id: bigint) => {
     const log = history.find(l => (l as any).args.id === id);
     if (log) {
-      setRevealedData(parseRevealedData(log));
+      const data = parseRevealedData(log);
+      setRevealedData(data);
+      return data;
     }
+    return null;
   };
 
 const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
@@ -141,14 +144,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         ...withdrawnLogs.map(l => (l as any).args.id?.toString())
       ]);
 
-      const activeLogs = logs.filter(l => {
-        const isNotProcessed = !processedIds.has((l as any).args.id?.toString());
-        const isRelevant = address && (
-          isAddressEqual((l as any).args.owner as `0x${string}`, address as `0x${string}`) ||
-          isAddressEqual((l as any).args.beneficiary as `0x${string}`, address as `0x${string}`)
-        );
-        return isNotProcessed && isRelevant;
-      });
+      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
       setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
@@ -210,38 +206,14 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     setIsMinting(true);
     setMintStep("Preparing Vault Protocol...");
     try {
-      let fileUrl = "";
-      let storageFee = 0n;
-
-      if (fileInfo?.file) {
-        setMintStep("Uploading to IPFS Archive...");
-        try {
-          fileUrl = await uploadToIPFS(fileInfo.file);
-          // Simulate a storage fee calculation (e.g., 0.0001 BTC)
-          storageFee = parseEther("0.0001");
-          toast.success("File archived on IPFS");
-        } catch (e) {
-          toast.error("IPFS Upload Failed");
-          throw e;
-        }
-      }
-
       const amountInWei = parseEther(amount);
-      const netAmount = amountInWei - storageFee;
-
-      if (netAmount <= 0n && amountInWei > 0n) {
-        toast.error("Insufficient funds for storage fees.");
-        return;
-      }
-
-      const finalAmount = netAmount > 0n ? netAmount : amountInWei;
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       // Combine label, message, and fileInfo into a JSON string
       const combinedMessage = JSON.stringify({
         label: label || "Unnamed Vault",
         secret: message,
-        file: { ...fileInfo, url: fileUrl },
+        file: fileInfo,
         amount: amount // Store original BTC amount for reveal
       });
 
@@ -250,13 +222,13 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         intention: {
           evmTransaction: {
             to: TimeCapsule.address as `0x${string}`,
-            value: amountInWei, // Send full amount, fee stays in contract or sent to treasury
+            value: amountInWei,
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
               functionName: "createCapsule",
               args: [
                 zeroAddress,
-                finalAmount,
+                amountInWei,
                 unlockTimestamp,
                 targetBeneficiary as `0x${string}`,
                 vaultType,
@@ -295,7 +267,9 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       await waitForTransactionAsync({ txId: tx.id });
 
         setSuccessTxHash(txHashes[0]); // EVM hash
-        setSuccessBtcTxHash(tx.id);    // BTC hash
+        setSuccessBtcTxHash(tx.id);
+      setSuccessMessage(message);
+      setSuccessAmount(amount);    // BTC hash
 
         setMessage("");
         setLabel("");
@@ -321,7 +295,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     setUnlockStatus('penalty');
 
     // Find the log to extract original message/amount
-    extractRevealedData(id);
+    const data = extractRevealedData(id);
 
     try {
       setMintStep("Initializing Temporal Intention...");
@@ -354,6 +328,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
       setSuccessTxHash(txHashes[0]);
       setSuccessBtcTxHash(tx.id);
+      setSuccessMessage(data?.message || null);
+      setSuccessAmount(data?.amount?.toString() || null);
 
       toast.success("Early withdrawal successful!");
       setTimeout(fetchHistory, 2000);
@@ -374,7 +350,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     setIsClaiming(true);
 
     // Find the log to extract original message/amount
-    extractRevealedData(id);
+    const data = extractRevealedData(id);
 
     try {
       setMintStep("Initializing Temporal Intention...");
@@ -407,6 +383,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
       setSuccessTxHash(txHashes[0]);
       setSuccessBtcTxHash(tx.id);
+      setSuccessMessage(data?.message || null);
+      setSuccessAmount(data?.amount?.toString() || null);
 
       toast.success("Payload claimed successfully!");
       setTimeout(fetchHistory, 2000);
@@ -480,7 +458,14 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         <SuccessOverlay
           txHash={successTxHash}
           btcTxHash={successBtcTxHash || undefined}
-          onClose={() => { setSuccessTxHash(null); setSuccessBtcTxHash(null); }}
+          message={successMessage || undefined}
+          amount={successAmount || undefined}
+          onClose={() => {
+            setSuccessTxHash(null);
+            setSuccessBtcTxHash(null);
+            setSuccessMessage(null);
+            setSuccessAmount(null);
+          }}
           onRefresh={fetchHistory}
         />
       )}

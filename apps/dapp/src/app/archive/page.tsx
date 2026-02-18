@@ -4,11 +4,10 @@ import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 import WalletConnect from "@/components/screens/WalletConnect";
 import { useState, useEffect } from "react";
 import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
-import { getEVMAddress } from "@midl/executor";
 import { useWaitForTransaction } from "@midl/react";
 import { useAccount, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData, isAddressEqual } from "viem";
+import { encodeFunctionData } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
@@ -35,6 +34,8 @@ export default function ArchivePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const [successBtcTxHash, setSuccessBtcTxHash] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successAmount, setSuccessAmount] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
@@ -44,8 +45,11 @@ export default function ArchivePage() {
   const extractRevealedData = (id: bigint) => {
     const log = history.find(l => (l as any).args.id === id);
     if (log) {
-      setRevealedData(parseRevealedData(log));
+      const data = parseRevealedData(log);
+      setRevealedData(data);
+      return data;
     }
+    return null;
   };
 
 const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
@@ -114,14 +118,7 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
         ...withdrawnLogs.map(l => (l as any).args.id?.toString())
       ]);
 
-      const activeLogs = logs.filter(l => {
-        const isNotProcessed = !processedIds.has((l as any).args.id?.toString());
-        const isRelevant = address && (
-          isAddressEqual((l as any).args.owner as `0x${string}`, address as `0x${string}`) ||
-          isAddressEqual((l as any).args.beneficiary as `0x${string}`, address as `0x${string}`)
-        );
-        return isNotProcessed && isRelevant;
-      });
+      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
       setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
@@ -142,7 +139,7 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
     setUnlockStatus('penalty');
 
     // Find the log to extract original message/amount
-    extractRevealedData(id);
+    const data = extractRevealedData(id);
 
     try {
       setMintStep("Initializing Temporal Intention...");
@@ -175,6 +172,8 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
       setSuccessTxHash(txHashes[0]);
       setSuccessBtcTxHash(tx.id);
+      setSuccessMessage(data?.message || null);
+      setSuccessAmount(data?.amount?.toString() || null);
 
       toast.success("Early withdrawal successful!");
       setTimeout(fetchHistory, 2000);
@@ -196,7 +195,7 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
     setIsClaiming(true);
 
     // Find the log to extract original message/amount
-    extractRevealedData(id);
+    const data = extractRevealedData(id);
 
     try {
       setMintStep("Initializing Temporal Intention...");
@@ -229,6 +228,8 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
       setSuccessTxHash(txHashes[0]);
       setSuccessBtcTxHash(tx.id);
+      setSuccessMessage(data?.message || null);
+      setSuccessAmount(data?.amount?.toString() || null);
 
       toast.success("Payload claimed successfully!");
       setTimeout(fetchHistory, 2000);
@@ -282,7 +283,14 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
         <SuccessOverlay
           txHash={successTxHash}
           btcTxHash={successBtcTxHash || undefined}
-          onClose={() => { setSuccessTxHash(null); setSuccessBtcTxHash(null); }}
+          message={successMessage || undefined}
+          amount={successAmount || undefined}
+          onClose={() => {
+            setSuccessTxHash(null);
+            setSuccessBtcTxHash(null);
+            setSuccessMessage(null);
+            setSuccessAmount(null);
+          }}
           onRefresh={fetchHistory}
         />
       )}
