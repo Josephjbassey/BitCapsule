@@ -4,6 +4,7 @@ import "@midl/satoshi-kit/styles.css";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "@/styles/cinematic.css";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
 	title: "BitCapsule Cinematic Vault",
@@ -32,6 +33,7 @@ export default function RootLayout({
 					{children}
 					<Toaster />
 				</Web3Provider>
+				<Analytics />
 			</body>
 		</html>
 	);
