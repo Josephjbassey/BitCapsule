@@ -156,7 +156,7 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
                                 </div>
                                 <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
                                     <span className="material-icons text-sm">info</span>
-                                    Metadata Verified</div>
+                                    File Metadata Verified</div>
                             </div>
                         )}
                     </div>

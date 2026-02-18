@@ -29,6 +29,7 @@ export default function ArchivePage() {
 
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [mintStep, setMintStep] = useState<string>("");
   const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
@@ -38,7 +39,15 @@ export default function ArchivePage() {
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
   const [revealedData, setRevealedData] = useState<RevealedData | null>(null);
 
-  const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
+
+  const extractRevealedData = (id: bigint) => {
+    const log = history.find(l => (l as any).args.id === id);
+    if (log) {
+      setRevealedData(parseRevealedData(log));
+    }
+  };
+
+const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
   useEffect(() => {
     setIsMounted(true);
@@ -125,12 +134,10 @@ export default function ArchivePage() {
     setUnlockStatus('penalty');
 
     // Find the log to extract original message/amount
-    const log = history.find(l => (l as any).args.id === id);
-    if (log) {
-      setRevealedData(parseRevealedData(log));
-    }
+    extractRevealedData(id);
 
     try {
+      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -145,13 +152,17 @@ export default function ArchivePage() {
         reset: true,
       });
 
+      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
+      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
+      setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
       setSuccessTxHash(txHashes[0]);
@@ -168,6 +179,7 @@ export default function ArchivePage() {
     } finally {
       setIsWithdrawing(false);
       setIsBroadcasting(false);
+      setMintStep("");
     }
   };
 
@@ -176,12 +188,10 @@ export default function ArchivePage() {
     setIsClaiming(true);
 
     // Find the log to extract original message/amount
-    const log = history.find(l => (l as any).args.id === id);
-    if (log) {
-      setRevealedData(parseRevealedData(log));
-    }
+    extractRevealedData(id);
 
     try {
+      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -196,13 +206,17 @@ export default function ArchivePage() {
         reset: true,
       });
 
+      setMintStep("Finalizing Bitcoin Anchor...");
       const { tx } = await finalizeBTCTransactionAsync();
+      setMintStep("Awaiting Neural Signature...");
       const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setMintStep("Broadcasting to Blockchain...");
       setIsBroadcasting(true);
       const txHashes = await sendBTCTransactionsAsync({
         serializedTransactions: [signedTransaction],
         btcTransaction: tx.hex,
       });
+      setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
       setSuccessTxHash(txHashes[0]);
@@ -218,6 +232,7 @@ export default function ArchivePage() {
     } finally {
       setIsClaiming(false);
       setIsBroadcasting(false);
+      setMintStep("");
     }
   };
 
@@ -273,7 +288,7 @@ export default function ArchivePage() {
         />
       )}
 
-      {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay />}
+      {isSigningOrPending && unlockStatus === 'none' && <TemporalSyncOverlay message={mintStep} />}
     </div>
   );
 }

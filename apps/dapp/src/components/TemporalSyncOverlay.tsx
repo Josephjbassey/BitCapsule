@@ -2,7 +2,11 @@
 
 import React from "react";
 
-export default function TemporalSyncOverlay() {
+interface TemporalSyncOverlayProps {
+  message?: string;
+}
+
+export default function TemporalSyncOverlay({ message }: TemporalSyncOverlayProps) {
   return (
     <div className="fixed inset-0 z-[150] bg-background-dark text-white font-display overflow-hidden flex flex-col items-center justify-center p-6">
         <div className="fixed inset-0 grid-bg pointer-events-none z-0 opacity-20 transform perspective-1000 rotate-x-12 scale-110"></div>
@@ -28,14 +32,14 @@ export default function TemporalSyncOverlay() {
                 <h2 className="text-2xl md:text-3xl font-bold tracking-[0.3em] uppercase glow-text">Syncing Neural Data</h2>
                 <div className="h-0.5 w-48 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto"></div>
                 <p className="text-primary/60 font-mono text-xs tracking-widest uppercase animate-pulse">
-                    &gt; ESTABLISHING BITCOIN_ANCHOR...
+                    &gt; {message || "ESTABLISHING BITCOIN_ANCHOR..."}
                 </p>
             </div>
 
             <div className="mt-12 w-full max-w-sm">
                 <div className="flex justify-between text-[10px] font-mono text-gray-500 uppercase mb-2">
                     <span>Protocol Load</span>
-                    <span>94%</span>
+                    <span>{message ? "IN_PROGRESS" : "94%"}</span>
                 </div>
                 <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden relative">
                     <div className="h-full bg-primary w-[94%] shadow-[0_0_10px_rgba(242,185,13,0.8)]"></div>
