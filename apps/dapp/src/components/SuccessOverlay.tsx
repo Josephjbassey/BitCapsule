@@ -22,7 +22,17 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, 
         <div className="fixed inset-0 grid-bg opacity-30 transform perspective-1000 rotate-x-12 scale-110 pointer-events-none"></div>
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(242,185,13,0.05)_0%,rgba(0,0,0,1)_90%)] pointer-events-none"></div>
 
-        <div className="relative max-w-2xl w-full glass-panel rounded-3xl p-8 md:p-12 overflow-hidden border border-primary/20 flex flex-col items-center text-center animate-in zoom-in fade-in duration-700">
+        <div className="relative max-w-2xl w-full glass-panel rounded-3xl p-8 md:p-12 overflow-visible border border-primary/20 flex flex-col items-center text-center animate-in zoom-in fade-in duration-700">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={handleReturn}
+              className="absolute -top-4 -right-4 w-10 h-10 bg-background-dark border border-primary/30 rounded-full flex items-center justify-center text-primary/60 hover:text-primary hover:border-primary transition-all z-50 group shadow-neon"
+              aria-label="Close"
+            >
+              <span className="material-icons text-xl group-hover:rotate-90 transition-transform duration-300">close</span>
+            </button>
+
             {/* Corner Accents */}
             <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary/50 rounded-tl-lg"></div>
             <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary/50 rounded-tr-lg"></div>
@@ -65,7 +75,9 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, 
                   {message && (
                     <div className="flex flex-col border-t border-white/5 pt-3">
                         <span className="text-[8px] text-primary/40 uppercase tracking-widest mb-1.5">Temporal Message</span>
-                        <p className="text-gray-300 italic text-xs md:text-sm leading-relaxed line-clamp-3">"{message}"</p>
+                        <div className="max-h-32 overflow-y-auto px-2 scrollbar-thin scrollbar-thumb-primary/20">
+                          <p className="text-gray-300 italic text-xs md:text-sm leading-relaxed whitespace-pre-wrap">"{message}"</p>
+                        </div>
                     </div>
                   )}
               </div>

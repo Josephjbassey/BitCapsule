@@ -129,7 +129,3 @@
   from { box-shadow: 0 0 10px -5px #f2b90d; }
   to { box-shadow: 0 0 30px 5px #f2b90d; }
 }
-
-::-webkit-scrollbar {
-  display: none;
-}
