@@ -21,7 +21,7 @@ const config: HardhatUserConfig = {
 	defaultNetwork: MNEMONIC.includes("junk") ? "hardhat" : "regtest",
 	namedAccounts: {
 		deployer: 0,
-		treasury: 1,
+		treasury: 0,
 	},
 	midl: {
 		networks: {
