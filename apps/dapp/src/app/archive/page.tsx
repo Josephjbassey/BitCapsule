@@ -71,19 +71,19 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
           abi: TimeCapsule.abi,
           eventName: 'CapsuleCreated',
           fromBlock: 'earliest'
-        }),
+        } as any),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'CapsuleClaimed',
           fromBlock: 'earliest'
-        }),
+        } as any),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'EarlyWithdrawal',
           fromBlock: 'earliest'
-        })
+        } as any)
       ]);
 
       const processedIds = new Set([
