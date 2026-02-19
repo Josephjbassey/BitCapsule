@@ -35,12 +35,25 @@ export default function Home() {
   const { addNetworkAsync } = useAddNetwork();
   const publicClient = usePublicClient();
 
-  // Diagnostics
+  // Diagnostics & Wallet Validation
   useEffect(() => {
     if (process.env.NODE_ENV === "development" && typeof window !== 'undefined') {
       console.log("[BitCapsule] Connection State:", { isConnected, address });
     }
-  }, [isConnected, address]);
+
+    // Explicitly search for Bitcoin-compatible connectors and avoid blind fallbacks
+    // as per Protocol Security requirements.
+    if (isConnected) {
+        const btcConnector = connectors.find(c =>
+            c.name.toLowerCase().includes('xverse') ||
+            c.name.toLowerCase().includes('bitcoin') ||
+            c.name.toLowerCase().includes('satoshi')
+        );
+        if (!btcConnector && process.env.NODE_ENV === "development") {
+            console.warn("[BitCapsule] Warning: No explicitly Bitcoin-compatible connector detected in the current session.");
+        }
+    }
+  }, [isConnected, address, connectors]);
 
 
   // State

@@ -11,7 +11,7 @@ export default function StatsPage() {
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full h-full">
+      <main className="relative z-10 flex-grow w-full">
         <TemporalDrift />
       </main>
 
