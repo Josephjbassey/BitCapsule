@@ -18,8 +18,8 @@ interface DepositFormProps {
   setAmount: (amt: string) => void;
   handleMint: () => void;
   isSigningOrPending: boolean;
-  fileInfo: { name: string; size: number } | null;
-  setFileInfo: (info: { name: string; size: number } | null) => void;
+  fileInfo: { name: string; size: number; file?: File } | null;
+  setFileInfo: (info: { name: string; size: number; file?: File } | null) => void;
 }
 
 export const DepositForm = ({
