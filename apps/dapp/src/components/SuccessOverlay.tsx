@@ -75,7 +75,7 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, 
                   {message && (
                     <div className="flex flex-col border-t border-white/5 pt-3">
                         <span className="text-[8px] text-primary/40 uppercase tracking-widest mb-1.5">Temporal Message</span>
-                        <div className="max-h-32 overflow-y-auto px-2 scrollbar-thin scrollbar-thumb-primary/20">
+                        <div className="max-h-32 overflow-y-auto px-2 no-scrollbar">
                           <p className="text-gray-300 italic text-xs md:text-sm leading-relaxed whitespace-pre-wrap">"{message}"</p>
                         </div>
                     </div>

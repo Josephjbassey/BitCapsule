@@ -129,3 +129,12 @@
   from { box-shadow: 0 0 10px -5px #f2b90d; }
   to { box-shadow: 0 0 30px 5px #f2b90d; }
 }
+
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

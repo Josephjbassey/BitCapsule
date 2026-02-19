@@ -24,7 +24,7 @@ const VaultArchive = dynamic(() => import("@/components/screens/VaultArchive"), 
 const UnlockProcess = dynamic(() => import("@/components/screens/UnlockProcess"), { ssr: false });
 
 export default function Home() {
-  const isConnected = true;
+  const { isConnected } = useAccount();
   const address = useEVMAddress();
   const { connectors } = useConnect();
   const { addTxIntentionAsync } = useAddTxIntention();
@@ -72,10 +72,10 @@ export default function Home() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [successTxHash, setSuccessTxHash] = useState<string | null>("0xd36bd82134da3b865e0a83dcebf58c154c875e1a2c1c2f28645d886b3878ffe0");
+  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const [successBtcTxHash, setSuccessBtcTxHash] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>("This is a very long temporal message to test the scrolling functionality. It should be scrollable within its own container if it exceeds the maximum height. We want to make sure the user can read the entire content of their temporal anchor. Let's add some more text here to ensure it definitely overflows the max-h-32 limit. More text. Even more text. Testing scrolling is important for accessibility and usability. Secure your capsule today!");
-  const [successAmount, setSuccessAmount] = useState<string | null>("0.05");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successAmount, setSuccessAmount] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
