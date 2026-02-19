@@ -18,7 +18,7 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, 
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center p-6 bg-background-dark text-white font-display overflow-y-auto py-12 md:py-24">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center p-4 md:p-6 bg-background-dark/95 backdrop-blur-md text-white font-display overflow-y-auto py-12 md:py-24">
         <div className="fixed inset-0 grid-bg opacity-30 transform perspective-1000 rotate-x-12 scale-110 pointer-events-none"></div>
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_center,rgba(242,185,13,0.05)_0%,rgba(0,0,0,1)_90%)] pointer-events-none"></div>
 
@@ -29,13 +29,13 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, 
             <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary/50 rounded-bl-lg"></div>
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary/50 rounded-br-lg"></div>
 
-            <div className="relative w-40 h-40 mb-8 flex items-center justify-center">
+            <div className="relative w-32 h-32 md:w-40 md:h-40 mb-8 flex items-center justify-center">
                 <div className="absolute inset-0 bg-primary/10 blur-[80px] rounded-full scale-150 animate-pulse-slow"></div>
                 <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-spin-slow"></div>
                 <div className="absolute inset-4 rounded-full border-2 border-primary/40 border-t-transparent animate-spin-reverse"></div>
 
-                <div className="relative w-28 h-28 bg-background-dark rounded-full border-4 border-primary flex items-center justify-center shadow-neon animate-in zoom-in duration-500 delay-300">
-                    <span className="material-icons text-primary text-5xl gold-glow">check_circle</span>
+                <div className="relative w-24 h-24 md:w-28 md:h-28 bg-background-dark rounded-full border-4 border-primary flex items-center justify-center shadow-neon animate-in zoom-in duration-500 delay-300">
+                    <span className="material-icons text-primary text-4xl md:text-5xl gold-glow">check_circle</span>
                 </div>
 
                 <div className="absolute -bottom-4 bg-primary text-black px-4 py-1 rounded-sm text-[10px] font-bold tracking-widest uppercase shadow-neon z-20">
@@ -53,18 +53,19 @@ export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, 
                 </p>
             </div>
 
+            {/* In-Line Data Reveal */}
             {(message || amount) && (
-              <div className="w-full bg-white/5 border border-primary/20 rounded-xl p-6 mb-8 text-left space-y-4">
+              <div className="w-full bg-white/5 border border-primary/10 rounded-xl p-4 md:p-6 mb-8 text-center space-y-3 animate-in slide-in-from-bottom duration-1000 delay-200">
                   {amount && (
-                    <div className="flex flex-col items-center border-b border-white/10 pb-4">
-                        <span className="text-[10px] text-primary/60 uppercase tracking-widest mb-1">Locked Value</span>
-                        <span className="text-2xl font-bold text-white tracking-tighter">{amount} BTC</span>
+                    <div className="flex flex-col items-center">
+                        <span className="text-[8px] text-primary/40 uppercase tracking-widest mb-0.5">Anchored Value</span>
+                        <span className="text-xl md:text-2xl font-bold text-white tracking-tighter">{amount} BTC</span>
                     </div>
                   )}
                   {message && (
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-primary/60 uppercase tracking-widest mb-2 text-center">Temporal Message</span>
-                        <p className="text-gray-300 italic text-sm text-center leading-relaxed px-2">"{message}"</p>
+                    <div className="flex flex-col border-t border-white/5 pt-3">
+                        <span className="text-[8px] text-primary/40 uppercase tracking-widest mb-1.5">Temporal Message</span>
+                        <p className="text-gray-300 italic text-xs md:text-sm leading-relaxed line-clamp-3">"{message}"</p>
                     </div>
                   )}
               </div>

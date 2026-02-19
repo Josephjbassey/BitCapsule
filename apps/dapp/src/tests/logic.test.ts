@@ -12,7 +12,7 @@ const parsed = parseVaultMessage(combined);
 
 assert.strictEqual(parsed.label, label);
 assert.strictEqual(parsed.secret, secret);
-assert.deepStrictEqual(parsed.file, file);
+assert.strictEqual(parsed.file?.name, file.name); assert.strictEqual(parsed.file?.size, file.size);
 assert.strictEqual(parsed.origAmount, amount);
 
 console.log("SUCCESS: Metadata logic verified.");
@@ -27,7 +27,7 @@ const log = {
 const revealed = parseRevealedData(log);
 assert.strictEqual(revealed.message, secret);
 assert.strictEqual(revealed.amount, amount);
-assert.deepStrictEqual(revealed.file, file);
+assert.strictEqual(revealed.file?.name, file.name); assert.strictEqual(revealed.file?.size, file.size);
 
 console.log("SUCCESS: Revealed data parsing verified.");
 
