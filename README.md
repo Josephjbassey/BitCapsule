@@ -22,8 +22,8 @@ BitCapsule operates on the **MIDL Regtest** network. You MUST switch your wallet
 
 ### 3. Setup the Project
 ```bash
-git clone https://github.com/midl-xyz/dapp-demo.git
-cd dapp-demo
+git clone https://github.com/josephjbasseph/BitCapsule.git
+cd BitCapsule
 pnpm install
 cp apps/dapp/.env.example apps/dapp/.env.local
 ```
@@ -69,7 +69,7 @@ The archive automatically tracks your active positions using blockchain events. 
 
 The **BitCapsule** protocol was forged through the synergy of human vision and artificial intelligence:
 
-*   **Project Lead & Visionary**: [The User] - Defined the core protocol requirements, visual aesthetic, and strategic direction.
+*   **Project Lead & Visionary**: [JosephJBassey](https://github.com/Josephjbassey/) - Defined the core protocol requirements, visual aesthetic, and strategic direction.
 *   **Jules (AI)**: **Lead Software Engineer** - Responsible for protocol development, smart contract integration, and full-stack implementation of the temporal interface.
 *   **Stitch (AI)**: **UI/UX Design Lead** - Crafted the cinematic visual language, high-fidelity components, and interactive micro-animations.
 *   **[enebhee@gmail.com](mailto:enebhee@gmail.com)**: **Strategic Planning & Lead Quality Assurance** - Spearheaded strategy development and performed rigorous bug testing to ensure protocol stability.
