@@ -104,10 +104,9 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
   const fetchHistory = async () => {
     const tcAddress = TimeCapsule.getAddress();
-    console.log("[BitCapsule] Fetching history from:", tcAddress);
     if (!publicClient) return;
     try {
-      const [logs, claimedLogs, withdrawnLogs] = await Promise.all([
+      const [logs, claimedLogs, withdrawnLogs, transferLogs, beneficiaryLogs] = await Promise.all([
         publicClient.getLogs({
           address: tcAddress,
           abi: TimeCapsule.abi,
@@ -125,6 +124,18 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
           abi: TimeCapsule.abi,
           eventName: 'EarlyWithdrawal', strict: false,
           fromBlock: 'earliest'
+        } as any),
+        publicClient.getLogs({
+          address: tcAddress,
+          abi: TimeCapsule.abi,
+          eventName: 'CapsuleTransferred', strict: false,
+          fromBlock: 'earliest'
+        } as any),
+        publicClient.getLogs({
+          address: tcAddress,
+          abi: TimeCapsule.abi,
+          eventName: 'BeneficiaryUpdated', strict: false,
+          fromBlock: 'earliest'
         } as any)
       ]);
 
@@ -133,12 +144,45 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         ...withdrawnLogs.map(l => (l as any).args.id?.toString())
       ]);
 
-      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
+      const currentOwners = new Map();
+      const currentBeneficiaries = new Map();
+
+      logs.forEach(l => {
+        const id = l.args.id?.toString();
+        if (id) {
+          currentOwners.set(id, l.args.owner);
+          currentBeneficiaries.set(id, l.args.beneficiary);
+        }
+      });
+
+      [...transferLogs].sort((a, b) => Number(a.blockNumber || 0) - Number(b.blockNumber || 0)).forEach(l => {
+        const id = l.args.id?.toString();
+        if (id) currentOwners.set(id, l.args.newOwner);
+      });
+
+      [...beneficiaryLogs].sort((a, b) => Number(a.blockNumber || 0) - Number(b.blockNumber || 0)).forEach(l => {
+        const id = l.args.id?.toString();
+        if (id) currentBeneficiaries.set(id, l.args.newBeneficiary);
+      });
+
+      const activeLogs = logs.filter(l => !processedIds.has(l.args.id?.toString())).map(l => {
+        const id = l.args.id?.toString();
+        return {
+          ...l,
+          args: {
+            ...l.args,
+            owner: currentOwners.get(id) || l.args.owner,
+            beneficiary: currentBeneficiaries.get(id) || l.args.beneficiary
+          }
+        };
+      });
+
       setHistory(activeLogs);
     } catch (error) {
       console.error("Failed to fetch history", error);
     }
   };
+
 
   useEffect(() => {
     if (isConnected && publicClient) {

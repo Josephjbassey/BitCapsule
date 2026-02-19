@@ -18,7 +18,7 @@ export default function Navbar() {
   useEffect(() => {
     try {
       const currentAddr = TimeCapsule.getAddress();
-      setIsFallback(currentAddr === "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E");
+      setIsFallback(currentAddr === "0x2d1B4148a8f8E502e3c2104fef07620261fE3DBC");
     } catch (e) {
       setIsFallback(true);
     }
