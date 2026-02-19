@@ -256,7 +256,7 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full h-full animate-in fade-in duration-700">
+      <main className="relative z-10 flex-grow w-full animate-in fade-in duration-700">
         <VaultArchive
           history={history}
           currentTime={currentTime}

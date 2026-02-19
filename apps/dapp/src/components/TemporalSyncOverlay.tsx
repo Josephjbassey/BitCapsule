@@ -1,12 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface TemporalSyncOverlayProps {
   message?: string;
 }
 
 export default function TemporalSyncOverlay({ message }: TemporalSyncOverlayProps) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    // Slow crawl from 0 to 98%
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 98) return prev;
+        // The closer it gets to 98, the slower it increments
+        const remaining = 98 - prev;
+        const increment = Math.max(0.1, remaining * 0.05);
+        return Math.min(98, prev + increment);
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[150] bg-background-dark text-white font-display overflow-hidden flex flex-col items-center justify-center p-6">
         <div className="fixed inset-0 grid-bg pointer-events-none z-0 opacity-20 transform perspective-1000 rotate-x-12 scale-110"></div>
@@ -39,10 +56,13 @@ export default function TemporalSyncOverlay({ message }: TemporalSyncOverlayProp
             <div className="mt-12 w-full max-w-sm">
                 <div className="flex justify-between text-[10px] font-mono text-gray-500 uppercase mb-2">
                     <span>Protocol Load</span>
-                    <span>{message ? "IN_PROGRESS" : "94%"}</span>
+                    <span>{Math.floor(progress)}%</span>
                 </div>
-                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden relative">
-                    <div className="h-full bg-primary w-[94%] shadow-[0_0_10px_rgba(242,185,13,0.8)]"></div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative">
+                    <div
+                        className="h-full bg-primary shadow-[0_0_15px_rgba(242,185,13,0.8)] transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    ></div>
                     <div className="absolute inset-0 terminal-scanline opacity-30"></div>
                 </div>
             </div>
