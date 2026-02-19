@@ -154,9 +154,18 @@ export default function UnlockProcess({ status, onClose, txHash, revealedData }:
                                         <div className="text-[10px] text-gray-500">{(revealedData.file.size / 1024).toFixed(1)} KB</div>
                                     </div>
                                 </div>
-                                <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
-                                    <span className="material-icons text-sm">info</span>
-                                    File Metadata Verified</div>
+                                <div className="flex flex-col items-end gap-2">
+                                    <div className="text-[10px] text-primary/40 uppercase font-bold flex items-center gap-1">
+                                        <span className="material-icons text-sm">info</span>
+                                        File Metadata Verified
+                                    </div>
+                                    {revealedData.file.url && (
+                                        <a href={revealedData.file.url.replace('ipfs://', 'https://ipfs.io/ipfs/')} target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-primary/20 hover:bg-primary/30 text-primary text-[10px] font-bold uppercase rounded border border-primary/30 transition-all flex items-center gap-1">
+                                            <span className="material-icons text-xs">download</span>
+                                            Retrieve from IPFS
+                                        </a>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
