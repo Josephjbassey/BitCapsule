@@ -108,47 +108,20 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       const [logs, claimedLogs, withdrawnLogs] = await Promise.all([
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
-          event: {
-            type: 'event',
-            name: 'CapsuleCreated',
-            inputs: [
-              { type: 'uint256', name: 'id', indexed: true },
-              { type: 'address', name: 'owner', indexed: true },
-              { type: 'address', name: 'beneficiary', indexed: true },
-              { type: 'uint256', name: 'unlockTime', indexed: false },
-              { type: 'uint8', name: 'vaultType', indexed: false },
-              { type: 'uint256', name: 'amount', indexed: false },
-              { type: 'address', name: 'token', indexed: false },
-              { type: 'string', name: 'message', indexed: false }
-            ]
-          } as any,
+          abi: TimeCapsule.abi,
+          eventName: 'CapsuleCreated',
           fromBlock: 'earliest'
         }),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
-          event: {
-            type: 'event',
-            name: 'CapsuleClaimed',
-            inputs: [
-              { type: 'uint256', name: 'id', indexed: true },
-              { type: 'address', name: 'claimant', indexed: true }
-            ]
-          } as any,
+          abi: TimeCapsule.abi,
+          eventName: 'CapsuleClaimed',
           fromBlock: 'earliest'
         }),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
-          event: {
-            type: 'event',
-            name: 'EarlyWithdrawal',
-            inputs: [
-              { type: 'uint256', name: 'id', indexed: true },
-              { type: 'address', name: 'owner', indexed: true },
-              { type: 'uint256', name: 'userAmount', indexed: false },
-              { type: 'uint256', name: 'treasuryAmount', indexed: false },
-              { type: 'address', name: 'token', indexed: false }
-            ]
-          } as any,
+          abi: TimeCapsule.abi,
+          eventName: 'EarlyWithdrawal',
           fromBlock: 'earliest'
         })
       ]);
@@ -246,7 +219,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         return;
       }
 
-      const finalAmount = netAmount > 0n ? netAmount : amountInWei;
+      const finalAmount = amountInWei;
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
       // Combine label, message, and fileInfo into a JSON string
@@ -446,11 +419,11 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
   }
 
   return (
-    <div className="relative min-h-screen bg-background-dark text-white font-display flex flex-col selection:bg-primary selection:text-white">
+    <div className="relative h-screen bg-background-dark overflow-hidden text-white font-display flex flex-col selection:bg-primary selection:text-white">
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-grow w-full flex flex-col items-center animate-in fade-in duration-700">
+      <main className="relative z-10 flex-grow w-full flex flex-col items-center overflow-hidden animate-in fade-in duration-700">
         {view === 'creation' ? (
           <VaultCreation
             vaultType={vaultType}

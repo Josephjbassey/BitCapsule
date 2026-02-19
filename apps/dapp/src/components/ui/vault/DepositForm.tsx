@@ -87,7 +87,7 @@ export const DepositForm = ({
                         type="file"
                         onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) setFileInfo({ name: file.name, size: file.size });
+                            if (file) setFileInfo({ name: file.name, size: file.size, file });
                             else setFileInfo(null);
                         }}
                         className="absolute inset-0 opacity-0 cursor-pointer z-10"
