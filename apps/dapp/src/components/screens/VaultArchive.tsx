@@ -31,6 +31,12 @@ export default function VaultArchive({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const filteredHistory = history.filter(log => {
+    // Only show vaults where user is owner or beneficiary
+    const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
+    const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
+
+    if (!isOwner && !isBeneficiary) return false;
+
     const unlockTime = Number(log.args.unlockTime);
     const isLocked = currentTime < unlockTime;
     if (filter === 'LOCKED') return isLocked;
