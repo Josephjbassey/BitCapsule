@@ -40,6 +40,31 @@ export const abi = [
       {
         "indexed": true,
         "internalType": "address",
+        "name": "oldBeneficiary",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newBeneficiary",
+        "type": "address"
+      }
+    ],
+    "name": "BeneficiaryUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "claimant",
         "type": "address"
       }
@@ -100,6 +125,31 @@ export const abi = [
       }
     ],
     "name": "CapsuleCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "CapsuleTransferred",
     "type": "event"
   },
   {
@@ -293,6 +343,49 @@ export const abi = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unlockTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "beneficiary",
+        "type": "address"
+      },
+      {
+        "internalType": "enum TimeCapsule.VaultType",
+        "name": "vaultType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "createCapsuleFor",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -311,6 +404,42 @@ export const abi = [
   {
     "inputs": [],
     "name": "ping",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "newBeneficiary",
+        "type": "address"
+      }
+    ],
+    "name": "transferBeneficiary",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferCapsule",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -348,14 +477,13 @@ export const abi = [
 ] as const;
 
 export const getAddress = (): `0x${string}` => {
-    const FALLBACK_ADDRESS = "0x9e0C06f9889a633b941dc3a06AFB5604C1Bb826E";
+    const FALLBACK_ADDRESS = "0x2d1B4148a8f8E502e3c2104fef07620261fE3DBC";
     const envAddr = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
     const address = (envAddr && envAddr !== "undefined") ? envAddr : FALLBACK_ADDRESS;
 
     if (address === FALLBACK_ADDRESS && (!envAddr || envAddr === "undefined")) {
-        // Only log warning once to avoid spamming console
         if (typeof window !== "undefined" && !(window as any)._TC_ADDR_WARNED) {
-            console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set or invalid — using fallback address. Do NOT use in production.");
+            console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set or invalid — using latest deployment fallback.");
             (window as any)._TC_ADDR_WARNED = true;
         }
     }

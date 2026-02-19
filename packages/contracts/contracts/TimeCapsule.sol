@@ -39,6 +39,8 @@ contract TimeCapsule is ReentrancyGuard {
     event CapsuleClaimed(uint256 indexed id, address indexed claimant);
     event EarlyWithdrawal(uint256 indexed id, address indexed owner, uint256 userAmount, uint256 treasuryAmount, address token);
     event Pinged(address indexed user, uint256 timestamp);
+    event BeneficiaryUpdated(uint256 indexed id, address indexed oldBeneficiary, address indexed newBeneficiary);
+    event CapsuleTransferred(uint256 indexed id, address indexed oldOwner, address indexed newOwner);
 
     constructor(address _treasury) {
         treasury = _treasury;
@@ -46,7 +48,6 @@ contract TimeCapsule is ReentrancyGuard {
 
     /**
      * @dev Create a new time-locked capsule.
-     * signature: (address token, uint256 amount, uint256 unlockTimestamp, address beneficiary, VaultType vaultType, string memory message)
      */
     function createCapsule(
         address token,
@@ -56,21 +57,48 @@ contract TimeCapsule is ReentrancyGuard {
         VaultType vaultType,
         string memory message
     ) external payable nonReentrant {
-        require(amount > 0, "Amount must be greater than 0");
+        _createCapsule(msg.sender, token, amount, unlockTimestamp, beneficiary, vaultType, message);
+    }
+
+    /**
+     * @dev Create a new time-locked capsule for a specific owner (useful for bridge calls).
+     */
+    function createCapsuleFor(
+        address owner,
+        address token,
+        uint256 amount,
+        uint256 unlockTimestamp,
+        address beneficiary,
+        VaultType vaultType,
+        string memory message
+    ) external payable nonReentrant {
+        _createCapsule(owner, token, amount, unlockTimestamp, beneficiary, vaultType, message);
+    }
+
+    function _createCapsule(
+        address owner,
+        address token,
+        uint256 amount,
+        uint256 unlockTimestamp,
+        address beneficiary,
+        VaultType vaultType,
+        string memory message
+    ) internal {
         require(unlockTimestamp > block.timestamp, "Unlock time must be in the future");
 
         if (token == address(0)) {
-            require(msg.value == amount, "Sent value must match amount");
+            // Use msg.value as the amount to handle bridge fees or mismatches gracefully
+            amount = msg.value;
         } else {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
-        if (vaultType == VaultType.LEGACY || vaultType == VaultType.SOCIAL) {
-            require(beneficiary != address(0), "Beneficiary required");
-        }
+        require(amount > 0, "Amount must be greater than 0");
+
+        // Removed strict beneficiary check to support BTC addresses in metadata with address(0) on-chain
 
         capsules[capsuleCount] = Capsule({
-            owner: msg.sender,
+            owner: owner,
             token: token,
             amount: amount,
             unlockTimestamp: unlockTimestamp,
@@ -80,10 +108,40 @@ contract TimeCapsule is ReentrancyGuard {
             message: message
         });
 
-        lastPing[msg.sender] = block.timestamp;
+        lastPing[owner] = block.timestamp;
 
-        emit CapsuleCreated(capsuleCount, msg.sender, beneficiary, unlockTimestamp, vaultType, amount, token, message);
+        emit CapsuleCreated(capsuleCount, owner, beneficiary, unlockTimestamp, vaultType, amount, token, message);
         capsuleCount++;
+    }
+
+    function transferCapsule(uint256 id, address newOwner) external nonReentrant {
+        Capsule storage capsule = capsules[id];
+        require(capsule.owner != address(0), "Capsule does not exist");
+        require(msg.sender == capsule.owner, "Only owner");
+        require(!capsule.claimed, "Already claimed");
+        require(newOwner != address(0), "Invalid new owner");
+
+        address oldOwner = capsule.owner;
+        capsule.owner = newOwner;
+
+        // If new owner is not already active, initialize their ping
+        if (lastPing[newOwner] == 0) {
+            lastPing[newOwner] = block.timestamp;
+        }
+
+        emit CapsuleTransferred(id, oldOwner, newOwner);
+    }
+
+    function transferBeneficiary(uint256 id, address newBeneficiary) external nonReentrant {
+        Capsule storage capsule = capsules[id];
+        require(capsule.owner != address(0), "Capsule does not exist");
+        require(msg.sender == capsule.owner, "Only owner");
+        require(!capsule.claimed, "Already claimed");
+
+        address oldBeneficiary = capsule.beneficiary;
+        capsule.beneficiary = newBeneficiary;
+
+        emit BeneficiaryUpdated(id, oldBeneficiary, newBeneficiary);
     }
 
     function ping() external {

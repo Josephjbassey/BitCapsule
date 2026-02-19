@@ -63,25 +63,27 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
   }, []);
 
   const fetchHistory = async () => {
+    const tcAddress = TimeCapsule.getAddress();
+    console.log("[BitCapsule] Fetching history from:", tcAddress);
     if (!publicClient) return;
     try {
       const [logs, claimedLogs, withdrawnLogs] = await Promise.all([
         publicClient.getLogs({
-          address: TimeCapsule.getAddress(),
+          address: tcAddress,
           abi: TimeCapsule.abi,
-          eventName: 'CapsuleCreated',
+          eventName: 'CapsuleCreated', strict: false,
           fromBlock: 'earliest'
         } as any),
         publicClient.getLogs({
-          address: TimeCapsule.getAddress(),
+          address: tcAddress,
           abi: TimeCapsule.abi,
-          eventName: 'CapsuleClaimed',
+          eventName: 'CapsuleClaimed', strict: false,
           fromBlock: 'earliest'
         } as any),
         publicClient.getLogs({
-          address: TimeCapsule.getAddress(),
+          address: tcAddress,
           abi: TimeCapsule.abi,
-          eventName: 'EarlyWithdrawal',
+          eventName: 'EarlyWithdrawal', strict: false,
           fromBlock: 'earliest'
         } as any)
       ]);
