@@ -14,11 +14,11 @@ task("list-accounts", "Prints the list of named accounts", async (taskArgs, hre)
   console.log("---------------------------------\n");
 });
 
-const MNEMONIC = vars.has("MNEMONIC") ? vars.get("MNEMONIC") : "test test test test test test test test test test test junk";
+const MNEMONIC = vars.get("MNEMONIC");
 
 const config: HardhatUserConfig = {
 	solidity: "0.8.28",
-	defaultNetwork: MNEMONIC.includes("junk") ? "hardhat" : "regtest",
+	defaultNetwork: "regtest",
 	namedAccounts: {
 		deployer: 0,
 		treasury: 0,

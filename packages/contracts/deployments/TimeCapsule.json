@@ -1,7 +1,7 @@
 {
-  "address": "0xfF06a8Df58ecBbDf8C0F444DFea769D39EEb95b8",
-  "txId": "0x853b908c355dcde6f4be326e655884f408342b2ef6317f5d8f48d7b215fa1e1c",
-  "btcTxId": "e0eb14d9b367f93a145abdc8ff8f310acea0b6e10c200ea4a24daae1a88f4ce4",
+  "address": "0xeDAbd2A195888860B2c5B9f0A34c0C2f74Bcb0Cc",
+  "txId": "0xba97b1126120f5b56783ebab31d060a1076691505d0f4da3851c5522b8709199",
+  "btcTxId": "a74319f913784f1919b615af119edab16f2336a67e51572c0674f4a03d6428c8",
   "abi": [
     {
       "inputs": [
@@ -29,6 +29,25 @@
       ],
       "name": "SafeERC20FailedOperation",
       "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newBeneficiary",
+          "type": "address"
+        }
+      ],
+      "name": "BeneficiaryUpdated",
+      "type": "event"
     },
     {
       "anonymous": false,
@@ -102,6 +121,31 @@
         }
       ],
       "name": "CapsuleCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "CapsuleTransferred",
       "type": "event"
     },
     {
@@ -313,6 +357,42 @@
     {
       "inputs": [],
       "name": "ping",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "newBeneficiary",
+          "type": "address"
+        }
+      ],
+      "name": "transferBeneficiary",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferCapsule",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
