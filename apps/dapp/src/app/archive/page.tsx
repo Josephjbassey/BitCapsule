@@ -1,4 +1,6 @@
 "use client";
+import { regtest } from "@midl/core";
+import { getEVMAddress } from "@midl/executor";
 import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 
 import WalletConnect from "@/components/screens/WalletConnect";
@@ -7,7 +9,7 @@ import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTrans
 import { useWaitForTransaction } from "@midl/react";
 import { useAccount, usePublicClient } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
-import { encodeFunctionData } from "viem";
+import { encodeFunctionData, isAddress } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
@@ -106,6 +108,72 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
       return () => clearInterval(interval);
     }
   }, [isConnected, publicClient]);
+
+    const handleTransferCapsule = async (id: bigint, newOwner: string) => {
+    if (isSigningOrPending) return;
+    try {
+      setMintStep("Initializing Transfer...");
+      const mapped = isAddress(newOwner) ? newOwner : (await getEVMAddress(newOwner as any, regtest)) as `0x${string}`;
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: "transferCapsule",
+              args: [id, mapped],
+            }),
+          },
+        },
+        reset: true,
+      });
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({ serializedTransactions: [signedTransaction], btcTransaction: tx.hex });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Capsule ownership transferred!");
+      setTimeout(fetchHistory, 2000);
+    } catch (e: any) {
+      toast.error(e.message || "Transfer failed");
+    } finally {
+      setIsBroadcasting(false);
+      setMintStep("");
+    }
+  };
+
+  const handleTransferBeneficiary = async (id: bigint, newBeneficiary: string) => {
+    if (isSigningOrPending) return;
+    try {
+      setMintStep("Updating Beneficiary...");
+      const mapped = isAddress(newBeneficiary) ? newBeneficiary : (await getEVMAddress(newBeneficiary as any, regtest)) as `0x${string}`;
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: "transferBeneficiary",
+              args: [id, mapped],
+            }),
+          },
+        },
+        reset: true,
+      });
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({ serializedTransactions: [signedTransaction], btcTransaction: tx.hex });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Beneficiary updated!");
+      setTimeout(fetchHistory, 2000);
+    } catch (e: any) {
+      toast.error(e.message || "Update failed");
+    } finally {
+      setIsBroadcasting(false);
+      setMintStep("");
+    }
+  };
 
   const handleWithdrawEarly = async (id: bigint) => {
     if (isWithdrawing) return;
@@ -236,6 +304,8 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
           currentTime={currentTime}
           handleWithdrawEarly={handleWithdrawEarly}
           handleClaim={handleClaim}
+          handleTransferCapsule={handleTransferCapsule}
+          handleTransferBeneficiary={handleTransferBeneficiary}
           address={address}
           isSigningOrPending={isSigningOrPending}
           onNavigateBack={() => window.location.href = '/'}

@@ -1,4 +1,5 @@
 "use client";
+import { regtest } from "@midl/core";
 import { getEVMAddress } from "@midl/executor";
 import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 import { uploadToIPFS } from "@/shared/utils/ipfs";
@@ -134,6 +135,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
       const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
       setHistory(activeLogs);
+        console.log("[BitCapsule] Sync Complete. Active Vaults count:", activeLogs.length, "Total logs found:", logs.length);
       console.log("[BitCapsule] Fetched history. Total logs:", logs.length, "Active:", activeLogs.length);
     } catch (error) {
       console.error("[BitCapsule] Failed to fetch history", error);
@@ -306,6 +308,72 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     }
   };
 
+    const handleTransferCapsule = async (id: bigint, newOwner: string) => {
+    if (isSigningOrPending) return;
+    try {
+      setMintStep("Initializing Transfer...");
+      const mapped = isAddress(newOwner) ? newOwner : (await getEVMAddress(newOwner as any, regtest)) as `0x${string}`;
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: "transferCapsule",
+              args: [id, mapped],
+            }),
+          },
+        },
+        reset: true,
+      });
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({ serializedTransactions: [signedTransaction], btcTransaction: tx.hex });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Capsule ownership transferred!");
+      setTimeout(fetchHistory, 2000);
+    } catch (e: any) {
+      toast.error(e.message || "Transfer failed");
+    } finally {
+      setIsBroadcasting(false);
+      setMintStep("");
+    }
+  };
+
+  const handleTransferBeneficiary = async (id: bigint, newBeneficiary: string) => {
+    if (isSigningOrPending) return;
+    try {
+      setMintStep("Updating Beneficiary...");
+      const mapped = isAddress(newBeneficiary) ? newBeneficiary : (await getEVMAddress(newBeneficiary as any, regtest)) as `0x${string}`;
+      const intention = await addTxIntentionAsync({
+        intention: {
+          evmTransaction: {
+            to: TimeCapsule.address as `0x${string}`,
+            data: encodeFunctionData({
+              abi: TimeCapsule.abi,
+              functionName: "transferBeneficiary",
+              args: [id, mapped],
+            }),
+          },
+        },
+        reset: true,
+      });
+      const { tx } = await finalizeBTCTransactionAsync();
+      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
+      setIsBroadcasting(true);
+      await sendBTCTransactionsAsync({ serializedTransactions: [signedTransaction], btcTransaction: tx.hex });
+      await waitForTransactionAsync({ txId: tx.id });
+      toast.success("Beneficiary updated!");
+      setTimeout(fetchHistory, 2000);
+    } catch (e: any) {
+      toast.error(e.message || "Update failed");
+    } finally {
+      setIsBroadcasting(false);
+      setMintStep("");
+    }
+  };
+
   const handleWithdrawEarly = async (id: bigint) => {
     if (isWithdrawing) return;
     setIsWithdrawing(true);
@@ -455,6 +523,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
             currentTime={currentTime}
             handleWithdrawEarly={handleWithdrawEarly}
             handleClaim={handleClaim}
+            handleTransferCapsule={handleTransferCapsule}
+            handleTransferBeneficiary={handleTransferBeneficiary}
             address={address}
             isSigningOrPending={isSigningOrPending}
             onNavigateBack={() => setView('creation')}
