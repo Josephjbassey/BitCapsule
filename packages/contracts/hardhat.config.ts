@@ -4,29 +4,30 @@ import "@midl/hardhat-deploy";
 import { midlRegtest } from "@midl/executor";
 import { type HardhatUserConfig, vars, task } from "hardhat/config";
 
-// Task to list accounts derived from the mnemonic
 task("list-accounts", "Prints the list of named accounts", async (taskArgs, hre) => {
   const namedAccounts = await hre.getNamedAccounts();
-  console.log("\n--- BitCapsule Named Accounts ---");
+  console.log("\nNamed Accounts:");
   for (const [name, address] of Object.entries(namedAccounts)) {
-    console.log(`  ${name.padEnd(10)}: ${address}`);
+    console.log(`  - ${name}: ${address}`);
   }
-  console.log("---------------------------------\n");
+  console.log("\nNote: These addresses are derived from your configured MNEMONIC.");
 });
 
-const MNEMONIC = vars.get("MNEMONIC");
-
-const config: HardhatUserConfig = {
+export default (<HardhatUserConfig>{
 	solidity: "0.8.28",
 	defaultNetwork: "regtest",
 	namedAccounts: {
-		deployer: 0,
-		treasury: 0,
+		deployer: {
+			default: 0,
+		},
+		treasury: {
+			default: 0,
+		},
 	},
 	midl: {
 		networks: {
 			regtest: {
-				mnemonic: MNEMONIC,
+				mnemonic: vars.get("MNEMONIC"),
 				path: "deployments",
 				confirmationsRequired: 1,
 				btcConfirmationsRequired: 1,
@@ -34,14 +35,9 @@ const config: HardhatUserConfig = {
 				network: {
 					explorerUrl: "https://mempool.staging.midl.xyz",
 					id: "regtest",
+					accounts: { mnemonic: vars.get("MNEMONIC") },
 					network: "regtest",
 				},
-			},
-			// Add hardhat network to prevent crash during task initialization
-			hardhat: {
-				mnemonic: MNEMONIC,
-				path: "deployments",
-				hardhatNetwork: "hardhat",
 			},
 		},
 	},
@@ -49,9 +45,6 @@ const config: HardhatUserConfig = {
 		regtest: {
 			url: midlRegtest.rpcUrls.default.http[0],
 			chainId: midlRegtest.id,
-			accounts: {
-				mnemonic: MNEMONIC,
-			},
 		},
 	},
 	etherscan: {
@@ -69,6 +62,4 @@ const config: HardhatUserConfig = {
 			},
 		],
 	},
-};
-
-export default config;
+});
