@@ -1,4 +1,5 @@
 "use client";
+import { getEVMAddress } from "@midl/executor";
 import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 import { uploadToIPFS } from "@/shared/utils/ipfs";
 import dynamic from "next/dynamic";
@@ -24,7 +25,7 @@ const VaultArchive = dynamic(() => import("@/components/screens/VaultArchive"), 
 const UnlockProcess = dynamic(() => import("@/components/screens/UnlockProcess"), { ssr: false });
 
 export default function Home() {
-  const { isConnected } = useAccount();
+  const { isConnected, connector } = useAccount();
   const address = useEVMAddress();
   const { connectors } = useConnect();
   const { addTxIntentionAsync } = useAddTxIntention();
@@ -133,8 +134,9 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
       const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
       setHistory(activeLogs);
+      console.log("[BitCapsule] Fetched history. Total logs:", logs.length, "Active:", activeLogs.length);
     } catch (error) {
-      console.error("Failed to fetch history", error);
+      console.error("[BitCapsule] Failed to fetch history", error);
     }
   };
 
@@ -186,7 +188,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         targetBeneficiary = beneficiary as `0x${string}`;
       } else {
         toast.info("Bitcoin beneficiary detected. Metadata archived.");
-        targetBeneficiary = zeroAddress;
+        targetBeneficiary = address as `0x${string}`; // Use owner as placeholder for BTC beneficiary to avoid contract revert
       }
     }
 
@@ -231,6 +233,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       });
 
       setMintStep("Initializing Temporal Intention...");
+      const isXverse = connector?.id?.toLowerCase().includes('xverse') || connector?.name?.toLowerCase().includes('xverse');
+      console.log('[BitCapsule] Initializing intent. Wallet:', connector?.name, 'isXverse:', isXverse);
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -241,7 +245,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
               functionName: "createCapsule",
               args: [
                 zeroAddress,
-                finalAmount,
+                amountInWei,
                 unlockTimestamp,
                 targetBeneficiary as `0x${string}`,
                 vaultType,
@@ -250,8 +254,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
             }),
           },
           // Explicitly include deposit for native BTC funding from Bitcoin side to resolve PSBT issues
-          deposit: amountInWei > 0n ? {
-            satoshis: Number(amountInWei / BigInt(10**10))
+          deposit: (isXverse && amountInWei > 0n) ? {
+            satoshis: Math.ceil(Number(amountInWei) / 10**10) // Precise satoshi calculation
           } : undefined,
         },
         reset: true,
@@ -312,6 +316,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
     try {
       setMintStep("Initializing Temporal Intention...");
+      setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
@@ -366,6 +371,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     const data = extractRevealedData(id);
 
     try {
+      setMintStep("Initializing Temporal Intention...");
       setMintStep("Initializing Temporal Intention...");
       const intention = await addTxIntentionAsync({
         intention: {
