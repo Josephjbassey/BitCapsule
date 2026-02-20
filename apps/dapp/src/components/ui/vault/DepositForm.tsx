@@ -57,7 +57,7 @@ export const DepositForm = ({
               id="vault-type-selector"
               value={vaultType}
               onChange={(e) => setVaultType(Number(e.target.value))}
-              className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
+              className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60 hover:scale-[1.01]"
           >
               <option value={VaultType.TEMPORAL}>TEMPORAL VAULT (Personal)</option>
               <option value={VaultType.LEGACY}>LEGACY SWITCH (Inheritance)</option>
@@ -74,7 +74,7 @@ export const DepositForm = ({
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="e.g., Retirement Fund, 2030 Savings"
-                className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60"
+                className="w-full bg-background-dark border border-primary/40 rounded-lg p-3 text-gray-300 font-display text-xs focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all hover:border-primary/60 hover:scale-[1.01]"
             />
         </div>
 
@@ -185,7 +185,7 @@ export const DepositForm = ({
           <button type="button"
             onClick={handleMint}
             disabled={isSigningOrPending}
-            className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50 active:scale-[0.98]"
+            className="relative w-full group overflow-hidden rounded-lg bg-surface-dark border border-primary/30 hover:border-primary/80 transition-all duration-300 disabled:opacity-50 active:scale-95 hover:scale-[1.02] hover:shadow-neon"
           >
             <div className="absolute inset-0 circuit-pattern opacity-10 group-hover:opacity-20 transition-opacity"></div>
             <div className="relative flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5">

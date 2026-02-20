@@ -93,8 +93,9 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
       const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
       setHistory(activeLogs);
+      console.log("[BitCapsule] Fetched history. Total logs:", logs.length, "Active:", activeLogs.length);
     } catch (error) {
-      console.error("Failed to fetch history", error);
+      console.error("[BitCapsule] Failed to fetch history", error);
     }
   };
 

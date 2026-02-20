@@ -1,5 +1,12 @@
 import { isAddress } from "viem";
 
+export enum VaultType {
+  TEMPORAL = 0,
+  LEGACY = 1,
+  HODL = 2,
+  SOCIAL = 3
+}
+
 export const abi = [
   {
     "inputs": [
@@ -353,18 +360,14 @@ export const getAddress = (): `0x${string}` => {
     const address = (envAddr && envAddr !== "undefined") ? envAddr : FALLBACK_ADDRESS;
 
     if (address === FALLBACK_ADDRESS && (!envAddr || envAddr === "undefined")) {
-        // Only log warning once to avoid spamming console
         if (typeof window !== "undefined" && !(window as any)._TC_ADDR_WARNED) {
-            console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set or invalid — using fallback address. Do NOT use in production.");
+            console.warn("NEXT_PUBLIC_TIME_CAPSULE_ADDRESS not set or invalid — using fallback address.");
             (window as any)._TC_ADDR_WARNED = true;
         }
     }
 
     if (!isAddress(address)) {
-        throw new Error(
-            `TimeCapsule address is missing or invalid: ${address}. ` +
-            "Ensure NEXT_PUBLIC_TIME_CAPSULE_ADDRESS is set in your environment."
-        );
+        throw new Error(`TimeCapsule address invalid: ${address}`);
     }
     return address as `0x${string}`;
 }

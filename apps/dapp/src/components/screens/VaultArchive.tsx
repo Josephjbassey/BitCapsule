@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { isAddressEqual } from "viem";
 import { parseVaultMessage } from "@/shared/utils/vault";
-import { VaultType } from "./VaultCreation";
+import { VaultType } from "@/shared/contracts/TimeCapsule";
 import { CountdownTimer } from "../ui/vault/CountdownTimer";
 
 interface VaultArchiveProps {
@@ -152,8 +152,8 @@ export default function VaultArchive({
                 const unlockYear = new Date(unlockTime * 1000).getFullYear();
 
                 return (
-                  <div key={`${log.transactionHash}-${i}`} className="group relative holographic-card">
-                    <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-80 border ${borderColor} transition-all duration-300 hover:border-primary/60`}>
+                  <div key={`${log.transactionHash}-${i}`} className="group relative holographic-card animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${i * 100}ms` }}>
+                    <div className={`glass-panel rounded-xl p-6 relative flex flex-col justify-between h-80 border ${borderColor} transition-all duration-300 hover:border-primary/60 hover:shadow-neon hover:-translate-y-1`}>
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col text-left">
                           <div className="flex justify-between items-center w-full mb-1">
@@ -194,13 +194,13 @@ export default function VaultArchive({
                         <span>VAULT_ID: #{id?.toString()}</span>
                         <div className="flex gap-2">
                            {isLocked && isOwner && !isLegacy && (
-                             <button type="button" onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-[0.98]">Panic</button>
+                             <button type="button" onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Panic</button>
                            )}
                            {isLocked && isOwner && isLegacy && (
                              <span className="text-gray-600 cursor-not-allowed uppercase font-bold" title="Legacy vaults cannot be breached prematurely">Locked</span>
                            )}
                            {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
-                             <button type="button" onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-[0.98]">Claim</button>
+                             <button type="button" onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Claim</button>
                            )}
                         </div>
                       </div>
