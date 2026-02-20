@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { isAddressEqual } from "viem";
 import { parseVaultMessage } from "@/shared/utils/vault";
 import { VaultType } from "@/shared/contracts/TimeCapsule";
@@ -11,6 +11,8 @@ interface VaultArchiveProps {
   currentTime: number;
   handleWithdrawEarly: (id: bigint) => void;
   handleClaim: (id: bigint, legacy: boolean) => void;
+  handleTransferCapsule: (id: bigint, newOwner: string) => void;
+  handleTransferBeneficiary: (id: bigint, newBeneficiary: string) => void;
   address: string | undefined;
   isSigningOrPending: boolean;
   onNavigateBack: () => void;
@@ -22,6 +24,8 @@ export default function VaultArchive({
   currentTime,
   handleWithdrawEarly,
   handleClaim,
+  handleTransferCapsule,
+  handleTransferBeneficiary,
   address,
   isSigningOrPending,
   onNavigateBack,
@@ -30,7 +34,12 @@ export default function VaultArchive({
   const [filter, setFilter] = useState<'ALL' | 'LOCKED' | 'UNLOCKED'>('ALL');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    console.log("[VaultArchive] Component Rendered. History Size:", history.length, "Connected Address:", address);
+  }, [history, address]);
+
   const filteredHistory = history.filter(log => {
+    // console.log("[Archive] Checking log:", log.args.id, "Owner:", log.args.owner, "Beneficiary:", log.args.beneficiary, "Current Address:", address);
     // Only show vaults where user is owner or beneficiary
     const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
     const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
@@ -43,8 +52,6 @@ export default function VaultArchive({
     if (filter === 'UNLOCKED') return !isLocked;
     return true;
   });
-
-
 
   return (
     <div className="flex flex-grow w-full h-full min-h-[500px] bg-background-dark text-white font-display overflow-hidden relative">
@@ -192,16 +199,30 @@ export default function VaultArchive({
 
                       <div className="flex justify-between items-center text-[10px] font-mono text-white/30">
                         <span>VAULT_ID: #{id?.toString()}</span>
-                        <div className="flex gap-2">
-                           {isLocked && isOwner && !isLegacy && (
-                             <button type="button" onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Panic</button>
+                        <div className="flex flex-col gap-2 items-end">
+                           {isLocked && isOwner && (
+                             <div className="flex gap-2">
+                               <button type="button" onClick={() => {
+                                 const addr = window.prompt("Enter new owner address (EVM or BTC):");
+                                 if (addr) handleTransferCapsule(id, addr);
+                               }} disabled={isSigningOrPending} className="text-blue-400 hover:text-blue-300 transition-all uppercase font-bold text-[9px] active:scale-90">Tfr Owner</button>
+                               <button type="button" onClick={() => {
+                                 const addr = window.prompt("Enter new beneficiary address (EVM or BTC):");
+                                 if (addr) handleTransferBeneficiary(id, addr);
+                               }} disabled={isSigningOrPending} className="text-purple-400 hover:text-purple-300 transition-all uppercase font-bold text-[9px] active:scale-90">Set Benf</button>
+                             </div>
                            )}
-                           {isLocked && isOwner && isLegacy && (
-                             <span className="text-gray-600 cursor-not-allowed uppercase font-bold" title="Legacy vaults cannot be breached prematurely">Locked</span>
-                           )}
-                           {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
-                             <button type="button" onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Claim</button>
-                           )}
+                           <div className="flex gap-2">
+                             {isLocked && isOwner && !isLegacy && (
+                               <button type="button" onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Panic</button>
+                             )}
+                             {isLocked && isOwner && isLegacy && (
+                               <span className="text-gray-600 cursor-not-allowed uppercase font-bold" title="Legacy vaults cannot be breached prematurely">Locked</span>
+                             )}
+                             {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
+                               <button type="button" onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Claim</button>
+                             )}
+                           </div>
                         </div>
                       </div>
                     </div>

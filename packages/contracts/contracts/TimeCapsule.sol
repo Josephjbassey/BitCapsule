@@ -39,15 +39,13 @@ contract TimeCapsule is ReentrancyGuard {
     event CapsuleClaimed(uint256 indexed id, address indexed claimant);
     event EarlyWithdrawal(uint256 indexed id, address indexed owner, uint256 userAmount, uint256 treasuryAmount, address token);
     event Pinged(address indexed user, uint256 timestamp);
+    event CapsuleTransferred(uint256 indexed id, address indexed from, address indexed to);
+    event BeneficiaryUpdated(uint256 indexed id, address indexed newBeneficiary);
 
     constructor(address _treasury) {
         treasury = _treasury;
     }
 
-    /**
-     * @dev Create a new time-locked capsule.
-     * signature: (address token, uint256 amount, uint256 unlockTimestamp, address beneficiary, VaultType vaultType, string memory message)
-     */
     function createCapsule(
         address token,
         uint256 amount,
@@ -84,6 +82,20 @@ contract TimeCapsule is ReentrancyGuard {
 
         emit CapsuleCreated(capsuleCount, msg.sender, beneficiary, unlockTimestamp, vaultType, amount, token, message);
         capsuleCount++;
+    }
+
+    function transferCapsule(uint256 id, address newOwner) external {
+        require(capsules[id].owner == msg.sender, "Not owner");
+        require(newOwner != address(0), "Invalid address");
+        capsules[id].owner = newOwner;
+        emit CapsuleTransferred(id, msg.sender, newOwner);
+    }
+
+    function transferBeneficiary(uint256 id, address newBeneficiary) external {
+        require(capsules[id].owner == msg.sender, "Not owner");
+        require(newBeneficiary != address(0), "Invalid address");
+        capsules[id].beneficiary = newBeneficiary;
+        emit BeneficiaryUpdated(id, newBeneficiary);
     }
 
     function ping() external {
