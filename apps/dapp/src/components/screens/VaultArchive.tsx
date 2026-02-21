@@ -50,7 +50,16 @@ export default function VaultArchive({
     const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
     const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
 
-    if (!isOwner && !isBeneficiary) return false;
+    if (!isOwner && !isBeneficiary) {
+        if (process.env.NODE_ENV === "development") {
+            console.log("[BitCapsule] Vault #" + log.args.id?.toString() + " hidden (Not owner/beneficiary)", {
+                user: address,
+                owner: log.args.owner,
+                beneficiary: log.args.beneficiary
+            });
+        }
+        return false;
+    }
 
     const unlockTime = Number(log.args.unlockTime);
     const isLocked = currentTime < unlockTime;
