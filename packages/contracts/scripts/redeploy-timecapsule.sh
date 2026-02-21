@@ -4,10 +4,11 @@ set -euo pipefail
 # Redeploy TimeCapsule (immutable contract) and optionally update dApp env.
 # Usage:
 #   ./packages/contracts/scripts/redeploy-timecapsule.sh
-#   ./packages/contracts/scripts/redeploy-timecapsule.sh --network regtest --update-env
+#   ./packages/contracts/scripts/redeploy-timecapsule.sh --network regtest --reset --update-env
 
 NETWORK="regtest"
 UPDATE_ENV="false"
+RESET="true"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,12 +20,22 @@ while [[ $# -gt 0 ]]; do
       UPDATE_ENV="true"
       shift
       ;;
+    --reset)
+      RESET="true"
+      shift
+      ;;
+    --no-reset)
+      RESET="false"
+      shift
+      ;;
     -h|--help)
       cat <<'USAGE'
 Redeploy TimeCapsule and print the new address.
 
 Options:
   --network <name>   Hardhat network to deploy to (default: regtest)
+  --reset            Force redeployment (default behavior)
+  --no-reset         Disable forced redeployment and allow idempotent deploy
   --update-env       Also write NEXT_PUBLIC_TIME_CAPSULE_ADDRESS to apps/dapp/.env.local
   -h, --help         Show this help
 USAGE
@@ -45,7 +56,11 @@ DAPP_ENV_FILE="$ROOT_DIR/apps/dapp/.env.local"
 cd "$CONTRACTS_DIR"
 
 echo "[1/3] Redeploying TimeCapsule on network '$NETWORK'..."
-pnpm exec hardhat deploy --network "$NETWORK" --reset
+DEPLOY_CMD=(pnpm exec hardhat deploy --network "$NETWORK")
+if [[ "$RESET" == "true" ]]; then
+  DEPLOY_CMD+=(--reset)
+fi
+"${DEPLOY_CMD[@]}"
 
 if [[ ! -f "$DEPLOYMENT_FILE" ]]; then
   echo "Deployment file not found: $DEPLOYMENT_FILE" >&2
