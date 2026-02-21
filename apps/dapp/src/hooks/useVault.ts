@@ -149,7 +149,7 @@ export function useVault() {
         txHash: txHashes[0],
         btcTxHash: tx.id,
         message: revealedData?.message,
-        amount: revealedData?.amount,
+        amount: revealedData?.amount?.toString(),
         file: revealedData?.file
       });
       setTimeout(() => fetchHistory(false), 2000);
