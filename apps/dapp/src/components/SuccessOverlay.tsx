@@ -8,7 +8,7 @@ interface SuccessOverlayProps {
   onClose: () => void;
   onRefresh: () => void;
   message?: string;
-  amount?: string;
+  amount?: string | number;
 }
 
 export default function SuccessOverlay({ txHash, btcTxHash, onClose, onRefresh, message, amount }: SuccessOverlayProps) {
