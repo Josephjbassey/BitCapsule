@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { uploadToIPFS } from "@/shared/utils/ipfs";
 import { VaultType } from "@/shared/contracts/TimeCapsule";
 
-export function useVault(fromBlockWindow: bigint = 5000n) {
+export function useVault(fromBlockWindow: bigint = 10000n) {
   const { isConnected, connector } = useAccount();
   const { connectors } = useConnect();
   const address = useEVMAddress();
@@ -41,6 +41,7 @@ export function useVault(fromBlockWindow: bigint = 5000n) {
     if (!publicClient) return;
     try {
       const contractAddress = TimeCapsule.getAddress();
+      if (process.env.NODE_ENV === "development") console.log("[useVault] Syncing from block:", fromBlock, "to", currentBlock, "Contract:", contractAddress);
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
@@ -65,6 +66,7 @@ export function useVault(fromBlockWindow: bigint = 5000n) {
       };
 
       setAllLogs(nextLogs);
+      if (process.env.NODE_ENV === "development") console.log("[useVault] Fetched logs:", { created: created.length, claimed: claimed.length, withdrawn: withdrawn.length });
 
       const activeLogs = reconcileArchiveLogs(nextLogs.created, nextLogs.claimed, nextLogs.withdrawn, nextLogs.transferred, nextLogs.beneficiary);
       setHistory(activeLogs);

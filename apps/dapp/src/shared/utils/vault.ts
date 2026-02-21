@@ -69,16 +69,18 @@ export function reconcileArchiveLogs(
   transferredLogs: Log[] = [],
   beneficiaryLogs: Log[] = []
 ) {
-  const processedIds = new Set([
-    ...claimedLogs.map((log) => (log as any)?.args?.id?.toString()),
-    ...withdrawnLogs.map((log) => (log as any)?.args?.id?.toString())
-  ]);
+  const processedIds = new Set<string>();
+
+  [...claimedLogs, ...withdrawnLogs].forEach(log => {
+    const id = (log as any)?.args?.id;
+    if (id != null) processedIds.add(id.toString());
+  });
 
   const ownerMap = new Map<string, string>();
   const beneficiaryMap = new Map<string, string>();
 
   const allStateLogs = [...transferredLogs, ...beneficiaryLogs].sort((a, b) => {
-    if (a.blockNumber !== b.blockNumber) return Number(a.blockNumber || 0n) - Number(b.blockNumber || 0n);
+    if (a.blockNumber !== b.blockNumber) return Number((a.blockNumber || 0n) - (b.blockNumber || 0n));
     return (a.logIndex || 0) - (b.logIndex || 0);
   });
 
@@ -103,7 +105,10 @@ export function reconcileArchiveLogs(
   });
 
   return createdLogs
-    .filter((log) => !processedIds.has((log as any)?.args?.id?.toString()))
+    .filter((log) => {
+        const id = (log as any)?.args?.id;
+        return id != null && !processedIds.has(id.toString());
+    })
     .map(log => {
       const args = (log as any).args;
       const id = args.id.toString();
