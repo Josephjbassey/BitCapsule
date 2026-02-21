@@ -125,12 +125,20 @@ contract TimeCapsule is ReentrancyGuard {
     function claim(uint256 id) external nonReentrant {
          Capsule storage capsule = capsules[id];
          require(capsule.owner != address(0), "Capsule does not exist");
-         require(msg.sender == capsule.owner, "Not owner");
+         require(capsule.vaultType != VaultType.LEGACY, "Use claimLegacy");
+
+         if (capsule.vaultType == VaultType.SOCIAL) {
+             require(msg.sender == capsule.beneficiary, "Not beneficiary");
+         } else {
+             require(msg.sender == capsule.owner, "Not owner");
+         }
+
          require(block.timestamp >= capsule.unlockTimestamp, "Not unlocked");
          require(!capsule.claimed, "Already claimed");
 
          capsule.claimed = true;
-         _transfer(capsule.token, capsule.owner, capsule.amount);
+         address recipient = capsule.vaultType == VaultType.SOCIAL ? capsule.beneficiary : capsule.owner;
+         _transfer(capsule.token, recipient, capsule.amount);
          emit CapsuleClaimed(id, msg.sender);
     }
 

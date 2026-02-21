@@ -27,7 +27,7 @@ export function parseRevealedData(log: any): RevealedData {
   try {
     const data = JSON.parse(log.args.message);
     message = data.secret || message;
-    amount = data.amount || amount;
+    amount = data.amount ?? amount;
     file = data.file ? { ...data.file, url: data.file.url } : null;
   } catch (e) {
     message = log.args.message;
