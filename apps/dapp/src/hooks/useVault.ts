@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { uploadToIPFS } from "@/shared/utils/ipfs";
 import { VaultType } from "@/shared/contracts/TimeCapsule";
 
-export function useVault(fromBlockWindow: bigint = 10000n) {
+export function useVault(fromBlockWindow: bigint = 5000n) {
   const { isConnected, connector } = useAccount();
   const { connectors } = useConnect();
   const address = useEVMAddress();
@@ -49,13 +49,22 @@ export function useVault(fromBlockWindow: bigint = 10000n) {
       const fromBlock = currentBlock > safeWindow ? currentBlock - safeWindow : 0n;
       if (process.env.NODE_ENV === "development") console.log("[useVault] Syncing from block:", fromBlock.toString(), "to", currentBlock.toString(), "Contract:", contractAddress);
 
-      const [created, claimed, withdrawn, transferred, beneficiary] = await Promise.all([
+      const results = await Promise.allSettled([
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleCreated', strict: false, fromBlock, toBlock: currentBlock } as any),
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleClaimed', strict: false, fromBlock, toBlock: currentBlock } as any),
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'EarlyWithdrawal', strict: false, fromBlock, toBlock: currentBlock } as any),
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleTransferred', strict: false, fromBlock, toBlock: currentBlock } as any),
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'BeneficiaryUpdated', strict: false, fromBlock, toBlock: currentBlock } as any),
       ]);
+
+      const logs = results.map((res, i) => {
+        if (res.status === 'fulfilled') return res.value;
+        const eventNames = ['CapsuleCreated', 'CapsuleClaimed', 'EarlyWithdrawal', 'CapsuleTransferred', 'BeneficiaryUpdated'];
+        console.error(`[useVault] Failed to fetch logs for ${eventNames[i]}`, res.reason);
+        return [];
+      });
+      const [created, claimed, withdrawn, transferred, beneficiary] = logs;
+
 
       const nextLogs = {
           created,
@@ -66,7 +75,7 @@ export function useVault(fromBlockWindow: bigint = 10000n) {
       };
 
       setAllLogs(nextLogs);
-      if (process.env.NODE_ENV === "development") console.log("[useVault] Fetched logs:", { created: created.length, claimed: claimed.length, withdrawn: withdrawn.length });
+      if (process.env.NODE_ENV === "development") console.log("[useVault] Fetched logs:", { created: created.length, claimed: claimed.length, withdrawn: withdrawn.length, transferred: transferred.length, beneficiary: beneficiary.length });
 
       const activeLogs = reconcileArchiveLogs(nextLogs.created, nextLogs.claimed, nextLogs.withdrawn, nextLogs.transferred, nextLogs.beneficiary);
       setHistory(activeLogs);
