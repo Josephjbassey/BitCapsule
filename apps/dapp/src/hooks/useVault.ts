@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { uploadToIPFS } from "@/shared/utils/ipfs";
 import { VaultType } from "@/shared/contracts/TimeCapsule";
 
-export function useVault(fromBlockWindow: bigint = 30000n) {
+export function useVault(fromBlockWindow: bigint = 50000n) {
   const { isConnected, connector } = useAccount();
   const { connectors } = useConnect();
   const address = useEVMAddress();
@@ -40,7 +40,7 @@ export function useVault(fromBlockWindow: bigint = 30000n) {
     const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
     try {
-      const contractAddress = "0xC6bfc001f8A0Fb3C56Aa2F3096b43a08E680dB8B"; // [Diagnostic] Hardcoded verified address
+      const contractAddress = "0xdec36ac49C43900B15Cc8ceb5E6669C4b92e3830"; // [Diagnostic] Hardcoded verified address
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
@@ -55,14 +55,14 @@ export function useVault(fromBlockWindow: bigint = 30000n) {
               address: contractAddress,
               abi,
               eventName: 'CapsuleCreated',
-              fromBlock: 11760n,
-              toBlock: 11780n,
+              fromBlock: 32700n,
+              toBlock: 34000n,
               strict: false
           } as any);
-          console.log("[BitCapsule] Diagnostic #11769 Logs:", diagLogs);
+          console.log("[BitCapsule] Diagnostic #32829/33820/33849 Logs:", diagLogs);
           if (diagLogs.length === 0) {
-              const block = await publicClient.getBlock({ blockNumber: 11769n });
-              console.log("[BitCapsule] Diagnostic Block #11769 Header:", block);
+              const block = await publicClient.getBlock({ blockNumber: 32829n });
+              console.log("[BitCapsule] Diagnostic Block #32829 Header:", block);
           } else {
               const receipt = await publicClient.getTransactionReceipt({ hash: diagLogs[0].transactionHash });
               console.log("[BitCapsule] Diagnostic Receipt for #11769:", receipt);
