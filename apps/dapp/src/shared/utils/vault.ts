@@ -1,8 +1,8 @@
-import { formatEther } from "viem";
+import { formatEther, type Log } from "viem";
 
 export interface RevealedData {
   message: string;
-  amount: string | number;
+  amount: string;
   file?: {
     name: string;
     size: number;
@@ -10,27 +10,31 @@ export interface RevealedData {
   } | null;
 }
 
-export function parseRevealedData(log: any): RevealedData {
+export function parseRevealedData(log: Log): RevealedData {
   let message = "Protocol Active. Payload Recovered.";
   let amount = "---";
   let file = null;
 
+  const args = (log as any).args;
+
   // Fallback to event amount if possible
-  if (log.args?.amount) {
+  if (args?.amount) {
     try {
-      amount = formatEther(log.args.amount);
+      amount = formatEther(args.amount);
     } catch (e) {
       console.warn("Failed to format ether from log amount", e);
     }
   }
 
-  try {
-    const data = JSON.parse(log.args.message);
-    message = data.secret || message;
-    amount = data.amount ?? amount;
-    file = data.file ? { ...data.file, url: data.file.url } : null;
-  } catch (e) {
-    message = log.args.message;
+  if (args?.message) {
+      try {
+        const data = JSON.parse(args.message);
+        message = data.secret || message;
+        amount = data.amount ?? amount;
+        file = data.file ? { ...data.file, url: data.file.url } : null;
+      } catch (e) {
+        message = args.message;
+      }
   }
 
   return { message, amount, file };
@@ -59,52 +63,56 @@ export function parseVaultMessage(msg: string) {
 
 
 export function reconcileArchiveLogs(
-  createdLogs: any[],
-  claimedLogs: any[],
-  withdrawnLogs: any[],
-  transferredLogs: any[] = [],
-  beneficiaryLogs: any[] = []
+  createdLogs: Log[],
+  claimedLogs: Log[],
+  withdrawnLogs: Log[],
+  transferredLogs: Log[] = [],
+  beneficiaryLogs: Log[] = []
 ) {
   const processedIds = new Set([
-    ...claimedLogs.map((log) => log?.args?.id?.toString()),
-    ...withdrawnLogs.map((log) => log?.args?.id?.toString())
+    ...claimedLogs.map((log) => (log as any)?.args?.id?.toString()),
+    ...withdrawnLogs.map((log) => (log as any)?.args?.id?.toString())
   ]);
 
   const ownerMap = new Map<string, string>();
   const beneficiaryMap = new Map<string, string>();
 
   const allStateLogs = [...transferredLogs, ...beneficiaryLogs].sort((a, b) => {
-    if (a.blockNumber !== b.blockNumber) return Number(a.blockNumber) - Number(b.blockNumber);
-    return a.logIndex - b.logIndex;
+    if (a.blockNumber !== b.blockNumber) return Number(a.blockNumber || 0n) - Number(b.blockNumber || 0n);
+    return (a.logIndex || 0) - (b.logIndex || 0);
   });
 
   allStateLogs.forEach(log => {
-    if (!log.args || log.args.id == null) return;
+    const args = (log as any).args;
+    if (!args || args.id == null) return;
 
     let id: string;
     try {
-      id = log.args.id.toString();
+      id = args.id.toString();
     } catch (e) {
       return;
     }
 
-    if (log.eventName === 'CapsuleTransferred' && log.args.to) {
-      ownerMap.set(id, log.args.to);
-    } else if (log.eventName === 'BeneficiaryUpdated' && log.args.newBeneficiary) {
-      beneficiaryMap.set(id, log.args.newBeneficiary);
+    const eventName = (log as any).eventName;
+
+    if (eventName === 'CapsuleTransferred' && args.to) {
+      ownerMap.set(id, args.to);
+    } else if (eventName === 'BeneficiaryUpdated' && args.newBeneficiary) {
+      beneficiaryMap.set(id, args.newBeneficiary);
     }
   });
 
   return createdLogs
-    .filter((log) => !processedIds.has(log?.args?.id?.toString()))
+    .filter((log) => !processedIds.has((log as any)?.args?.id?.toString()))
     .map(log => {
-      const id = log.args.id.toString();
-      const updatedLog = { ...log, args: { ...log.args } };
+      const args = (log as any).args;
+      const id = args.id.toString();
+      const updatedLog = { ...log, args: { ...args } };
       if (ownerMap.has(id)) {
-        updatedLog.args.owner = ownerMap.get(id);
+        (updatedLog as any).args.owner = ownerMap.get(id);
       }
       if (beneficiaryMap.has(id)) {
-        updatedLog.args.beneficiary = beneficiaryMap.get(id);
+        (updatedLog as any).args.beneficiary = beneficiaryMap.get(id);
       }
       return updatedLog;
     });

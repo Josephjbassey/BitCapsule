@@ -170,5 +170,5 @@ contract TimeCapsule is ReentrancyGuard {
         }
     }
 
-    receive() external payable {}
+    receive() external payable { revert("Direct native transfers not supported"); }
 }

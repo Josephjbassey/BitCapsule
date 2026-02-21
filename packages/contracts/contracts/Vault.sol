@@ -35,13 +35,14 @@ contract Vault is ReentrancyGuard {
      * @param token The address of the token (address(0) for native BTC)
      * @param amount The amount of tokens to deposit
      */
-    function deposit(address token, uint256 amount) external payable nonReentrant {
-        // Deposit without lock adds to unlockedBalances
+    function deposit(address token, uint256 amount) public payable nonReentrant {
         if (amount == 0) revert InvalidAmount();
 
         if (token == address(0)) {
             if (msg.value != amount) revert InvalidAmount();
         } else {
+            // Guard against trapped native value in ERC-20 deposits
+            if (msg.value > 0) revert InvalidAmount();
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
@@ -62,6 +63,8 @@ contract Vault is ReentrancyGuard {
         if (token == address(0)) {
             if (msg.value != amount) revert InvalidAmount();
         } else {
+            // Guard against trapped native value in ERC-20 deposits
+            if (msg.value > 0) revert InvalidAmount();
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
@@ -143,5 +146,12 @@ contract Vault is ReentrancyGuard {
         return userLocks[token][user];
     }
 
-    receive() external payable {}
+    /**
+     * @dev Ensures direct native transfers are tracked in unlockedBalances
+     */
+    receive() external payable {
+        if (msg.value > 0) {
+            deposit(address(0), msg.value);
+        }
+    }
 }

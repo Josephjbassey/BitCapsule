@@ -4,6 +4,8 @@ import "@midl/hardhat-deploy";
 import { midlRegtest } from "@midl/executor";
 import { type HardhatUserConfig, vars, task } from "hardhat/config";
 
+const DEFAULT_REGTEST_MNEMONIC = "test test test test test test test test test test test junk";
+
 task("list-accounts", "Prints the list of named accounts", async (taskArgs, hre) => {
   const namedAccounts = await hre.getNamedAccounts();
   console.log("\nNamed Accounts:");
@@ -27,7 +29,7 @@ export default (<HardhatUserConfig>{
 	midl: {
 		networks: {
 			regtest: {
-				mnemonic: vars.has("MNEMONIC") ? vars.get("MNEMONIC") : "test test test test test test test test test test test junk",
+				mnemonic: vars.has("MNEMONIC") ? vars.get("MNEMONIC") : DEFAULT_REGTEST_MNEMONIC,
 				path: "deployments",
 				confirmationsRequired: 1,
 				btcConfirmationsRequired: 1,
@@ -35,7 +37,7 @@ export default (<HardhatUserConfig>{
 				network: {
 					explorerUrl: "https://mempool.staging.midl.xyz",
 					id: "regtest",
-					accounts: { mnemonic: vars.has("MNEMONIC") ? vars.get("MNEMONIC") : "test test test test test test test test test test test junk" },
+					accounts: { mnemonic: vars.has("MNEMONIC") ? vars.get("MNEMONIC") : DEFAULT_REGTEST_MNEMONIC },
 					network: "regtest",
 				},
 			},

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { uploadToIPFS } from "@/shared/utils/ipfs";
 import { VaultType } from "@/shared/contracts/TimeCapsule";
 
-export function useVault() {
+export function useVault(fromBlockWindow: bigint = 5000n) {
   const { isConnected, connector } = useAccount();
   const { connectors } = useConnect();
   const address = useEVMAddress();
@@ -37,17 +37,16 @@ export function useVault() {
     beneficiary: [] as any[]
   });
 
-  const lastSyncedBlock = useRef<bigint>(0n);
-
-  const fetchHistory = useCallback(async (isInitial = false) => {
+  const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
     try {
       const contractAddress = TimeCapsule.getAddress();
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
-      // Apply dynamic fromBlock logic as requested by user to bypass indexing lag
-      const fromBlock = currentBlock > 5000n ? currentBlock - 5000n : 0n;
+
+      const safeWindow = fromBlockWindow < 0n ? 0n : fromBlockWindow;
+      const fromBlock = currentBlock > safeWindow ? currentBlock - safeWindow : 0n;
 
       const [created, claimed, withdrawn, transferred, beneficiary] = await Promise.all([
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleCreated', strict: false, fromBlock, toBlock: currentBlock } as any),
@@ -57,45 +56,39 @@ export function useVault() {
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'BeneficiaryUpdated', strict: false, fromBlock, toBlock: currentBlock } as any),
       ]);
 
-      setAllLogs(prev => {
-        // Since we are fetching a window, we should reconcile with previous logs to avoid duplicates if needed,
-        // but reconcileArchiveLogs usually handles ID-based state.
-        // Actually, replacing the window's logs is safer if we want the "latest 5000" view.
-        const next = {
-            created,
-            claimed,
-            withdrawn,
-            transferred,
-            beneficiary
-        };
+      const nextLogs = {
+          created,
+          claimed,
+          withdrawn,
+          transferred,
+          beneficiary
+      };
 
-        const activeLogs = reconcileArchiveLogs(next.created, next.claimed, next.withdrawn, next.transferred, next.beneficiary);
-        setHistory(activeLogs);
+      setAllLogs(nextLogs);
 
-        if (typeof window !== 'undefined') {
-            const confirmedHashes = new Set(next.created.map(l => (l as any).transactionHash));
-            setPendingVaults(pending => {
-                const filtered = pending.filter(p => !confirmedHashes.has(p.transactionHash));
-                if (filtered.length !== pending.length) {
-                    localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(filtered, (k, v) => typeof v === 'bigint' ? v.toString() : v));
-                }
-                return filtered;
-            });
-        }
+      const activeLogs = reconcileArchiveLogs(nextLogs.created, nextLogs.claimed, nextLogs.withdrawn, nextLogs.transferred, nextLogs.beneficiary);
+      setHistory(activeLogs);
 
-        return next;
-      });
+      if (typeof window !== 'undefined') {
+          const confirmedHashes = new Set(nextLogs.created.map(l => (l as any).transactionHash));
+          setPendingVaults(pending => {
+              const filtered = pending.filter(p => !confirmedHashes.has(p.transactionHash));
+              if (filtered.length !== pending.length) {
+                  localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(filtered, (k, v) => typeof v === 'bigint' ? v.toString() : v));
+              }
+              return filtered;
+          });
+      }
 
-      lastSyncedBlock.current = currentBlock;
     } catch (error) {
       console.error("[useVault] Failed to fetch history", error);
     }
-  }, [publicClient]);
+  }, [publicClient, fromBlockWindow]);
 
   useEffect(() => {
     if (isConnected && publicClient) {
-      fetchHistory(true);
-      const interval = setInterval(() => fetchHistory(false), 15000);
+      fetchHistory();
+      const interval = setInterval(() => fetchHistory(), 15000);
       return () => clearInterval(interval);
     }
   }, [isConnected, publicClient, fetchHistory]);
@@ -152,7 +145,7 @@ export function useVault() {
         amount: revealedData?.amount?.toString(),
         file: revealedData?.file
       });
-      setTimeout(() => fetchHistory(false), 2000);
+      setTimeout(() => fetchHistory(), 2000);
       return txHashes[0];
     } catch (e: any) {
       toast.error(e.message || `${functionName} failed`);
@@ -237,8 +230,6 @@ export function useVault() {
               ],
             }),
           },
-          // Removed isBtcWallet check to always include deposit for any amount > 0
-          // ensuring the MIDL executor carries the BTC payload.
           deposit: (amountInWei > 0n) ? { satoshis } : undefined,
         },
         reset: true,
@@ -290,7 +281,7 @@ export function useVault() {
         return updated;
       });
 
-      setTimeout(() => fetchHistory(false), 2000);
+      setTimeout(() => fetchHistory(), 2000);
     } catch (error: any) {
       toast.error(error.message || "Minting failed");
       throw error;
@@ -328,7 +319,7 @@ export function useVault() {
   return {
     history,
     pendingVaults,
-    fetchHistory: () => fetchHistory(false),
+    fetchHistory,
     handleMint,
     handleTransferCapsule,
     handleTransferBeneficiary,
