@@ -1,4 +1,5 @@
-import { formatEther, isAddressEqual, type Log } from "viem";
+import { formatEther, isAddressEqual, type Log, decodeEventLog } from "viem";
+import * as TimeCapsule from "../contracts/TimeCapsule";
 
 export interface RevealedData {
   message: string;
@@ -61,87 +62,78 @@ export function parseVaultMessage(msg: string) {
   }
 }
 
-
-export function reconcileArchiveLogs(
-  createdLogs: Log[],
-  claimedLogs: Log[],
-  withdrawnLogs: Log[],
-  transferredLogs: Log[] = [],
-  beneficiaryLogs: Log[] = []
-) {
+export function reconcileArchiveLogs(allLogs: Log[]) {
   const processedIds = new Set<string>();
-
-  if (process.env.NODE_ENV === "development") {
-      console.log("[BitCapsule] Reconciling logs...", {
-          created: createdLogs.length,
-          claimed: claimedLogs.length,
-          withdrawn: withdrawnLogs.length
-      });
-  }
-
-  // Only consider logs that are actually processed events
-  [...claimedLogs, ...withdrawnLogs].forEach(log => {
-    const eventName = (log as any).eventName;
-    const id = (log as any)?.args?.id;
-
-    // Safety: Only mark as processed if it's actually a claim/withdrawal event
-    // and has a valid ID.
-    if (id != null && (eventName === 'CapsuleClaimed' || eventName === 'EarlyWithdrawal')) {
-      processedIds.add(id.toString());
-    }
-  });
-
   const ownerMap = new Map<string, string>();
   const beneficiaryMap = new Map<string, string>();
 
-  const allStateLogs = [...transferredLogs, ...beneficiaryLogs].sort((a, b) => {
+  const createdLogs: any[] = [];
+
+  // Sort logs chronologically to ensure state changes are applied in order
+  const sortedLogs = [...allLogs].sort((a, b) => {
     if (a.blockNumber !== b.blockNumber) return Number((a.blockNumber || 0n) - (b.blockNumber || 0n));
     return (a.logIndex || 0) - (b.logIndex || 0);
   });
 
-  allStateLogs.forEach(log => {
-    const args = (log as any).args;
-    if (!args || args.id == null) return;
+  if (process.env.NODE_ENV === "development") {
+      console.log("[BitCapsule] Reconciling total logs:", sortedLogs.length);
+  }
 
-    const eventName = (log as any).eventName;
-    if (eventName !== 'CapsuleTransferred' && eventName !== 'BeneficiaryUpdated') return;
-
-    let id: string;
+  sortedLogs.forEach(log => {
     try {
-      id = args.id.toString();
-    } catch (e) {
-      return;
-    }
+      let eventName = (log as any).eventName;
+      let args = (log as any).args;
 
-    if (eventName === 'CapsuleTransferred' && args.to) {
-      ownerMap.set(id, args.to);
-    } else if (eventName === 'BeneficiaryUpdated' && args.newBeneficiary) {
-      beneficiaryMap.set(id, args.newBeneficiary);
+      // If log is not decoded, decode it
+      if (!eventName || !args) {
+        const decoded = decodeEventLog({
+          abi: TimeCapsule.abi,
+          data: log.data,
+          topics: log.topics,
+          strict: false
+        });
+        if (decoded) {
+          eventName = decoded.eventName;
+          args = decoded.args;
+        }
+      }
+
+      if (!eventName || !args) return;
+      const id = args?.id?.toString();
+
+      if (!id) return;
+
+      if (eventName === 'CapsuleCreated') {
+        createdLogs.push({ ...log, eventName, args });
+      } else if (eventName === 'CapsuleClaimed' || eventName === 'EarlyWithdrawal') {
+        processedIds.add(id);
+      } else if (eventName === 'CapsuleTransferred' && args.to) {
+        ownerMap.set(id, args.to);
+      } else if (eventName === 'BeneficiaryUpdated' && args.newBeneficiary) {
+        beneficiaryMap.set(id, args.newBeneficiary);
+      }
+    } catch (e) {
+      // Skip logs that can't be decoded
     }
   });
 
   return createdLogs
     .filter((log) => {
-        const eventName = (log as any).eventName;
-        const id = (log as any)?.args?.id;
-
-        if (id == null || eventName !== 'CapsuleCreated') return false;
-
-        const isProcessed = processedIds.has(id.toString());
+        const id = log.args.id.toString();
+        const isProcessed = processedIds.has(id);
         if (isProcessed && process.env.NODE_ENV === "development") {
             console.log(`[BitCapsule] Filtering out vault #${id} (Already claimed/withdrawn)`);
         }
         return !isProcessed;
     })
     .map(log => {
-      const args = (log as any).args;
-      const id = args.id.toString();
-      const updatedLog = { ...log, args: { ...args } };
+      const id = log.args.id.toString();
+      const updatedLog = { ...log, args: { ...log.args } };
       if (ownerMap.has(id)) {
-        (updatedLog as any).args.owner = ownerMap.get(id);
+        updatedLog.args.owner = ownerMap.get(id);
       }
       if (beneficiaryMap.has(id)) {
-        (updatedLog as any).args.beneficiary = beneficiaryMap.get(id);
+        updatedLog.args.beneficiary = beneficiaryMap.get(id);
       }
       return updatedLog;
     });
