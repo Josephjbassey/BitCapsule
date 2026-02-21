@@ -1,7 +1,7 @@
 {
-  "address": "0xd4CB4e4cEe7e88f7eB34c117E209BfA85903Ecb9",
-  "txId": "0x8df130e4a415fcadfbc36a18f61c8ac57b682b19c2289d1da99fb538e756dcd8",
-  "btcTxId": "82e4460ed18f802aa76aecea45c933dfbc82ae8f135e0b12d9cb0434921bd941",
+  "address": "0x6D5aa83de2469e0CDfD8c5ff0422588A3FFFb70d",
+  "txId": "0x6519a1bc315d9c497b873ed6bb49b3e0796cb2cb6b8e2524e59ea8438ba9e8cb",
+  "btcTxId": "3c990b4a2e4cb8dbdfe210b593bd1f712bade453c3691fdbb6fef3d9832c7606",
   "abi": [
     {
       "inputs": [],
@@ -16,6 +16,11 @@
     {
       "inputs": [],
       "name": "InvalidTokenAddress",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NativeTransferFailed",
       "type": "error"
     },
     {
@@ -116,7 +121,7 @@
       ],
       "name": "deposit",
       "outputs": [],
-      "stateMutability": "nonpayable",
+      "stateMutability": "payable",
       "type": "function"
     },
     {
@@ -144,7 +149,7 @@
       ],
       "name": "depositWithLock",
       "outputs": [],
-      "stateMutability": "nonpayable",
+      "stateMutability": "payable",
       "type": "function"
     },
     {
@@ -282,6 +287,10 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
     }
   ]
 }

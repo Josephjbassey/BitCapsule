@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,6 +13,7 @@ contract Vault is ReentrancyGuard {
     error InvalidAmount();
     error InsufficientBalance();
     error VaultLocked();
+    error NativeTransferFailed();
 
     struct Lock {
         uint256 amount;
@@ -30,31 +31,42 @@ contract Vault is ReentrancyGuard {
     event Withdraw(address indexed user, address indexed token, uint256 amount);
     
     /**
-     * @dev Deposit ERC20 tokens into the vault
-     * @param token The address of the ERC20 token
+     * @dev Deposit ERC20 tokens or native BTC into the vault
+     * @param token The address of the token (address(0) for native BTC)
      * @param amount The amount of tokens to deposit
      */
-    function deposit(address token, uint256 amount) external nonReentrant {
-        // Deposit without lock adds to unlockedBalances
-        if (token == address(0)) revert InvalidTokenAddress();
+    function deposit(address token, uint256 amount) public payable nonReentrant {
         if (amount == 0) revert InvalidAmount();
 
-        unlockedBalances[token][msg.sender] += amount;
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        if (token == address(0)) {
+            if (msg.value != amount) revert InvalidAmount();
+        } else {
+            // Guard against trapped native value in ERC-20 deposits
+            if (msg.value > 0) revert InvalidAmount();
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        }
 
+        unlockedBalances[token][msg.sender] += amount;
         emit Deposit(msg.sender, token, amount, 0, "");
     }
 
     /**
-     * @dev Deposit ERC20 tokens into the vault with a time lock
-     * @param token The address of the ERC20 token
+     * @dev Deposit ERC20 tokens or native BTC into the vault with a time lock
+     * @param token The address of the token (address(0) for native BTC)
      * @param amount The amount of tokens to deposit
      * @param lockDuration The duration in seconds to lock the funds
      * @param message A message attached to the deposit
      */
-    function depositWithLock(address token, uint256 amount, uint256 lockDuration, string memory message) public nonReentrant {
-        if (token == address(0)) revert InvalidTokenAddress();
+    function depositWithLock(address token, uint256 amount, uint256 lockDuration, string memory message) public payable nonReentrant {
         if (amount == 0) revert InvalidAmount();
+
+        if (token == address(0)) {
+            if (msg.value != amount) revert InvalidAmount();
+        } else {
+            // Guard against trapped native value in ERC-20 deposits
+            if (msg.value > 0) revert InvalidAmount();
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        }
 
         if (lockDuration > 0) {
             uint256 unlockTime = block.timestamp + lockDuration;
@@ -62,23 +74,19 @@ contract Vault is ReentrancyGuard {
                 amount: amount,
                 unlockTime: unlockTime
             }));
-
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             emit Deposit(msg.sender, token, amount, unlockTime, message);
         } else {
             unlockedBalances[token][msg.sender] += amount;
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             emit Deposit(msg.sender, token, amount, 0, message);
         }
     }
     
     /**
-     * @dev Withdraw ERC20 tokens from the vault
-     * @param token The address of the ERC20 token
+     * @dev Withdraw ERC20 tokens or native BTC from the vault
+     * @param token The address of the token (address(0) for native BTC)
      * @param amount The amount of tokens to withdraw
      */
     function withdraw(address token, uint256 amount) external nonReentrant {
-        if (token == address(0)) revert InvalidTokenAddress();
         if (amount == 0) revert InvalidAmount();
         
         // Clean up matured locks and add to unlocked balance
@@ -87,7 +95,13 @@ contract Vault is ReentrancyGuard {
         if (unlockedBalances[token][msg.sender] < amount) revert InsufficientBalance();
 
         unlockedBalances[token][msg.sender] -= amount;
-        IERC20(token).safeTransfer(msg.sender, amount);
+
+        if (token == address(0)) {
+            (bool success, ) = msg.sender.call{value: amount}("");
+            if (!success) revert NativeTransferFailed();
+        } else {
+            IERC20(token).safeTransfer(msg.sender, amount);
+        }
         
         emit Withdraw(msg.sender, token, amount);
     }
@@ -112,7 +126,7 @@ contract Vault is ReentrancyGuard {
 
     /**
      * @dev Get the TOTAL balance of a user for a specific token (locked + unlocked)
-     * @param token The address of the ERC20 token
+     * @param token The address of the token
      * @param user The address of the user
      * @return The balance of the user for the specified token
      */
@@ -130,5 +144,14 @@ contract Vault is ReentrancyGuard {
      */
     function getUserLocks(address token, address user) external view returns (Lock[] memory) {
         return userLocks[token][user];
+    }
+
+    /**
+     * @dev Ensures direct native transfers are tracked in unlockedBalances
+     */
+    receive() external payable {
+        if (msg.value > 0) {
+            deposit(address(0), msg.value);
+        }
     }
 }

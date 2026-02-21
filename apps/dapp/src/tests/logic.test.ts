@@ -54,7 +54,7 @@ describe('parseRevealedData', () => {
       },
     };
 
-    const revealed = parseRevealedData(log);
+    const revealed = parseRevealedData(log as any);
 
     expect(revealed.message).toBe('Decoded payload');
     expect(revealed.amount).toBe('1.25');
@@ -69,7 +69,7 @@ describe('parseRevealedData', () => {
       },
     };
 
-    const revealed = parseRevealedData(log);
+    const revealed = parseRevealedData(log as any);
 
     expect(revealed.message).toBe('plain text payload');
     expect(revealed.amount).toBe('---');
@@ -87,7 +87,7 @@ describe('parseRevealedData', () => {
       },
     };
 
-    const revealed = parseRevealedData(log);
+    const revealed = parseRevealedData(log as any);
 
     expect(revealed.message).toBe('zero numeric amount payload');
     expect(revealed.amount).toBe(0);
@@ -103,7 +103,7 @@ describe('parseRevealedData', () => {
       },
     };
 
-    const revealed = parseRevealedData(log);
+    const revealed = parseRevealedData(log as any);
 
     expect(revealed.message).toBe('zero string amount payload');
     expect(revealed.amount).toBe('0');
