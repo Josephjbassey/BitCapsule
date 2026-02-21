@@ -88,6 +88,7 @@ contract TimeCapsule is ReentrancyGuard {
         require(capsules[id].owner == msg.sender, "Not owner");
         require(newOwner != address(0), "Invalid address");
         capsules[id].owner = newOwner;
+        lastPing[msg.sender] = block.timestamp; // Sign of life
         emit CapsuleTransferred(id, msg.sender, newOwner);
     }
 
@@ -95,6 +96,7 @@ contract TimeCapsule is ReentrancyGuard {
         require(capsules[id].owner == msg.sender, "Not owner");
         require(newBeneficiary != address(0), "Invalid address");
         capsules[id].beneficiary = newBeneficiary;
+        lastPing[msg.sender] = block.timestamp; // Sign of life
         emit BeneficiaryUpdated(id, newBeneficiary);
     }
 
@@ -112,6 +114,7 @@ contract TimeCapsule is ReentrancyGuard {
         require(capsule.vaultType == VaultType.TEMPORAL || capsule.vaultType == VaultType.HODL, "Early withdrawal N/A");
 
         capsule.claimed = true;
+        lastPing[msg.sender] = block.timestamp; // Sign of life
 
         uint256 treasuryAmount = (capsule.amount * 20) / 100;
         uint256 userAmount = capsule.amount - treasuryAmount;
@@ -131,6 +134,7 @@ contract TimeCapsule is ReentrancyGuard {
              require(msg.sender == capsule.beneficiary, "Not beneficiary");
          } else {
              require(msg.sender == capsule.owner, "Not owner");
+             lastPing[msg.sender] = block.timestamp; // Sign of life
          }
 
          require(block.timestamp >= capsule.unlockTimestamp, "Not unlocked");
