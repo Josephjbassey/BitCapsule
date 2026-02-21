@@ -135,7 +135,7 @@ export function useVault() {
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
               functionName: functionName as any,
-              args,
+              args: args as any,
             }),
           },
         },
