@@ -27,7 +27,7 @@ export default (<HardhatUserConfig>{
 	midl: {
 		networks: {
 			regtest: {
-				mnemonic: vars.get("MNEMONIC"),
+				mnemonic: vars.has("MNEMONIC") ? vars.get("MNEMONIC") : "test test test test test test test test test test test junk",
 				path: "deployments",
 				confirmationsRequired: 1,
 				btcConfirmationsRequired: 1,
@@ -35,7 +35,7 @@ export default (<HardhatUserConfig>{
 				network: {
 					explorerUrl: "https://mempool.staging.midl.xyz",
 					id: "regtest",
-					accounts: { mnemonic: vars.get("MNEMONIC") },
+					accounts: { mnemonic: vars.has("MNEMONIC") ? vars.get("MNEMONIC") : "test test test test test test test test test test test junk" },
 					network: "regtest",
 				},
 			},
@@ -44,7 +44,7 @@ export default (<HardhatUserConfig>{
 	networks: {
 		regtest: {
 			url: vars.has("MIDL_RPC_URL") ? vars.get("MIDL_RPC_URL") : (process.env.MIDL_RPC_URL || "https://rpc.staging.midl.xyz"),
-			chainId: vars.has("MIDL_CHAIN_ID") ? Number(vars.get("MIDL_CHAIN_ID")) : Number(process.env.MIDL_CHAIN_ID || 420),
+			chainId: vars.has("MIDL_CHAIN_ID") ? Number(vars.get("MIDL_CHAIN_ID")) : Number(process.env.MIDL_CHAIN_ID || midlRegtest.id),
 		},
 	},
 	etherscan: {

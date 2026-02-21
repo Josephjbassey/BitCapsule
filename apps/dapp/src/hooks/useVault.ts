@@ -23,25 +23,19 @@ export function useVault() {
   const { waitForTransactionAsync } = useWaitForTransaction();
 
   const [history, setHistory] = useState<any[]>([]);
-  const [allLogs, setAllLogs] = useState<{
-    created: any[],
-    claimed: any[],
-    withdrawn: any[],
-    transferred: any[],
-    beneficiary: any[]
-  }>({ created: [], claimed: [], withdrawn: [], transferred: [], beneficiary: [] });
-
   const [pendingVaults, setPendingVaults] = useState<any[]>([]);
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isPerformingAction, setIsPerformingAction] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [mintStep, setMintStep] = useState("");
-  const [successData, setSuccessData] = useState<{
-    txHash: string;
-    btcTxHash: string;
-    message?: string;
-    amount?: string | number;
-    file?: RevealedData['file']
-  } | null>(null);
+  const [successData, setSuccessData] = useState<{ txHash: string; btcTxHash: string; message?: string; amount?: string; file?: any } | null>(null);
+
+  const [allLogs, setAllLogs] = useState({
+    created: [] as any[],
+    claimed: [] as any[],
+    withdrawn: [] as any[],
+    transferred: [] as any[],
+    beneficiary: [] as any[]
+  });
 
   const lastSyncedBlock = useRef<bigint>(0n);
 
@@ -52,9 +46,8 @@ export function useVault() {
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock = isInitial ? 0n : lastSyncedBlock.current + 1n;
-
-      if (fromBlock > currentBlock && !isInitial) return;
+      // Apply dynamic fromBlock logic as requested by user to bypass indexing lag
+      const fromBlock = currentBlock > 5000n ? currentBlock - 5000n : 0n;
 
       const [created, claimed, withdrawn, transferred, beneficiary] = await Promise.all([
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleCreated', strict: false, fromBlock, toBlock: currentBlock } as any),
@@ -65,12 +58,15 @@ export function useVault() {
       ]);
 
       setAllLogs(prev => {
+        // Since we are fetching a window, we should reconcile with previous logs to avoid duplicates if needed,
+        // but reconcileArchiveLogs usually handles ID-based state.
+        // Actually, replacing the window's logs is safer if we want the "latest 5000" view.
         const next = {
-            created: [...prev.created, ...created],
-            claimed: [...prev.claimed, ...claimed],
-            withdrawn: [...prev.withdrawn, ...withdrawn],
-            transferred: [...prev.transferred, ...transferred],
-            beneficiary: [...prev.beneficiary, ...beneficiary]
+            created,
+            claimed,
+            withdrawn,
+            transferred,
+            beneficiary
         };
 
         const activeLogs = reconcileArchiveLogs(next.created, next.claimed, next.withdrawn, next.transferred, next.beneficiary);
@@ -211,13 +207,6 @@ export function useVault() {
 
       setMintStep("Initializing Temporal Intention...");
 
-      // Determine if we are using a Bitcoin-based wallet that requires an explicit deposit
-      const isBtcWallet = connector?.name?.toLowerCase().includes('xverse') ||
-                         connector?.name?.toLowerCase().includes('unisat') ||
-                         connector?.name?.toLowerCase().includes('leather') ||
-                         connector?.name?.toLowerCase().includes('satoshi') ||
-                         connector?.name?.toLowerCase().includes('bitcoin');
-
       const denom = 10n ** 10n;
       const satoshis = Number((amountInWei + denom - 1n) / denom);
 
@@ -226,7 +215,6 @@ export function useVault() {
           amount: params.amount,
           amountInWei: amountInWei.toString(),
           satoshis,
-          isBtcWallet,
           walletName: connector?.name
         });
       }
@@ -249,8 +237,9 @@ export function useVault() {
               ],
             }),
           },
-          // Always provide explicit deposit for BTC wallets when value is involved to ensure PSBT accuracy
-          deposit: (isBtcWallet && amountInWei > 0n) ? { satoshis } : undefined,
+          // Removed isBtcWallet check to always include deposit for any amount > 0
+          // ensuring the MIDL executor carries the BTC payload.
+          deposit: (amountInWei > 0n) ? { satoshis } : undefined,
         },
         reset: true,
       });
