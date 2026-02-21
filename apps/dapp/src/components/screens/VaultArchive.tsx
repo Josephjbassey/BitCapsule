@@ -136,9 +136,9 @@ export default function VaultArchive({
                 <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
                 LIVE_SYNC
              </div>
-             <div className="hidden md:flex px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[9px] font-mono text-blue-400 items-center gap-2" title="Blockscout may lag in indexing new transactions. Check Bitcoin mempool for real-time status.">
-                <span className="material-icons text-[10px]">info</span>
-                89% INDEXED
+             <div className="hidden md:flex px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[9px] font-mono text-blue-400 items-center gap-2" title="MIDL Bridge & Call: Transactions appear instantly on Bitcoin (Mempool) but may take 30-60s to index on EVM (Blockscout).">
+                <span className="material-icons text-[10px]">hourglass_empty</span>
+                TEMPORAL LAG: ~45s
              </div>
           </div>
         </header>
