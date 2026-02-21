@@ -83,12 +83,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // Ensure SuccessOverlay and UnlockProcess are mutually exclusive
-  useEffect(() => {
-    if (successData && unlockStatus !== 'none') {
-        setUnlockStatus('none');
-    }
-  }, [successData, unlockStatus]);
 
   const onMint = async () => {
     if (!amount) {
@@ -210,7 +204,7 @@ export default function Home() {
         />
       )}
 
-      {unlockStatus !== 'none' && !successData && (
+      {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
           revealedData={revealedData || (successData ? {
@@ -219,7 +213,11 @@ export default function Home() {
             file: successData.file
           } : null)}
           txHash={successData?.txHash}
-          onClose={() => { setUnlockStatus('none'); setRevealedData(null); }}
+          onClose={() => {
+            setUnlockStatus('none');
+            setRevealedData(null);
+            if (successData) clearSuccessData();
+          }}
         />
       )}
 
