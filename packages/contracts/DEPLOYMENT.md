@@ -79,6 +79,26 @@ Once your contracts are deployed, you must update the dApp to point to your new 
 4.  Rebuild or restart your dApp.
 
 ---
+
+
+## 5. Migration Notes for Claim Logic Changes (Immutable Contract)
+
+`TimeCapsule.sol` is currently deployed as an immutable contract (non-proxy).
+If claim authorization rules change (for example, enabling SOCIAL beneficiary claims), you must deploy a **new contract address** and migrate operational usage.
+
+Recommended migration plan:
+1. **Freeze new writes** in the frontend to the old address (maintenance window).
+2. **Deploy** the updated `TimeCapsule` implementation to a new address.
+3. **Update frontend config** (`NEXT_PUBLIC_TIME_CAPSULE_ADDRESS`) to the new address.
+4. **State migration strategy for existing capsules**:
+   - Keep old capsules claimable on the old contract while directing all new creates to the new contract, or
+   - Build a one-time migration utility that reads old capsule events and re-creates equivalent capsules on the new contract with explicit user confirmation.
+5. **Communicate cutoff policy** to users (which address holds legacy capsules vs. new capsules).
+
+This avoids silent breakage and makes legacy state handling explicit before changing claim behavior.
+
+---
+
 **Troubleshooting**:
 - **"No Hardhat config file found"**: Ensure you are running the command from inside the `packages/contracts` folder.
 - **Address "undefined" is invalid**: This usually means `namedAccounts` in `hardhat.config.ts` is misconfigured. Ensure you are using the latest version of the config.
