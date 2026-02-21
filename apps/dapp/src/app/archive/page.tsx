@@ -41,12 +41,6 @@ export default function ArchivePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Ensure SuccessOverlay and UnlockProcess are mutually exclusive
-  useEffect(() => {
-    if (successData && unlockStatus !== 'none') {
-        setUnlockStatus('none');
-    }
-  }, [successData, unlockStatus]);
 
   const isSigningOrPending = isBroadcasting || isPerformingAction;
 
@@ -122,7 +116,7 @@ export default function ArchivePage() {
         />
       )}
 
-      {unlockStatus !== 'none' && !successData && (
+      {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
           revealedData={revealedData || (successData ? {
@@ -131,7 +125,11 @@ export default function ArchivePage() {
             file: successData.file
           } : null)}
           txHash={successData?.txHash}
-          onClose={() => { setUnlockStatus('none'); setRevealedData(null); }}
+          onClose={() => {
+            setUnlockStatus('none');
+            setRevealedData(null);
+            if (successData) clearSuccessData();
+          }}
         />
       )}
 
