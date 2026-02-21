@@ -210,10 +210,24 @@ export function useVault() {
       });
 
       setMintStep("Initializing Temporal Intention...");
-      const isXverse = connector?.id?.toLowerCase().includes('xverse') || connector?.name?.toLowerCase().includes('xverse');
+
+      // Determine if we are using a Bitcoin-based wallet that requires an explicit deposit
+      const isBtcWallet = connector?.name?.toLowerCase().includes('xverse') ||
+                         connector?.name?.toLowerCase().includes('unisat') ||
+                         connector?.name?.toLowerCase().includes('leather') ||
+                         connector?.name?.toLowerCase().includes('satoshi') ||
+                         connector?.name?.toLowerCase().includes('bitcoin');
 
       const denom = 10n ** 10n;
       const satoshis = Number((amountInWei + denom - 1n) / denom);
+
+      console.log("[useVault] Transaction params:", {
+        amount: params.amount,
+        amountInWei: amountInWei.toString(),
+        satoshis,
+        isBtcWallet,
+        walletName: connector?.name
+      });
 
       const intention = await addTxIntentionAsync({
         intention: {
@@ -233,7 +247,8 @@ export function useVault() {
               ],
             }),
           },
-          deposit: (isXverse && amountInWei > 0n) ? { satoshis } : undefined,
+          // Always provide explicit deposit for BTC wallets when value is involved to ensure PSBT accuracy
+          deposit: (isBtcWallet && amountInWei > 0n) ? { satoshis } : undefined,
         },
         reset: true,
       });
