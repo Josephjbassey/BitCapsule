@@ -14,10 +14,10 @@
   },
   "pnpm": {
     "overrides": {
-      "viem": "npm:@midl/viem@^2.45.0"
+      "viem": "npm:@midl/viem@2.21.39"
     }
   },
   "overrides": {
-    "viem": "npm:@midl/viem@^2.21.37"
+    "viem": "npm:@midl/viem@2.21.39"
   }
 }

@@ -43,8 +43,8 @@ export default (<HardhatUserConfig>{
 	},
 	networks: {
 		regtest: {
-			url: midlRegtest.rpcUrls.default.http[0],
-			chainId: midlRegtest.id,
+			url: "https://rpc.staging.midl.xyz",
+			chainId: 15001,
 		},
 	},
 	etherscan: {
