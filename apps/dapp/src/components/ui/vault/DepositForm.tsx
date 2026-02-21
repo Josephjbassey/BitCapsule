@@ -47,7 +47,7 @@ export const DepositForm = ({
       <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-lg"></div>
       <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary rounded-br-lg"></div>
 
-      <div className="p-5 sm:p-8 space-y-6 sm:space-y-8 grid-bg animate-in fade-in zoom-in duration-700">
+      <div className="p-5 sm:p-8 space-y-6 sm:space-y-8 grid-bg animate-in fade-in duration-700">
         <div className="space-y-2">
           <label htmlFor="vault-type-selector" className="flex justify-between text-[10px] sm:text-xs tracking-wider text-primary/80 uppercase font-semibold">
             <span>Utility Protocol</span>
