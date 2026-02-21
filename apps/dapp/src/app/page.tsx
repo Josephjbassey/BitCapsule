@@ -360,7 +360,11 @@ export default function Home() {
       {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
-          revealedData={revealedData || successData}
+          revealedData={revealedData || (successData ? {
+            message: successData.message || "Protocol Active. Payload Recovered.",
+            amount: successData.amount || "---",
+            file: successData.file
+          } : null)}
           txHash={successData?.txHash}
           onClose={() => { setUnlockStatus('none'); setRevealedData(null); }}
         />

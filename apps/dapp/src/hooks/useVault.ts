@@ -24,7 +24,13 @@ export function useVault() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [isPerformingAction, setIsPerformingAction] = useState(false);
   const [mintStep, setMintStep] = useState("");
-  const [successData, setSuccessData] = useState<{ txHash: string; btcTxHash: string; message?: string; amount?: string } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    txHash: string;
+    btcTxHash: string;
+    message?: string;
+    amount?: string | number;
+    file?: RevealedData['file']
+  } | null>(null);
 
   const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
@@ -116,7 +122,8 @@ export function useVault() {
         txHash: txHashes[0],
         btcTxHash: tx.id,
         message: revealedData?.message,
-        amount: revealedData?.amount?.toString()
+        amount: revealedData?.amount,
+        file: revealedData?.file
       });
       setTimeout(fetchHistory, 2000);
       return txHashes[0];
