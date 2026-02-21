@@ -37,19 +37,42 @@ export function useVault(fromBlockWindow: bigint = 30000n) {
     beneficiary: [] as any[]
   });
 
-  const fetchHistory = useCallback(async () => {
+    const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
     try {
-      const contractAddress = TimeCapsule.getAddress();
+      const contractAddress = "0xC6bfc001f8A0Fb3C56Aa2F3096b43a08E680dB8B"; // [Diagnostic] Hardcoded verified address
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
-
       const safeWindow = fromBlockWindow < 0n ? 0n : fromBlockWindow;
       const fromBlock = currentBlock > safeWindow ? currentBlock - safeWindow : 0n;
-      if (process.env.NODE_ENV === "development") console.log("[useVault] Syncing from block:", fromBlock.toString(), "to", currentBlock.toString(), "Contract:", contractAddress);
 
-      const results = await Promise.allSettled([
+      console.log("[BitCapsule] Scanning blocks...", { fromBlock: fromBlock.toString(), toBlock: currentBlock.toString(), contract: contractAddress });
+
+      // [Diagnostic] Check block #11769 specifically
+      try {
+          const diagLogs = await publicClient.getLogs({
+              address: contractAddress,
+              abi,
+              eventName: 'CapsuleCreated',
+              fromBlock: 11760n,
+              toBlock: 11780n,
+              strict: false
+          } as any);
+          console.log("[BitCapsule] Diagnostic #11769 Logs:", diagLogs);
+          if (diagLogs.length === 0) {
+              const block = await publicClient.getBlock({ blockNumber: 11769n });
+              console.log("[BitCapsule] Diagnostic Block #11769 Header:", block);
+          } else {
+              const receipt = await publicClient.getTransactionReceipt({ hash: diagLogs[0].transactionHash });
+              console.log("[BitCapsule] Diagnostic Receipt for #11769:", receipt);
+          }
+      } catch (e) {
+          console.warn("[BitCapsule] Diagnostic query failed", e);
+      }
+
+      // Strict Fetcher Pattern
+      const [created, claimed, withdrawn, transferred, beneficiary] = await Promise.all([
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleCreated', strict: false, fromBlock, toBlock: currentBlock } as any),
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleClaimed', strict: false, fromBlock, toBlock: currentBlock } as any),
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'EarlyWithdrawal', strict: false, fromBlock, toBlock: currentBlock } as any),
@@ -57,27 +80,19 @@ export function useVault(fromBlockWindow: bigint = 30000n) {
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'BeneficiaryUpdated', strict: false, fromBlock, toBlock: currentBlock } as any),
       ]);
 
-      const logs = results.map((res, i) => {
-        if (res.status === 'fulfilled') return res.value;
-        const eventNames = ['CapsuleCreated', 'CapsuleClaimed', 'EarlyWithdrawal', 'CapsuleTransferred', 'BeneficiaryUpdated'];
-        console.error(`[useVault] Failed to fetch logs for ${eventNames[i]}`, res.reason);
-        return [];
+      console.log("[BitCapsule] Raw logs length:", {
+          created: created.length,
+          claimed: claimed.length,
+          withdrawn: withdrawn.length,
+          transferred: transferred.length,
+          beneficiary: beneficiary.length
       });
-      const [created, claimed, withdrawn, transferred, beneficiary] = logs;
 
-
-      const nextLogs = {
-          created,
-          claimed,
-          withdrawn,
-          transferred,
-          beneficiary
-      };
-
+      const nextLogs = { created, claimed, withdrawn, transferred, beneficiary };
       setAllLogs(nextLogs);
-      if (process.env.NODE_ENV === "development") console.log("[useVault] Raw log lengths:", { created: created.length, claimed: claimed.length, withdrawn: withdrawn.length, transferred: transferred.length, beneficiary: beneficiary.length });
 
       const activeLogs = reconcileArchiveLogs(nextLogs.created, nextLogs.claimed, nextLogs.withdrawn, nextLogs.transferred, nextLogs.beneficiary);
+      console.log("[BitCapsule] Reconciled history length:", activeLogs.length);
       setHistory(activeLogs);
 
       if (typeof window !== 'undefined') {
@@ -92,9 +107,10 @@ export function useVault(fromBlockWindow: bigint = 30000n) {
       }
 
     } catch (error) {
-      console.error("[useVault] Failed to fetch history", error);
+      console.error("[BitCapsule] Failed to fetch history", error);
     }
   }, [publicClient, fromBlockWindow]);
+
 
   useEffect(() => {
     if (isConnected && publicClient) {
