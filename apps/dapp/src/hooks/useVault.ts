@@ -40,7 +40,7 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
     const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
     try {
-      const contractAddress = "0xdec36ac49C43900B15Cc8ceb5E6669C4b92e3830"; // [Diagnostic] Hardcoded verified address
+      const contractAddress = TimeCapsule.getAddress();
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
@@ -49,7 +49,7 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
 
       console.log("[BitCapsule] Scanning blocks...", { fromBlock: fromBlock.toString(), toBlock: currentBlock.toString(), contract: contractAddress });
 
-      // [Diagnostic] Check block #11769 specifically
+      // [Diagnostic] Check block #32700 specifically
       try {
           const diagLogs = await publicClient.getLogs({
               address: contractAddress,
