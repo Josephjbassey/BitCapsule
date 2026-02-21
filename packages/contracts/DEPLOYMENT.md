@@ -53,6 +53,11 @@ rm -rf ./deployments
 pnpm exec hardhat deploy --network regtest
 ```
 
+Or use the helper redeploy script (recommended after claim-logic updates):
+```bash
+pnpm --filter @dapp-demo/contracts run redeploy:timecapsule
+```
+
 **Note on Output**: Hardhat-deploy is idempotent. If the bytecode hasn't changed, it won't redeploy. Use the `---reset` flag to force a redeployment:
 ```bash
 pnpm exec hardhat deploy --network regtest --reset
