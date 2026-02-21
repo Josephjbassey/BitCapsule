@@ -41,13 +41,13 @@ export function useVault(fromBlockWindow: bigint = 10000n) {
     if (!publicClient) return;
     try {
       const contractAddress = TimeCapsule.getAddress();
-      if (process.env.NODE_ENV === "development") console.log("[useVault] Syncing from block:", fromBlock, "to", currentBlock, "Contract:", contractAddress);
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
 
       const safeWindow = fromBlockWindow < 0n ? 0n : fromBlockWindow;
       const fromBlock = currentBlock > safeWindow ? currentBlock - safeWindow : 0n;
+      if (process.env.NODE_ENV === "development") console.log("[useVault] Syncing from block:", fromBlock.toString(), "to", currentBlock.toString(), "Contract:", contractAddress);
 
       const [created, claimed, withdrawn, transferred, beneficiary] = await Promise.all([
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleCreated', strict: false, fromBlock, toBlock: currentBlock } as any),
