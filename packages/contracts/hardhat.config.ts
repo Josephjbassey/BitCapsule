@@ -43,8 +43,8 @@ export default (<HardhatUserConfig>{
 	},
 	networks: {
 		regtest: {
-			url: "https://rpc.staging.midl.xyz",
-			chainId: 15001,
+			url: vars.has("MIDL_RPC_URL") ? vars.get("MIDL_RPC_URL") : (process.env.MIDL_RPC_URL || "https://rpc.staging.midl.xyz"),
+			chainId: vars.has("MIDL_CHAIN_ID") ? Number(vars.get("MIDL_CHAIN_ID")) : Number(process.env.MIDL_CHAIN_ID || 420),
 		},
 	},
 	etherscan: {

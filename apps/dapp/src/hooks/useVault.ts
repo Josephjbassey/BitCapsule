@@ -221,13 +221,15 @@ export function useVault() {
       const denom = 10n ** 10n;
       const satoshis = Number((amountInWei + denom - 1n) / denom);
 
-      console.log("[useVault] Transaction params:", {
-        amount: params.amount,
-        amountInWei: amountInWei.toString(),
-        satoshis,
-        isBtcWallet,
-        walletName: connector?.name
-      });
+      if (process.env.NODE_ENV === "development") {
+        console.log("[useVault] Transaction params:", {
+          amount: params.amount,
+          amountInWei: amountInWei.toString(),
+          satoshis,
+          isBtcWallet,
+          walletName: connector?.name
+        });
+      }
 
       const intention = await addTxIntentionAsync({
         intention: {
