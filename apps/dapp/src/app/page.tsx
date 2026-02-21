@@ -7,10 +7,9 @@ import dynamic from "next/dynamic";
 import WalletConnect from "@/components/screens/WalletConnect";
 
 import { useState, useEffect } from "react";
-import { useEVMAddress, useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
-import { useWaitForTransaction, useAddNetwork } from "@midl/react";
-import { useAccount, useConnect, usePublicClient } from "wagmi";
-import { ConnectButton } from "@midl/satoshi-kit";
+import { useAddTxIntention, useSignIntention, useFinalizeBTCTransaction, useSendBTCTransactions } from "@midl/executor-react";
+import { useWaitForTransaction } from "@midl/react";
+import { useAccount, useConnect } from "wagmi";
 import * as TimeCapsule from "@/shared/contracts/TimeCapsule";
 import { encodeFunctionData, zeroAddress, isAddress, parseEther } from "viem";
 import SuccessOverlay from "@/components/SuccessOverlay";
@@ -18,6 +17,7 @@ import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
 import { toast } from "sonner";
 import { BackgroundEffects } from "@/components/ui/vault/BackgroundEffects";
 import Navbar from "@/components/Navbar";
+import { useVault } from "@/hooks/useVault";
 
 // Import Screens
 import { VaultType } from "@/components/screens/VaultCreation";
@@ -26,16 +26,33 @@ const VaultArchive = dynamic(() => import("@/components/screens/VaultArchive"), 
 const UnlockProcess = dynamic(() => import("@/components/screens/UnlockProcess"), { ssr: false });
 
 export default function Home() {
-  const { isConnected, connector } = useAccount();
-  const address = useEVMAddress();
   const { connectors } = useConnect();
+  const { connector } = useAccount();
   const { addTxIntentionAsync } = useAddTxIntention();
   const { signIntentionAsync } = useSignIntention();
   const { finalizeBTCTransactionAsync } = useFinalizeBTCTransaction();
   const { sendBTCTransactionsAsync } = useSendBTCTransactions();
   const { waitForTransactionAsync } = useWaitForTransaction();
-  const { addNetworkAsync } = useAddNetwork();
-  const publicClient = usePublicClient();
+
+  const {
+    history,
+    pendingVaults,
+    setPendingVaults,
+    fetchHistory,
+    handleTransferCapsule,
+    handleTransferBeneficiary,
+    handleWithdrawEarly,
+    handleClaim,
+    isBroadcasting,
+    setIsBroadcasting,
+    isPerformingAction,
+    mintStep,
+    setMintStep,
+    successData,
+    setSuccessData,
+    address,
+    isConnected
+  } = useVault();
 
   // Diagnostics & Wallet Validation
   useEffect(() => {
@@ -43,8 +60,6 @@ export default function Home() {
       console.log("[BitCapsule] Connection State:", { isConnected, address });
     }
 
-    // Explicitly search for Bitcoin-compatible connectors and avoid blind fallbacks
-    // as per Protocol Security requirements.
     if (isConnected) {
         const btcConnector = connectors.find(c =>
             c.name.toLowerCase().includes('xverse') ||
@@ -69,33 +84,12 @@ export default function Home() {
   const [unlockTimeDays, setUnlockTimeDays] = useState(365); // Default 1 year
 
   const [isMinting, setIsMinting] = useState(false);
-  const [mintStep, setMintStep] = useState<string>("");
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
-  const [successBtcTxHash, setSuccessBtcTxHash] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [successAmount, setSuccessAmount] = useState<string | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [pendingVaults, setPendingVaults] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
   const [revealedData, setRevealedData] = useState<RevealedData | null>(null);
 
-
-  const extractRevealedData = (id: bigint) => {
-    const log = history.find(l => (l as any).args.id === id);
-    if (log) {
-      const data = parseRevealedData(log);
-      setRevealedData(data);
-      return data;
-    }
-    return null;
-  };
-
-const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isClaiming;
+  const isSigningOrPending = isMinting || isBroadcasting || isPerformingAction;
 
   useEffect(() => {
     setIsMounted(true);
@@ -104,86 +98,6 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     }, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bitcapsule_pending_vaults');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const normalized = parsed.map((v: any) => ({
-            ...v,
-            args: {
-              ...v.args,
-              unlockTime: BigInt(v.args.unlockTime),
-              amount: BigInt(v.args.amount)
-            }
-          }));
-          setPendingVaults(normalized);
-        } catch (e) { console.error('Failed to parse pending vaults', e); }
-      }
-    }
-  }, []);
-
-
-  const fetchHistory = async () => {
-    if (!publicClient) return;
-    try {
-      const [logs, claimedLogs, withdrawnLogs] = await Promise.all([
-        publicClient.getLogs({
-          address: TimeCapsule.getAddress(),
-          abi: TimeCapsule.abi,
-          eventName: 'CapsuleCreated',
-          strict: false,
-          fromBlock: 'earliest'
-        } as any),
-        publicClient.getLogs({
-          address: TimeCapsule.getAddress(),
-          abi: TimeCapsule.abi,
-          eventName: 'CapsuleClaimed',
-          strict: false,
-          fromBlock: 'earliest'
-        } as any),
-        publicClient.getLogs({
-          address: TimeCapsule.getAddress(),
-          abi: TimeCapsule.abi,
-          eventName: 'EarlyWithdrawal',
-          strict: false,
-          fromBlock: 'earliest'
-        } as any)
-      ]);
-
-      const processedIds = new Set([
-        ...claimedLogs.map(l => (l as any).args.id?.toString()),
-        ...withdrawnLogs.map(l => (l as any).args.id?.toString())
-      ]);
-
-      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
-      setHistory(activeLogs);
-      if (typeof window !== 'undefined') {
-        const confirmedHashes = new Set(logs.map(l => (l as any).transactionHash));
-        setPendingVaults(prev => {
-          const filtered = prev.filter(p => !confirmedHashes.has(p.transactionHash));
-          if (filtered.length !== prev.length) {
-            localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(filtered, (k, v) => typeof v === 'bigint' ? v.toString() : v));
-          }
-          return filtered;
-        });
-      }
-        console.log("[BitCapsule] Sync Complete. Active Vaults count:", activeLogs.length, "Total logs found:", logs.length);
-      console.log("[BitCapsule] Fetched history. Total logs:", logs.length, "Active:", activeLogs.length);
-    } catch (error) {
-      console.error("[BitCapsule] Failed to fetch history", error);
-    }
-  };
-
-  useEffect(() => {
-    if (isConnected && publicClient) {
-      fetchHistory();
-      const interval = setInterval(fetchHistory, 15000); // Poll every 15s
-      return () => clearInterval(interval);
-    }
-  }, [isConnected, publicClient]);
 
   const handleMint = async () => {
     if (!isConnected || isMinting) return;
@@ -224,8 +138,9 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       if (isEvm) {
         targetBeneficiary = beneficiary as `0x${string}`;
       } else {
-        toast.info("Bitcoin beneficiary detected. Metadata archived.");
-        targetBeneficiary = address as `0x${string}`; // Use owner as placeholder for BTC beneficiary to avoid contract revert
+        setMintStep("Mapping Bitcoin Identity...");
+        targetBeneficiary = (await getEVMAddress(beneficiary as any, regtest)) as `0x${string}`;
+        toast.info("Bitcoin beneficiary mapped to EVM.");
       }
     }
 
@@ -239,7 +154,6 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         setMintStep("Uploading to IPFS Archive...");
         try {
           fileUrl = await uploadToIPFS(fileInfo.file);
-          // Simulate a storage fee calculation (e.g., 0.0001 BTC)
           storageFee = parseEther("0.0001");
           toast.success("File archived on IPFS");
         } catch (e) {
@@ -249,33 +163,21 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       }
 
       const amountInWei = parseEther(amount);
-      const netAmount = amountInWei - storageFee;
-
-      if (netAmount <= 0n && amountInWei > 0n) {
-        toast.error("Insufficient funds for storage fees.");
-        setIsMinting(false);
-        setMintStep("");
-        return;
-      }
-
-      const finalAmount = amountInWei;
       const unlockTimestamp = BigInt(Math.floor(Date.now() / 1000) + unlockTimeDays * 24 * 60 * 60);
 
-      // Combine label, message, and fileInfo into a JSON string
       const combinedMessage = JSON.stringify({
         label: label || "Unnamed Vault",
         secret: message,
         file: { ...fileInfo, url: fileUrl },
-        amount: amount // Store original BTC amount for reveal
+        amount: amount
       });
 
       setMintStep("Initializing Temporal Intention...");
       const isXverse = connector?.id?.toLowerCase().includes('xverse') || connector?.name?.toLowerCase().includes('xverse');
-      console.log('[BitCapsule] Initializing intent. Wallet:', connector?.name, 'isXverse:', isXverse);
       const intention = await addTxIntentionAsync({
         intention: {
           evmTransaction: {
-            to: TimeCapsule.address as `0x${string}`,
+            to: TimeCapsule.getAddress(),
             value: amountInWei,
             data: encodeFunctionData({
               abi: TimeCapsule.abi,
@@ -290,9 +192,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
               ],
             }),
           },
-          // Explicitly include deposit for native BTC funding from Bitcoin side to resolve PSBT issues
           deposit: (isXverse && amountInWei > 0n) ? {
-            satoshis: Math.ceil(Number(amountInWei) / 10**10) // Precise satoshi calculation
+            satoshis: Math.ceil(Number(amountInWei) / 10**10)
           } : undefined,
         },
         reset: true,
@@ -313,55 +214,50 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         btcTransaction: tx.hex,
       });
 
-      if (txHashes && txHashes.length > 0) {
-        console.log("[BitCapsule] Tx hashes:", txHashes);
-        console.log("[BitCapsule] BTC Tx ID:", tx.id);
-
-        setMintStep("Confirming Temporal Link...");
+      setMintStep("Confirming Temporal Link...");
       await waitForTransactionAsync({ txId: tx.id });
 
-        setSuccessTxHash(txHashes[0]); // EVM hash
-        setSuccessBtcTxHash(tx.id);
-      setSuccessMessage(message);
-      setSuccessAmount(amount);    // BTC hash
+      setSuccessData({
+        txHash: txHashes[0],
+        btcTxHash: tx.id,
+        message: message,
+        amount: amount
+      });
 
-        const newPending = {
-          transactionHash: txHashes[0],
-          btcTxHash: tx.id,
-          args: {
-            id: BigInt(0),
-            owner: address,
-            beneficiary: targetBeneficiary,
-            unlockTime: unlockTimestamp,
-            vaultType: vaultType,
-            amount: amountInWei,
-            message: combinedMessage,
-          },
-          isPending: true,
-          timestamp: Date.now()
-        };
+      const newPending = {
+        transactionHash: txHashes[0],
+        btcTxHash: tx.id,
+        args: {
+          id: BigInt(0),
+          owner: address,
+          beneficiary: targetBeneficiary,
+          unlockTime: unlockTimestamp,
+          vaultType: vaultType,
+          amount: amountInWei,
+          message: combinedMessage,
+        },
+        isPending: true,
+        timestamp: Date.now()
+      };
 
-        setPendingVaults(prev => {
-          const updated = [newPending, ...prev];
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(updated, (key, value) =>
-              typeof value === 'bigint' ? value.toString() : value
-            ));
-          }
-          return updated;
-        });
+      setPendingVaults(prev => {
+        const updated = [newPending, ...prev];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(updated, (key, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          ));
+        }
+        return updated;
+      });
 
-        setMessage("");
-        setLabel("");
-        setAmount("");
-        setFileInfo(null);
-        setTimeout(fetchHistory, 2000);
-      }
+      setMessage("");
+      setLabel("");
+      setAmount("");
+      setFileInfo(null);
+      setTimeout(fetchHistory, 2000);
     } catch (error: any) {
       console.error("Action failed", error);
       toast.error(error.message || "Transaction failed");
-      setSuccessTxHash(null);
-      setSuccessBtcTxHash(null);
     } finally {
       setIsMinting(false);
       setIsBroadcasting(false);
@@ -369,181 +265,26 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     }
   };
 
-    const handleTransferCapsule = async (id: bigint, newOwner: string) => {
-    if (isSigningOrPending) return;
-    try {
-      setMintStep("Initializing Transfer...");
-      const mapped = isAddress(newOwner) ? newOwner : (await getEVMAddress(newOwner as any, regtest)) as `0x${string}`;
-      const intention = await addTxIntentionAsync({
-        intention: {
-          evmTransaction: {
-            to: TimeCapsule.address as `0x${string}`,
-            data: encodeFunctionData({
-              abi: TimeCapsule.abi,
-              functionName: "transferCapsule",
-              args: [id, mapped],
-            }),
-          },
-        },
-        reset: true,
-      });
-      const { tx } = await finalizeBTCTransactionAsync();
-      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-      setIsBroadcasting(true);
-      await sendBTCTransactionsAsync({ serializedTransactions: [signedTransaction], btcTransaction: tx.hex });
-      await waitForTransactionAsync({ txId: tx.id });
-      toast.success("Capsule ownership transferred!");
-      setTimeout(fetchHistory, 2000);
-    } catch (e: any) {
-      toast.error(e.message || "Transfer failed");
-    } finally {
-      setIsBroadcasting(false);
-      setMintStep("");
-    }
-  };
-
-  const handleTransferBeneficiary = async (id: bigint, newBeneficiary: string) => {
-    if (isSigningOrPending) return;
-    try {
-      setMintStep("Updating Beneficiary...");
-      const mapped = isAddress(newBeneficiary) ? newBeneficiary : (await getEVMAddress(newBeneficiary as any, regtest)) as `0x${string}`;
-      const intention = await addTxIntentionAsync({
-        intention: {
-          evmTransaction: {
-            to: TimeCapsule.address as `0x${string}`,
-            data: encodeFunctionData({
-              abi: TimeCapsule.abi,
-              functionName: "transferBeneficiary",
-              args: [id, mapped],
-            }),
-          },
-        },
-        reset: true,
-      });
-      const { tx } = await finalizeBTCTransactionAsync();
-      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-      setIsBroadcasting(true);
-      await sendBTCTransactionsAsync({ serializedTransactions: [signedTransaction], btcTransaction: tx.hex });
-      await waitForTransactionAsync({ txId: tx.id });
-      toast.success("Beneficiary updated!");
-      setTimeout(fetchHistory, 2000);
-    } catch (e: any) {
-      toast.error(e.message || "Update failed");
-    } finally {
-      setIsBroadcasting(false);
-      setMintStep("");
-    }
-  };
-
-  const handleWithdrawEarly = async (id: bigint) => {
-    if (isWithdrawing) return;
-    setIsWithdrawing(true);
+  const onWithdrawEarly = async (id: bigint) => {
     setUnlockStatus('penalty');
-
-    // Find the log to extract original message/amount
-    const data = extractRevealedData(id);
-
+    const log = history.find(l => (l as any).args.id === id);
+    if (log) setRevealedData(parseRevealedData(log));
     try {
-      setMintStep("Initializing Temporal Intention...");
-      setMintStep("Initializing Temporal Intention...");
-      const intention = await addTxIntentionAsync({
-        intention: {
-          evmTransaction: {
-            to: TimeCapsule.address as `0x${string}`,
-            data: encodeFunctionData({
-              abi: TimeCapsule.abi,
-              functionName: "withdrawEarly",
-              args: [id],
-            }),
-          },
-        },
-        reset: true,
-      });
-
-      setMintStep("Finalizing Bitcoin Anchor...");
-      const { tx } = await finalizeBTCTransactionAsync();
-      setMintStep("Awaiting Neural Signature...");
-      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-      setMintStep("Broadcasting to Blockchain...");
-      setIsBroadcasting(true);
-      const txHashes = await sendBTCTransactionsAsync({
-        serializedTransactions: [signedTransaction],
-        btcTransaction: tx.hex,
-      });
-      setMintStep("Confirming Temporal Link...");
-      await waitForTransactionAsync({ txId: tx.id });
-
-      setSuccessTxHash(txHashes[0]);
-      setSuccessBtcTxHash(tx.id);
-      setSuccessMessage(data?.message || null);
-      setSuccessAmount(data?.amount?.toString() || null);
-
-      toast.success("Early withdrawal successful!");
-      setTimeout(fetchHistory, 2000);
-      setUnlockStatus('none');
-    } catch (e: any) {
-      console.error("Withdrawal failed", e);
-      toast.error(e.message || "Withdrawal failed");
+      await handleWithdrawEarly(id);
+    } catch (e) {
       setUnlockStatus('none');
       setRevealedData(null);
-    } finally {
-      setIsWithdrawing(false);
-      setIsBroadcasting(false);
     }
   };
 
-  const handleClaim = async (id: bigint, useLegacy: boolean) => {
-    if (isClaiming) return;
-    setIsClaiming(true);
-
-    // Find the log to extract original message/amount
-    const data = extractRevealedData(id);
-
+  const onClaim = async (id: bigint, useLegacy: boolean) => {
+    const log = history.find(l => (l as any).args.id === id);
+    if (log) setRevealedData(parseRevealedData(log));
     try {
-      setMintStep("Initializing Temporal Intention...");
-      setMintStep("Initializing Temporal Intention...");
-      const intention = await addTxIntentionAsync({
-        intention: {
-          evmTransaction: {
-            to: TimeCapsule.address as `0x${string}`,
-            data: encodeFunctionData({
-              abi: TimeCapsule.abi,
-              functionName: useLegacy ? "claimLegacy" : "claim",
-              args: [id],
-            }),
-          },
-        },
-        reset: true,
-      });
-
-      setMintStep("Finalizing Bitcoin Anchor...");
-      const { tx } = await finalizeBTCTransactionAsync();
-      setMintStep("Awaiting Neural Signature...");
-      const signedTransaction = await signIntentionAsync({ intention, txId: tx.id });
-      setMintStep("Broadcasting to Blockchain...");
-      setIsBroadcasting(true);
-      const txHashes = await sendBTCTransactionsAsync({
-        serializedTransactions: [signedTransaction],
-        btcTransaction: tx.hex,
-      });
-      setMintStep("Confirming Temporal Link...");
-      await waitForTransactionAsync({ txId: tx.id });
-
-      setSuccessTxHash(txHashes[0]);
-      setSuccessBtcTxHash(tx.id);
-      setSuccessMessage(data?.message || null);
-      setSuccessAmount(data?.amount?.toString() || null);
-
-      toast.success("Payload claimed successfully!");
-      setTimeout(fetchHistory, 2000);
+      await handleClaim(id, useLegacy);
       setUnlockStatus('success');
-    } catch (e: any) {
-      console.error("Claim failed", e);
-      toast.error(e.message || "Claim failed");
+    } catch (e) {
       setRevealedData(null);
-    } finally {
-      setIsClaiming(false);
-      setIsBroadcasting(false);
     }
   };
 
@@ -583,8 +324,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
             pendingVaults={pendingVaults}
             history={history}
             currentTime={currentTime}
-            handleWithdrawEarly={handleWithdrawEarly}
-            handleClaim={handleClaim}
+            handleWithdrawEarly={onWithdrawEarly}
+            handleClaim={onClaim}
             handleTransferCapsule={handleTransferCapsule}
             handleTransferBeneficiary={handleTransferBeneficiary}
             address={address}
@@ -605,18 +346,13 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         </div>
       </footer>
 
-      {successTxHash && (
+      {successData && (
         <SuccessOverlay
-          txHash={successTxHash}
-          btcTxHash={successBtcTxHash || undefined}
-          message={successMessage || undefined}
-          amount={successAmount || undefined}
-          onClose={() => {
-            setSuccessTxHash(null);
-            setSuccessBtcTxHash(null);
-            setSuccessMessage(null);
-            setSuccessAmount(null);
-          }}
+          txHash={successData.txHash}
+          btcTxHash={successData.btcTxHash}
+          message={successData.message}
+          amount={successData.amount}
+          onClose={() => setSuccessData(null)}
           onRefresh={fetchHistory}
         />
       )}
@@ -624,8 +360,8 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
       {unlockStatus !== 'none' && (
         <UnlockProcess
           status={unlockStatus}
-          revealedData={revealedData}
-          txHash={successTxHash || undefined}
+          revealedData={revealedData || successData}
+          txHash={successData?.txHash}
           onClose={() => { setUnlockStatus('none'); setRevealedData(null); }}
         />
       )}
