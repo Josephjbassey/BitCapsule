@@ -161,4 +161,4 @@ export const abi = [
   }
 ] as const;
 
-export const address = "0x17f670d63F93BD7bF061Bc693E65a359BF9C46d8" as `0x${string}`;
+export const address = "0x8018fd1a0112b27698e4C642B3aa447BAD92FA9f" as `0x${string}`;
