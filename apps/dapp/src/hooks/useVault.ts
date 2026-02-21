@@ -37,10 +37,10 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
     beneficiary: [] as any[]
   });
 
-    const fetchHistory = useCallback(async () => {
+  const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
     try {
-      const contractAddress = "0xdec36ac49C43900B15Cc8ceb5E6669C4b92e3830"; // [Diagnostic] Hardcoded verified address
+      const contractAddress = TimeCapsule.getAddress();
       const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
