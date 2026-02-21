@@ -3,7 +3,7 @@ import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
 import dynamic from "next/dynamic";
 import WalletConnect from "@/components/screens/WalletConnect";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useConnect } from "wagmi";
 import SuccessOverlay from "@/components/SuccessOverlay";
 import TemporalSyncOverlay from "@/components/TemporalSyncOverlay";
@@ -193,7 +193,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {successData && (
+      {successData && unlockStatus === 'none' && (
         <SuccessOverlay
           txHash={successData.txHash}
           btcTxHash={successData.btcTxHash}

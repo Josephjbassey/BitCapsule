@@ -105,7 +105,7 @@ export default function ArchivePage() {
         </div>
       </footer>
 
-      {successData && (
+      {successData && unlockStatus === 'none' && (
         <SuccessOverlay
           txHash={successData.txHash}
           btcTxHash={successData.btcTxHash}
