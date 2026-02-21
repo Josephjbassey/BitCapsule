@@ -79,6 +79,7 @@ export default function Home() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [successAmount, setSuccessAmount] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [pendingVaults, setPendingVaults] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
   const [revealedData, setRevealedData] = useState<RevealedData | null>(null);
@@ -104,6 +105,27 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bitcapsule_pending_vaults');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const normalized = parsed.map((v: any) => ({
+            ...v,
+            args: {
+              ...v.args,
+              unlockTime: BigInt(v.args.unlockTime),
+              amount: BigInt(v.args.amount)
+            }
+          }));
+          setPendingVaults(normalized);
+        } catch (e) { console.error('Failed to parse pending vaults', e); }
+      }
+    }
+  }, []);
+
+
   const fetchHistory = async () => {
     if (!publicClient) return;
     try {
@@ -112,18 +134,21 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'CapsuleCreated',
+          strict: false,
           fromBlock: 'earliest'
         } as any),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'CapsuleClaimed',
+          strict: false,
           fromBlock: 'earliest'
         } as any),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'EarlyWithdrawal',
+          strict: false,
           fromBlock: 'earliest'
         } as any)
       ]);
@@ -135,6 +160,16 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
 
       const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
       setHistory(activeLogs);
+      if (typeof window !== 'undefined') {
+        const confirmedHashes = new Set(logs.map(l => (l as any).transactionHash));
+        setPendingVaults(prev => {
+          const filtered = prev.filter(p => !confirmedHashes.has(p.transactionHash));
+          if (filtered.length !== prev.length) {
+            localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(filtered, (k, v) => typeof v === 'bigint' ? v.toString() : v));
+          }
+          return filtered;
+        });
+      }
         console.log("[BitCapsule] Sync Complete. Active Vaults count:", activeLogs.length, "Total logs found:", logs.length);
       console.log("[BitCapsule] Fetched history. Total logs:", logs.length, "Active:", activeLogs.length);
     } catch (error) {
@@ -289,6 +324,32 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
         setSuccessBtcTxHash(tx.id);
       setSuccessMessage(message);
       setSuccessAmount(amount);    // BTC hash
+
+        const newPending = {
+          transactionHash: txHashes[0],
+          btcTxHash: tx.id,
+          args: {
+            id: BigInt(0),
+            owner: address,
+            beneficiary: targetBeneficiary,
+            unlockTime: unlockTimestamp,
+            vaultType: vaultType,
+            amount: amountInWei,
+            message: combinedMessage,
+          },
+          isPending: true,
+          timestamp: Date.now()
+        };
+
+        setPendingVaults(prev => {
+          const updated = [newPending, ...prev];
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(updated, (key, value) =>
+              typeof value === 'bigint' ? value.toString() : value
+            ));
+          }
+          return updated;
+        });
 
         setMessage("");
         setLabel("");
@@ -519,6 +580,7 @@ const isSigningOrPending = isMinting || isBroadcasting || isWithdrawing || isCla
           />
         ) : (
           <VaultArchive
+            pendingVaults={pendingVaults}
             history={history}
             currentTime={currentTime}
             handleWithdrawEarly={handleWithdrawEarly}

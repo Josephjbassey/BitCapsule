@@ -8,6 +8,7 @@ import { CountdownTimer } from "../ui/vault/CountdownTimer";
 
 interface VaultArchiveProps {
   history: any[];
+  pendingVaults?: any[];
   currentTime: number;
   handleWithdrawEarly: (id: bigint) => void;
   handleClaim: (id: bigint, legacy: boolean) => void;
@@ -21,6 +22,7 @@ interface VaultArchiveProps {
 
 export default function VaultArchive({
   history,
+  pendingVaults,
   currentTime,
   handleWithdrawEarly,
   handleClaim,
@@ -35,11 +37,15 @@ export default function VaultArchive({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    console.log("[VaultArchive] Component Rendered. History Size:", history.length, "Connected Address:", address);
-  }, [history, address]);
+    console.log("[VaultArchive] Component Rendered. History Size:", history.length, "Pending Size:", pendingVaults?.length, "Connected Address:", address);
+  }, [history, pendingVaults, address]);
 
-  const filteredHistory = history.filter(log => {
-    // console.log("[Archive] Checking log:", log.args.id, "Owner:", log.args.owner, "Beneficiary:", log.args.beneficiary, "Current Address:", address);
+  const combinedHistory = [
+    ...(pendingVaults || []),
+    ...history
+  ];
+
+  const filteredHistory = combinedHistory.filter(log => {
     // Only show vaults where user is owner or beneficiary
     const isOwner = address && log.args.owner && isAddressEqual(address as `0x${string}`, log.args.owner as `0x${string}`);
     const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
@@ -130,6 +136,10 @@ export default function VaultArchive({
                 <span className="w-1 h-1 rounded-full bg-primary animate-pulse"></span>
                 LIVE_SYNC
              </div>
+             <div className="hidden md:flex px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[9px] font-mono text-blue-400 items-center gap-2" title="Blockscout may lag in indexing new transactions. Check Bitcoin mempool for real-time status.">
+                <span className="material-icons text-[10px]">info</span>
+                89% INDEXED
+             </div>
           </div>
         </header>
 
@@ -145,6 +155,7 @@ export default function VaultArchive({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 pb-24">
               {filteredHistory.map((log, i) => {
+                const isPending = !!log.isPending;
                 const id = log.args.id;
                 const unlockTime = Number(log.args.unlockTime);
                 const isLocked = currentTime < unlockTime;
@@ -154,8 +165,8 @@ export default function VaultArchive({
                 const isBeneficiary = address && log.args.beneficiary && isAddressEqual(address as `0x${string}`, log.args.beneficiary as `0x${string}`);
                 const isLegacy = log.args.vaultType === VaultType.LEGACY;
 
-                const borderColor = isLocked ? "border-primary/20" : "border-green-500/20";
-                const textColor = isLocked ? "text-primary" : "text-green-400";
+                const borderColor = isPending ? "border-yellow-500/40" : (isLocked ? "border-primary/20" : "border-green-500/20");
+                const textColor = isPending ? "text-yellow-500" : (isLocked ? "text-primary" : "text-green-400");
                 const unlockYear = new Date(unlockTime * 1000).getFullYear();
 
                 return (
@@ -164,22 +175,22 @@ export default function VaultArchive({
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col text-left">
                           <div className="flex justify-between items-center w-full mb-1">
-                            <span className={`text-[10px] font-mono tracking-widest ${isLocked ? "text-primary/60" : "text-green-400/60"}`}>
-                                {label}
+                            <span className={`text-[10px] font-mono tracking-widest ${isPending ? "text-yellow-500/60" : (isLocked ? "text-primary/60" : "text-green-400/60")}`}>
+                                {label} {isPending && <span className="ml-2 px-1 bg-yellow-500/20 text-yellow-500 text-[8px] animate-pulse rounded">SYNCING</span>}
                             </span>
-                            {isLocked && <CountdownTimer unlockTimestamp={unlockTime} />}
+                            {isLocked && !isPending && <CountdownTimer unlockTimestamp={unlockTime} />}
                           </div>
-                          <span className={`text-3xl font-bold ${textColor} font-mono tracking-tight`}>{unlockYear}</span>
+                          <span className={`text-3xl font-bold ${textColor} font-mono tracking-tight`}>{isPending ? "----" : unlockYear}</span>
                         </div>
-                        <span className={`material-symbols-outlined ${isLocked ? "text-primary/40" : "text-green-400/40"}`}>
-                          {isLocked ? "lock" : "lock_open"}
+                        <span className={`material-symbols-outlined ${isPending ? "text-yellow-500/40 animate-spin" : (isLocked ? "text-primary/40" : "text-green-400/40")}`}>
+                          {isPending ? "sync" : (isLocked ? "lock" : "lock_open")}
                         </span>
                       </div>
 
                       <div className="flex-1 flex flex-col items-start justify-center my-4 overflow-hidden relative bg-black/20 rounded p-4">
                         <span className="text-[8px] text-white/20 uppercase font-mono mb-2">Payload Data:</span>
-                        <p className={`text-xs text-white/50 font-mono leading-relaxed text-left break-all line-clamp-4 ${isLocked ? "blur-sm select-none" : ""}`}>
-                          {isLocked ? "Encrypted Content. Protocol Active." : (secret || "No message found.")}
+                        <p className={`text-xs text-white/50 font-mono leading-relaxed text-left break-all line-clamp-4 ${isLocked || isPending ? "blur-sm select-none" : ""}`}>
+                          {isPending ? "Temporal Link Initializing..." : (isLocked ? "Encrypted Content. Protocol Active." : (secret || "No message found."))}
                         </p>
                         {file && (
                           <div className="mt-2 flex flex-col gap-1">
@@ -187,20 +198,22 @@ export default function VaultArchive({
                               <span className="material-icons text-[10px]">attachment</span>
                               <span>{file.name}</span>
                             </div>
-                            {file.url && !isLocked && (
-                              <a href={file.url.replace('ipfs://', 'https://ipfs.io/ipfs/')} target="_blank" rel="noopener noreferrer" className="text-[8px] text-blue-400 hover:text-blue-300 underline flex items-center gap-1 font-mono uppercase">
-                                <span className="material-icons text-[8px]">download</span>
-                                IPFS Link
-                              </a>
-                            )}
                           </div>
                         )}
                       </div>
 
                       <div className="flex justify-between items-center text-[10px] font-mono text-white/30">
-                        <span>VAULT_ID: #{id?.toString()}</span>
+                        <span>
+                          {isPending ? (
+                            <a href={`https://mempool.staging.midl.xyz/tx/${log.btcTxHash}`} target="_blank" rel="noreferrer" className="text-yellow-500/80 hover:text-yellow-500 transition-colors underline underline-offset-2 uppercase font-bold text-[9px]">
+                              Verify on Bitcoin
+                            </a>
+                          ) : (
+                            `VAULT_ID: #${id?.toString()}`
+                          )}
+                        </span>
                         <div className="flex flex-col gap-2 items-end">
-                           {isLocked && isOwner && (
+                           {isLocked && isOwner && !isPending && (
                              <div className="flex gap-2">
                                <button type="button" onClick={() => {
                                  const addr = window.prompt("Enter new owner address (EVM or BTC):");
@@ -213,13 +226,16 @@ export default function VaultArchive({
                              </div>
                            )}
                            <div className="flex gap-2">
-                             {isLocked && isOwner && !isLegacy && (
+                             {isPending && (
+                               <span className="text-yellow-500/40 uppercase font-bold text-[9px]">Awaiting Confirmation</span>
+                             )}
+                             {isLocked && isOwner && !isLegacy && !isPending && (
                                <button type="button" onClick={() => handleWithdrawEarly(id)} disabled={isSigningOrPending} className="text-red-400 hover:text-red-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Panic</button>
                              )}
-                             {isLocked && isOwner && isLegacy && (
+                             {isLocked && isOwner && isLegacy && !isPending && (
                                <span className="text-gray-600 cursor-not-allowed uppercase font-bold" title="Legacy vaults cannot be breached prematurely">Locked</span>
                              )}
-                             {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && (
+                             {(!isLocked || (isLegacy && isBeneficiary)) && (isOwner || isBeneficiary) && !isPending && (
                                <button type="button" onClick={() => handleClaim(id, isLegacy)} disabled={isSigningOrPending} className="text-green-400 hover:text-green-300 transition-all uppercase font-bold active:scale-90 hover:scale-110">Claim</button>
                              )}
                            </div>

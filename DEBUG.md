@@ -33,7 +33,7 @@
 ## 🔍 Investigation Tools
 
 - **Local Logs**: The app logs key events to the browser console when `process.env.NODE_ENV === 'development'`.
-- **Explorer**: Always verify state on [Blockscout](https://blockscout.staging.midl.xyz/address/0x9e0C86386C8f6B223bE48f6834bEa6011749826E).
+- **Explorer**: Always verify state on [Blockscout](https://blockscout.staging.midl.xyz/address/0x0046A040F9822e65051594b444564f3baa1e6450).
 - **Network Tab**: Check for failed RPC calls to `https://rpc.staging.midl.xyz`.
 
 ### 5. Network Sync Issues (Mobile/Desktop)
