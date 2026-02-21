@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRevealedData, parseVaultMessage } from '../shared/utils/vault';
+import { parseRevealedData, parseVaultMessage, reconcileArchiveLogs } from '../shared/utils/vault';
 
 describe('parseVaultMessage', () => {
   it('parses serialized JSON metadata payloads', () => {
@@ -18,6 +18,18 @@ describe('parseVaultMessage', () => {
     expect(parsed.origAmount).toBe(amount);
   });
 
+
+  it('preserves zero amount metadata in vault payloads', () => {
+    const combined = JSON.stringify({
+      label: 'Zero Vault',
+      secret: 'Zero is valid',
+      amount: 0,
+    });
+
+    const parsed = parseVaultMessage(combined);
+
+    expect(parsed.origAmount).toBe(0);
+  });
   it('falls back for malformed JSON messages', () => {
     const malformed = '{"label":"Broken Vault", "secret": "oops"';
 
@@ -95,5 +107,24 @@ describe('parseRevealedData', () => {
 
     expect(revealed.message).toBe('zero string amount payload');
     expect(revealed.amount).toBe('0');
+  });
+});
+
+
+describe('reconcileArchiveLogs', () => {
+  it('derives active capsules from on-chain event logs without explorer counts', () => {
+    const createdLogs = [
+      { args: { id: 1n } },
+      { args: { id: 2n } },
+      { args: { id: 3n } },
+    ];
+
+    const claimedLogs = [{ args: { id: 2n } }];
+    const withdrawnLogs = [{ args: { id: 3n } }];
+
+    const active = reconcileArchiveLogs(createdLogs as any[], claimedLogs as any[], withdrawnLogs as any[]);
+
+    expect(active).toHaveLength(1);
+    expect(active[0]?.args?.id).toBe(1n);
   });
 });

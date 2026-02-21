@@ -14,7 +14,7 @@
 **Cause**: RPC lag or event reconciliation failure.
 **Debug Steps**:
 - Click the **SYNC** button in the Archive header to force a re-fetch.
-- Check the [Blockscout Explorer](https://blockscout.staging.midl.xyz) for the contract address to confirm the `CapsuleClaimed` or `EarlyWithdrawal` event was emitted.
+- Confirm events via RPC first (`getLogs` for `CapsuleClaimed` / `EarlyWithdrawal`) and use [Blockscout](https://blockscout.staging.midl.xyz) as a secondary check.
 - Verify the `fetchHistory` logic in `apps/dapp/src/app/archive/page.tsx` is querying all three event types.
 
 ### 3. Wallet Connection Stuck
@@ -33,7 +33,8 @@
 ## 🔍 Investigation Tools
 
 - **Local Logs**: The app logs key events to the browser console when `process.env.NODE_ENV === 'development'`.
-- **Explorer**: Always verify state on [Blockscout](https://blockscout.staging.midl.xyz/address/0x9e0C86386C8f6B223bE48f6834bEa6011749826E).
+- **RPC Event Logs (Primary)**: Verify state with direct RPC log queries first; this is the source of truth for archive reconciliation.
+- **Explorer (Advisory)**: Use [Blockscout](https://blockscout.staging.midl.xyz/address/0x9e0C86386C8f6B223bE48f6834bEa6011749826E) as a convenience UI, but treat counts as advisory when it reports partial indexing (e.g., '97% Blocks Indexed').
 - **Network Tab**: Check for failed RPC calls to `https://rpc.staging.midl.xyz`.
 
 ### 5. Network Sync Issues (Mobile/Desktop)
