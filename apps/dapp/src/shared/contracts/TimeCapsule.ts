@@ -213,7 +213,7 @@ export const abi = [
 ] as const;
 
 export const getAddress = (): `0x${string}` => {
-    const FALLBACK_ADDRESS = "0xC6bfc001f8A0Fb3C56Aa2F3096b43a08E680dB8B";
+    const FALLBACK_ADDRESS = "0xdec36ac49C43900B15Cc8ceb5E6669C4b92e3830";
     const envAddr = process.env.NEXT_PUBLIC_TIME_CAPSULE_ADDRESS;
     const address = (envAddr && envAddr !== "undefined") ? envAddr : FALLBACK_ADDRESS;
 
