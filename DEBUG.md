@@ -34,7 +34,7 @@
 
 - **Local Logs**: The app logs key events to the browser console when `process.env.NODE_ENV === 'development'`.
 - **RPC Event Logs (Primary)**: Verify state with direct RPC log queries first; this is the source of truth for archive reconciliation.
-- **Explorer (Advisory)**: Use [Blockscout](https://blockscout.staging.midl.xyz/address/0xd4CB4e4cEe7e88f7eB34c117E209BfA85903Ecb9) as a convenience UI, but treat counts as advisory when it reports partial indexing (e.g., '97% Blocks Indexed').
+- **Explorer (Advisory)**: Use [Blockscout](https://blockscout.staging.midl.xyz/address/0x1c599181a7d0AF5fcA5FE824C20F5E0d0Cb02F32) as a convenience UI, but treat counts as advisory when it reports partial indexing (e.g., '97% Blocks Indexed').
 - **Network Tab**: Check for failed RPC calls to `https://rpc.staging.midl.xyz`.
 
 ### 5. Network Sync Issues (Mobile/Desktop)
