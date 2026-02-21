@@ -29,84 +29,51 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
   const [mintStep, setMintStep] = useState("");
   const [successData, setSuccessData] = useState<{ txHash: string; btcTxHash: string; message?: string; amount?: string; file?: any } | null>(null);
 
-  const [allLogs, setAllLogs] = useState({
-    created: [] as any[],
-    claimed: [] as any[],
-    withdrawn: [] as any[],
-    transferred: [] as any[],
-    beneficiary: [] as any[]
-  });
 
-  const fetchHistory = useCallback(async () => {
+
+      const fetchHistory = useCallback(async () => {
     if (!publicClient) return;
     try {
       const contractAddress = TimeCapsule.getAddress();
-      const abi = TimeCapsule.abi;
 
       const currentBlock = await publicClient.getBlockNumber();
       const safeWindow = fromBlockWindow < 0n ? 0n : fromBlockWindow;
       const fromBlock = currentBlock > safeWindow ? currentBlock - safeWindow : 0n;
 
-      console.log("[BitCapsule] Scanning blocks...", { fromBlock: fromBlock.toString(), toBlock: currentBlock.toString(), contract: contractAddress });
-
-      // [Diagnostic] Check block #32700 specifically
-      try {
-          const diagLogs = await publicClient.getLogs({
-              address: contractAddress,
-              abi,
-              eventName: 'CapsuleCreated',
-              fromBlock: 32700n,
-              toBlock: 34000n,
-              strict: false
-          } as any);
-          console.log("[BitCapsule] Diagnostic #32829/33820/33849 Logs:", diagLogs);
-          if (diagLogs.length === 0) {
-              const block = await publicClient.getBlock({ blockNumber: 32829n });
-              console.log("[BitCapsule] Diagnostic Block #32829 Header:", block);
-          } else {
-              const receipt = await publicClient.getTransactionReceipt({ hash: diagLogs[0].transactionHash });
-              console.log("[BitCapsule] Diagnostic Receipt for #32829:", receipt);
-          }
-      } catch (e) {
-          console.warn("[BitCapsule] Diagnostic query failed", e);
+      if (process.env.NODE_ENV === "development") {
+          console.log("[BitCapsule] Scanning blocks...", { fromBlock: fromBlock.toString(), toBlock: currentBlock.toString(), contract: contractAddress });
       }
 
-      // Strict Fetcher Pattern
-      const [created, claimed, withdrawn, transferred, beneficiary] = await Promise.all([
-        publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleCreated', strict: false, fromBlock, toBlock: currentBlock } as any),
-        publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleClaimed', strict: false, fromBlock, toBlock: currentBlock } as any),
-        publicClient.getLogs({ address: contractAddress, abi, eventName: 'EarlyWithdrawal', strict: false, fromBlock, toBlock: currentBlock } as any),
-        publicClient.getLogs({ address: contractAddress, abi, eventName: 'CapsuleTransferred', strict: false, fromBlock, toBlock: currentBlock } as any),
-        publicClient.getLogs({ address: contractAddress, abi, eventName: 'BeneficiaryUpdated', strict: false, fromBlock, toBlock: currentBlock } as any),
-      ]);
+      // Fetch all logs for the contract in one go to prevent cross-contamination
+      // and RPC-level filtering issues.
+      const allLogs = await publicClient.getLogs({
+          address: contractAddress,
+          fromBlock,
+          toBlock: currentBlock
+      });
 
       if (process.env.NODE_ENV === "development") {
-          console.log("[BitCapsule] Raw logs counts:", {
-              created: created.length,
-              claimed: claimed.length,
-              withdrawn: withdrawn.length,
-              transferred: transferred.length,
-              beneficiary: beneficiary.length
-          });
-
-          if (created.length > 0) {
-              console.log("[BitCapsule] First created log sample:", {
-                  hash: created[0].transactionHash,
-                  eventName: (created[0] as any).eventName,
-                  args: (created[0] as any).args
+          console.log("[BitCapsule] Raw logs fetched:", allLogs.length);
+          if (allLogs.length > 0) {
+              console.log("[BitCapsule] Sample log data:", {
+                  hash: allLogs[0].transactionHash,
+                  data: allLogs[0].data,
+                  topics: allLogs[0].topics
               });
           }
       }
 
-      const nextLogs = { created, claimed, withdrawn, transferred, beneficiary };
-      setAllLogs(nextLogs);
+      const activeLogs = reconcileArchiveLogs(allLogs);
 
-      const activeLogs = reconcileArchiveLogs(nextLogs.created, nextLogs.claimed, nextLogs.withdrawn, nextLogs.transferred, nextLogs.beneficiary);
-      console.log("[BitCapsule] Reconciled history length:", activeLogs.length);
+      if (process.env.NODE_ENV === "development") {
+          console.log("[BitCapsule] Reconciled history size:", activeLogs.length);
+      }
+
       setHistory(activeLogs);
 
       if (typeof window !== 'undefined') {
-          const confirmedHashes = new Set(nextLogs.created.map(l => (l as any).transactionHash));
+          // Identify created logs for pending removal
+          const confirmedHashes = new Set(activeLogs.map(l => (l as any).transactionHash));
           setPendingVaults(pending => {
               const filtered = pending.filter(p => !confirmedHashes.has(p.transactionHash));
               if (filtered.length !== pending.length) {
@@ -120,6 +87,8 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
       console.error("[BitCapsule] Failed to fetch history", error);
     }
   }, [publicClient, fromBlockWindow]);
+
+
 
 
   useEffect(() => {
