@@ -44,7 +44,7 @@ export function parseVaultMessage(msg: string) {
       label: data.label || "Unnamed Vault",
       secret: data.secret || "",
       file: data.file || null,
-      origAmount: data.amount || null
+      origAmount: data.amount ?? null
     };
   } catch (e) {
     // Handle legacy messages that aren't JSON
@@ -55,4 +55,14 @@ export function parseVaultMessage(msg: string) {
       origAmount: null
     };
   }
+}
+
+
+export function reconcileArchiveLogs(createdLogs: any[], claimedLogs: any[], withdrawnLogs: any[]) {
+  const processedIds = new Set([
+    ...claimedLogs.map((log) => log?.args?.id?.toString()),
+    ...withdrawnLogs.map((log) => log?.args?.id?.toString())
+  ]);
+
+  return createdLogs.filter((log) => !processedIds.has(log?.args?.id?.toString()));
 }
