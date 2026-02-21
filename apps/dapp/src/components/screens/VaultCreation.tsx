@@ -32,12 +32,12 @@ interface VaultCreationProps {
 
 export default function VaultCreation(props: VaultCreationProps) {
   return (
-    <div className="relative z-10 flex-grow overflow-y-auto flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 px-4 md:px-6 py-12 md:py-20 w-full max-w-7xl mx-auto overflow-x-hidden min-h-full">
+    <div className="relative z-10 flex-grow overflow-y-auto no-scrollbar flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 px-4 md:px-6 py-4 sm:py-6 md:py-10 w-full max-w-7xl mx-auto overflow-x-hidden min-h-0">
       {/* Left Panel: The Lock Mechanism */}
       <LockMechanism />
 
       {/* Right Panel: Data Terminal */}
-      <div className="w-full md:w-1/2 max-w-lg relative z-10">
+      <div className="w-full md:w-1/2 max-w-md lg:max-w-lg relative z-10 max-h-[calc(100dvh-5rem)] md:max-h-[calc(100dvh-7rem)]">
         <DepositForm {...props} />
       </div>
     </div>

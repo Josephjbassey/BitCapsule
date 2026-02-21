@@ -1,7 +1,7 @@
 "use client";
 import { regtest } from "@midl/core";
 import { getEVMAddress } from "@midl/executor";
-import { RevealedData, parseRevealedData } from "@/shared/utils/vault";
+import { RevealedData, parseRevealedData, reconcileArchiveLogs } from "@/shared/utils/vault";
 
 import WalletConnect from "@/components/screens/WalletConnect";
 import { useState, useEffect } from "react";
@@ -92,12 +92,7 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
         } as any)
       ]);
 
-      const processedIds = new Set([
-        ...claimedLogs.map(l => (l as any).args.id?.toString()),
-        ...withdrawnLogs.map(l => (l as any).args.id?.toString())
-      ]);
-
-      const activeLogs = logs.filter(l => !processedIds.has((l as any).args.id?.toString()));
+      const activeLogs = reconcileArchiveLogs(logs, claimedLogs, withdrawnLogs);
       setHistory(activeLogs);
       if (typeof window !== 'undefined') {
         const confirmedHashes = new Set(logs.map(l => (l as any).transactionHash));
