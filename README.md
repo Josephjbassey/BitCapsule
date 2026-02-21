@@ -31,7 +31,7 @@ cp apps/dapp/.env.example apps/dapp/.env.local
 
 ### 4. Launch Neural Interface
 ```bash
-pnpm --filter @BitCapsule/dapp dev
+pnpm --filter @dapp-demo/dapp dev
 ```
 Open **[http://localhost:3000](http://localhost:3000)**. **Welcome to the future.**
 
