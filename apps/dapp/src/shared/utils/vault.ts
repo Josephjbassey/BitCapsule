@@ -79,10 +79,18 @@ export function reconcileArchiveLogs(
   });
 
   allStateLogs.forEach(log => {
-    const id = log.args.id.toString();
-    if (log.eventName === 'CapsuleTransferred') {
+    if (!log.args || log.args.id == null) return;
+
+    let id: string;
+    try {
+      id = log.args.id.toString();
+    } catch (e) {
+      return;
+    }
+
+    if (log.eventName === 'CapsuleTransferred' && log.args.to) {
       ownerMap.set(id, log.args.to);
-    } else if (log.eventName === 'BeneficiaryUpdated') {
+    } else if (log.eventName === 'BeneficiaryUpdated' && log.args.newBeneficiary) {
       beneficiaryMap.set(id, log.args.newBeneficiary);
     }
   });

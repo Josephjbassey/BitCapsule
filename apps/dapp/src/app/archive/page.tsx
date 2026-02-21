@@ -23,7 +23,7 @@ export default function ArchivePage() {
     isPerformingAction,
     mintStep,
     successData,
-    setSuccessData,
+    clearSuccessData,
     address,
     isConnected
   } = useVault();
@@ -41,6 +41,13 @@ export default function ArchivePage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Ensure SuccessOverlay and UnlockProcess are mutually exclusive
+  useEffect(() => {
+    if (successData && unlockStatus !== 'none') {
+        setUnlockStatus('none');
+    }
+  }, [successData, unlockStatus]);
+
   const isSigningOrPending = isBroadcasting || isPerformingAction;
 
   const onWithdrawEarly = async (id: bigint) => {
@@ -49,6 +56,7 @@ export default function ArchivePage() {
     if (log) setRevealedData(parseRevealedData(log));
     try {
       await handleWithdrawEarly(id);
+      setUnlockStatus('success');
     } catch (e) {
       setUnlockStatus('none');
       setRevealedData(null);
@@ -109,12 +117,12 @@ export default function ArchivePage() {
           btcTxHash={successData.btcTxHash}
           message={successData.message}
           amount={successData.amount}
-          onClose={() => setSuccessData(null)}
+          onClose={clearSuccessData}
           onRefresh={fetchHistory}
         />
       )}
 
-      {unlockStatus !== 'none' && (
+      {unlockStatus !== 'none' && !successData && (
         <UnlockProcess
           status={unlockStatus}
           revealedData={revealedData || (successData ? {
