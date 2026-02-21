@@ -39,6 +39,7 @@ export default function ArchivePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [successAmount, setSuccessAmount] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [pendingVaults, setPendingVaults] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(Math.floor(Date.now() / 1000));
   const [unlockStatus, setUnlockStatus] = useState<'none' | 'penalty' | 'success'>('none');
   const [revealedData, setRevealedData] = useState<RevealedData | null>(null);
@@ -72,29 +73,62 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'CapsuleCreated',
+          strict: false,
           fromBlock: 'earliest'
         } as any),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'CapsuleClaimed',
+          strict: false,
           fromBlock: 'earliest'
         } as any),
         publicClient.getLogs({
           address: TimeCapsule.getAddress(),
           abi: TimeCapsule.abi,
           eventName: 'EarlyWithdrawal',
+          strict: false,
           fromBlock: 'earliest'
         } as any)
       ]);
 
       const activeLogs = reconcileArchiveLogs(logs, claimedLogs, withdrawnLogs);
       setHistory(activeLogs);
+      if (typeof window !== 'undefined') {
+        const confirmedHashes = new Set(logs.map(l => (l as any).transactionHash));
+        setPendingVaults(prev => {
+          const filtered = prev.filter(p => !confirmedHashes.has(p.transactionHash));
+          if (filtered.length !== prev.length) {
+            localStorage.setItem('bitcapsule_pending_vaults', JSON.stringify(filtered, (k, v) => typeof v === 'bigint' ? v.toString() : v));
+          }
+          return filtered;
+        });
+      }
       console.log("[BitCapsule] Fetched history. Total logs:", logs.length, "Active:", activeLogs.length);
     } catch (error) {
       console.error("[BitCapsule] Failed to fetch history", error);
     }
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bitcapsule_pending_vaults');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const normalized = parsed.map((v: any) => ({
+            ...v,
+            args: {
+              ...v.args,
+              unlockTime: BigInt(v.args.unlockTime),
+              amount: BigInt(v.args.amount)
+            }
+          }));
+          setPendingVaults(normalized);
+        } catch (e) { console.error('Failed to parse pending vaults', e); }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (isConnected && publicClient) {
@@ -295,6 +329,7 @@ const isSigningOrPending = isBroadcasting || isWithdrawing || isClaiming;
 
       <main className="relative z-10 flex-grow w-full overflow-hidden animate-in fade-in duration-700">
         <VaultArchive
+          pendingVaults={pendingVaults}
           history={history}
           currentTime={currentTime}
           handleWithdrawEarly={handleWithdrawEarly}
