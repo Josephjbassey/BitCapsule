@@ -48,7 +48,7 @@ USAGE
   esac
 done
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 CONTRACTS_DIR="$ROOT_DIR/packages/contracts"
 DEPLOYMENT_FILE="$CONTRACTS_DIR/deployments/TimeCapsule.json"
 DAPP_ENV_FILE="$ROOT_DIR/apps/dapp/.env.local"
