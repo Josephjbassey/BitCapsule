@@ -41,13 +41,13 @@ export const DepositForm = ({
   setFileInfo,
 }: DepositFormProps) => {
   return (
-    <div className="bg-surface-dark/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group hover:shadow-primary/10 transition-shadow duration-500 w-full max-h-[calc(100vh-6.5rem)] md:max-h-[calc(100vh-8rem)]">
+    <div className="bg-surface-dark/90 border border-primary/30 rounded-xl p-1 shadow-2xl backdrop-blur-sm relative overflow-hidden group hover:shadow-primary/10 transition-shadow duration-500 w-full max-h-[calc(100dvh-5.5rem)] md:max-h-[calc(100dvh-7rem)]">
       <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary rounded-tl-lg"></div>
       <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary rounded-tr-lg"></div>
       <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary rounded-bl-lg"></div>
       <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary rounded-br-lg"></div>
 
-      <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 grid-bg animate-in fade-in duration-700 overflow-y-auto max-h-[calc(100vh-7.5rem)] md:max-h-[calc(100vh-9rem)]">
+      <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 grid-bg animate-in fade-in duration-700 overflow-y-auto no-scrollbar max-h-[calc(100dvh-6.5rem)] md:max-h-[calc(100dvh-8rem)]">
         <div className="space-y-2">
           <label htmlFor="vault-type-selector" className="flex justify-between text-[10px] sm:text-xs tracking-wider text-primary/80 uppercase font-semibold">
             <span>Utility Protocol</span>
