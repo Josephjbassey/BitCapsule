@@ -114,13 +114,13 @@ describe('parseRevealedData', () => {
 describe('reconcileArchiveLogs', () => {
   it('derives active capsules from on-chain event logs without explorer counts', () => {
     const createdLogs = [
-      { args: { id: 1n } },
-      { args: { id: 2n } },
-      { args: { id: 3n } },
+      { eventName: 'CapsuleCreated', args: { id: 1n } },
+      { eventName: 'CapsuleCreated', args: { id: 2n } },
+      { eventName: 'CapsuleCreated', args: { id: 3n } },
     ];
 
-    const claimedLogs = [{ args: { id: 2n } }];
-    const withdrawnLogs = [{ args: { id: 3n } }];
+    const claimedLogs = [{ eventName: 'CapsuleClaimed', args: { id: 2n } }];
+    const withdrawnLogs = [{ eventName: 'EarlyWithdrawal', args: { id: 3n } }];
 
     const active = reconcileArchiveLogs(createdLogs as any[], claimedLogs as any[], withdrawnLogs as any[]);
 

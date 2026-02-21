@@ -1,4 +1,4 @@
-import { formatEther, type Log } from "viem";
+import { formatEther, isAddressEqual, type Log } from "viem";
 
 export interface RevealedData {
   message: string;
@@ -71,9 +71,24 @@ export function reconcileArchiveLogs(
 ) {
   const processedIds = new Set<string>();
 
+  if (process.env.NODE_ENV === "development") {
+      console.log("[BitCapsule] Reconciling logs...", {
+          created: createdLogs.length,
+          claimed: claimedLogs.length,
+          withdrawn: withdrawnLogs.length
+      });
+  }
+
+  // Only consider logs that are actually processed events
   [...claimedLogs, ...withdrawnLogs].forEach(log => {
+    const eventName = (log as any).eventName;
     const id = (log as any)?.args?.id;
-    if (id != null) processedIds.add(id.toString());
+
+    // Safety: Only mark as processed if it's actually a claim/withdrawal event
+    // and has a valid ID.
+    if (id != null && (eventName === 'CapsuleClaimed' || eventName === 'EarlyWithdrawal')) {
+      processedIds.add(id.toString());
+    }
   });
 
   const ownerMap = new Map<string, string>();
@@ -88,14 +103,15 @@ export function reconcileArchiveLogs(
     const args = (log as any).args;
     if (!args || args.id == null) return;
 
+    const eventName = (log as any).eventName;
+    if (eventName !== 'CapsuleTransferred' && eventName !== 'BeneficiaryUpdated') return;
+
     let id: string;
     try {
       id = args.id.toString();
     } catch (e) {
       return;
     }
-
-    const eventName = (log as any).eventName;
 
     if (eventName === 'CapsuleTransferred' && args.to) {
       ownerMap.set(id, args.to);
@@ -106,8 +122,16 @@ export function reconcileArchiveLogs(
 
   return createdLogs
     .filter((log) => {
+        const eventName = (log as any).eventName;
         const id = (log as any)?.args?.id;
-        return id != null && !processedIds.has(id.toString());
+
+        if (id == null || eventName !== 'CapsuleCreated') return false;
+
+        const isProcessed = processedIds.has(id.toString());
+        if (isProcessed && process.env.NODE_ENV === "development") {
+            console.log(`[BitCapsule] Filtering out vault #${id} (Already claimed/withdrawn)`);
+        }
+        return !isProcessed;
     })
     .map(log => {
       const args = (log as any).args;

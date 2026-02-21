@@ -65,7 +65,7 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
               console.log("[BitCapsule] Diagnostic Block #32829 Header:", block);
           } else {
               const receipt = await publicClient.getTransactionReceipt({ hash: diagLogs[0].transactionHash });
-              console.log("[BitCapsule] Diagnostic Receipt for #11769:", receipt);
+              console.log("[BitCapsule] Diagnostic Receipt for #32829:", receipt);
           }
       } catch (e) {
           console.warn("[BitCapsule] Diagnostic query failed", e);
@@ -80,13 +80,23 @@ export function useVault(fromBlockWindow: bigint = 50000n) {
         publicClient.getLogs({ address: contractAddress, abi, eventName: 'BeneficiaryUpdated', strict: false, fromBlock, toBlock: currentBlock } as any),
       ]);
 
-      console.log("[BitCapsule] Raw logs length:", {
-          created: created.length,
-          claimed: claimed.length,
-          withdrawn: withdrawn.length,
-          transferred: transferred.length,
-          beneficiary: beneficiary.length
-      });
+      if (process.env.NODE_ENV === "development") {
+          console.log("[BitCapsule] Raw logs counts:", {
+              created: created.length,
+              claimed: claimed.length,
+              withdrawn: withdrawn.length,
+              transferred: transferred.length,
+              beneficiary: beneficiary.length
+          });
+
+          if (created.length > 0) {
+              console.log("[BitCapsule] First created log sample:", {
+                  hash: created[0].transactionHash,
+                  eventName: (created[0] as any).eventName,
+                  args: (created[0] as any).args
+              });
+          }
+      }
 
       const nextLogs = { created, claimed, withdrawn, transferred, beneficiary };
       setAllLogs(nextLogs);
